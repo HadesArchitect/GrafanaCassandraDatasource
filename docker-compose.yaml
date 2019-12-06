@@ -3,4 +3,14 @@ services:
   grafana:
     image: grafana/grafana
     ports:
-      - "80:3000"
+      - "3000:3000"
+    volumes:
+      - "${PWD}/grafana-data:/var/lib/grafana"  
+  mysql:
+    image: mysql
+    ports:
+      - "33060:33060"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - "${PWD}/mysql-data:/var/lib/mysql"
