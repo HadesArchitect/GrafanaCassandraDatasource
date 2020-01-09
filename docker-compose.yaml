@@ -1,16 +1,24 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:6.5.2
     ports:
       - "3000:3000"
     volumes:
       - "${PWD}/grafana-data:/var/lib/grafana"  
-  mysql:
-    image: mysql
+  cassandra:
+    image: datastax/dse-server:6.7.4
     ports:
-      - "33060:33060"
-    environment:
-      MYSQL_ROOT_PASSWORD: root
+      - "9042:9042"
     volumes:
-      - "${PWD}/mysql-data:/var/lib/mysql"
+      - /var/lib/cassandra
+    environment:
+      DS_LICENSE: accept
+  studio:
+    image: datastax/dse-studio:6.7.0
+    ports:
+      - "9091:9091"
+    depends_on:
+      - cassandra
+    environment:
+      DS_LICENSE: accept
