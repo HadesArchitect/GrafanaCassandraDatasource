@@ -1,0 +1,7 @@
+{
+  "name": "grafana-cassandra-datasource",
+  "version": "0.1.0",
+  "dependencies": {
+    "cassandra-driver": "^4.3.1"
+  }
+}
