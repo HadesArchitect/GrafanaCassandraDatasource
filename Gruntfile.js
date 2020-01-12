@@ -2,6 +2,7 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks("grunt-ts");
 
     grunt.initConfig({
   
@@ -12,7 +13,7 @@ module.exports = function(grunt) {
       copy: {
         src_to_dist: {
           cwd: 'src',
-          src: '**',
+          src: ['**', "!**/*.ts"],
           dest: 'dist/',
           expand: true
         },
@@ -21,8 +22,16 @@ module.exports = function(grunt) {
           src: ['README.md'],
           dest: 'dist/'
         }
+      },
+
+      ts: {
+        "build": {
+          src: "src/*.ts",
+          outDir: "dist/"
+        }
       }
+
     });
   
-    grunt.registerTask('default', ['clean', 'copy']);
+    grunt.registerTask('default', ['clean', 'copy', 'ts']);
   };
