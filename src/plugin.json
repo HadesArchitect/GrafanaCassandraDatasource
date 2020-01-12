@@ -1,6 +1,6 @@
 {
-    "name": "Grafana Cassandra Datasource Plugin",
-    "id": "gc-datasource-id",
+    "name": "Apache Cassandra",
+    "id": "grafana-cassandra-datasource",
     "type": "datasource",
   
     "partials": {
@@ -11,18 +11,18 @@
     "annotations": false,
   
     "info": {
-      "description": "Initial Grafana Cassandra Datasource",
+      "description": "Apache Cassandra & DataStax Enterprise Datasource for Grafana",
       "author": {
         "name": "Gamadrils Inc",
         "url": "https://gamadrils-inc.com"
       },
       "logos": {
-        "small": "img/simpleJson_logo.svg",
-        "large": "img/simpleJson_logo.svg"
+        "small": "img/cassandra.svg",
+        "large": "img/cassandra.svg"
       },
       "links": [
         {"name": "GitHub", "url": "https://github.com/HadesArchitect/grafana-cassandra-source"},
-        {"name": "MIT License", "url": "https://github.com/grafana/simple-json-datasource/blob/master/LICENSE"}
+        {"name": "MIT License", "url": "https://github.com/HadesArchitect/grafana-cassandra-source/blob/master/LICENSE"}
       ],
       "version": "0.1.0",
       "updated": "2020-01-10"
@@ -32,4 +32,4 @@
       "grafanaVersion": "6.5.2",
       "plugins": [ ]
     }
-  }
+}

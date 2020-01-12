@@ -5,7 +5,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - "${PWD}/grafana-data:/var/lib/grafana"  
+      - /var/lib/grafana
+      - .:/var/lib/grafana/plugins/cassandra
   cassandra:
     image: datastax/dse-server:6.7.4
     ports:
