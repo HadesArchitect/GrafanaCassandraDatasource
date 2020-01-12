@@ -1,17 +1,19 @@
-# C* -> Grafana DS
+# Cassandra Grafana DataSource
 
-** EARLY PHASE **
+**EARLY PHASE!!!**
 
-```
-create table test (id smallint(6) unsigned NOT NULL, time datetime NOT NULL, temperature smallint(6) NOT NULL);
+Apache Cassandra & DataStax Enterprise Datasource for Grafana
 
-insert into test (id, time, temperature) values (2, NOW(), 15);
+## Install JS dependencies
 
-SELECT
-  time AS "time",
-  temperature
-FROM test
-WHERE
-  $__timeFilter(time)
-ORDER BY time
-```
+* **Docker Way** `docker run -v ${PWD}:/opt/gcds -w /opt/gcds node npm install`
+* **Locally** `npm install`
+
+## Build 
+
+* **Docker Way** `docker run -v ${PWD}:/opt/gcds -w /opt/gcds node node_modules/grunt-cli/bin/grunt`
+* **Locally** `grunt`
+
+## Run grafana, cassandra & studio
+
+`docker-compose up -d`
