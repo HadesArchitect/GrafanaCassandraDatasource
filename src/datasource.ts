@@ -1,6 +1,14 @@
 import _ from "lodash";
 
-export class GenericDatasource {
+export class CassandraDatasource {
+
+  type: string;
+  url: string;
+  name: string;
+  q: string;
+  backendSrv: string;
+  templateSrv: string;
+  withCredentials: string;
 
   constructor(instanceSettings, $q, backendSrv, templateSrv) {
     this.type = instanceSettings.type;
@@ -10,23 +18,21 @@ export class GenericDatasource {
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
     this.withCredentials = instanceSettings.withCredentials;
-    this.headers = {'Content-Type': 'application/json'};
-    if (typeof instanceSettings.basicAuth === 'string' && instanceSettings.basicAuth.length > 0) {
-      this.headers['Authorization'] = instanceSettings.basicAuth;
-    }
   }
   
   // Json version
 
   testDatasource() {
-    return this.doRequest({
-      url: this.url + '/',
-      method: 'GET',
-    }).then(response => {
-      if (response.status === 200) {        
-        return { status: "success", message: "Data source is working", title: "Success" };        
-      }
-    });
+    console.log(this.backendSrv);
+    // return this.doRequest({
+    //   url: this.url + '/',
+    //   method: 'GET',
+    // }).then(response => {
+    //   if (response.status === 200) {        
+    //     return { status: "success", message: "Data source is working", title: "Success" };        
+    //   }
+    // });
+    return true;
   }
 
   // console.log ('Status: %, message: %s, title: %s', status, message, title);
