@@ -2,6 +2,7 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks("grunt-eslint");
 
     grunt.initConfig({
   
@@ -21,8 +22,12 @@ module.exports = function(grunt) {
           src: ['README.md'],
           dest: 'dist/'
         }
+      },
+
+      eslint: {
+        target: 'src/*.ts'
       }
     });
   
-    grunt.registerTask('default', ['clean', 'copy']);
-  };
+    grunt.registerTask('default', ['clean', 'eslint', 'copy']);
+};
