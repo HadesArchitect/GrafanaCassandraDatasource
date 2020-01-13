@@ -4,6 +4,8 @@ services:
     image: grafana/grafana:6.5.2
     ports:
       - "3000:3000"
+    environment:
+      GF_LOG_LEVEL: debug
     volumes:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
