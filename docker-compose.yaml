@@ -9,6 +9,7 @@ services:
     volumes:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
+      - ../template:/var/lib/grafana/plugins/template
     environment:
       GF_INSTALL_PLUGINS: grafana-simple-json-datasource
   cassandra:

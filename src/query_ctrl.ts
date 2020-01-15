@@ -1,7 +1,7 @@
 import {QueryCtrl} from 'grafana/app/plugins/sdk';
 //import './css/query-editor.css';
 
-export class GenericDatasourceQueryCtrl extends QueryCtrl {
+export class CassandraDatasourceQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
   scope: any;
