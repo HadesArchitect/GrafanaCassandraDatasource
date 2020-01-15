@@ -3,9 +3,7 @@
     "version": "0.1.0",
     "license": "MIT",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
-    "dependencies": {
-        "cassandra-driver": "^4.3.1"
-    },
+    "dependencies": {},
     "devDependencies": {
         "grunt": "^1.0.1",
         "grunt-cli": "^1.0.1",

@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"errors"
+	// "github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
@@ -18,13 +20,18 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-type JsonDatasource struct {
+type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	logger hclog.Logger
 }
 
-func (ds *JsonDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug("Query", "datasource", tsdbReq.Datasource.Name, "TimeRange", tsdbReq.TimeRange)
+
+	ds.logger.Debug(fmt.Sprintf("%+v\n", ctx))
+	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
+
+    return nil, errors.New("PLANNEDFAIL");
 
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {
@@ -41,7 +48,15 @@ func (ds *JsonDatasource) Query(ctx context.Context, tsdbReq *datasource.Datasou
 	}
 }
 
-func (ds *JsonDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+// func initSession() {
+// 	cluster := gocql.NewCluster("cassandra")
+// 	cluster.Keyspace = "videodb"
+// 	cluster.Consistency = gocql.One
+// 	session, _ := cluster.CreateSession()
+// 	defer session.Close()
+// }
+
+func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	remoteDsReq, err := ds.CreateMetricRequest(tsdbReq)
 	if err != nil {
 		return nil, err
@@ -55,7 +70,7 @@ func (ds *JsonDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.D
 	return ds.ParseQueryResponse(remoteDsReq.queries, body)
 }
 
-func (ds *JsonDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
+func (ds *CassandraDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
 	jsonQueries, err := parseJSONQueries(tsdbReq)
 	if err != nil {
 		return nil, err
@@ -86,7 +101,7 @@ func (ds *JsonDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequ
 	}, nil
 }
 
-func (ds *JsonDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	remoteDsReq, err := ds.CreateSearchRequest(tsdbReq)
 	if err != nil {
 		return nil, err
@@ -100,7 +115,7 @@ func (ds *JsonDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.D
 	return ds.ParseSearchResponse(body)
 }
 
-func (ds *JsonDatasource) CreateSearchRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
+func (ds *CassandraDatasource) CreateSearchRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
 	jsonQueries, err := parseJSONQueries(tsdbReq)
 	if err != nil {
 		return nil, err
@@ -129,7 +144,7 @@ func (ds *JsonDatasource) CreateSearchRequest(tsdbReq *datasource.DatasourceRequ
 	}, nil
 }
 
-func (ds *JsonDatasource) MakeHttpRequest(ctx context.Context, remoteDsReq *RemoteDatasourceRequest) ([]byte, error) {
+func (ds *CassandraDatasource) MakeHttpRequest(ctx context.Context, remoteDsReq *RemoteDatasourceRequest) ([]byte, error) {
 	res, err := ctxhttp.Do(ctx, httpClient, remoteDsReq.req)
 	if err != nil {
 		return nil, err
@@ -173,7 +188,7 @@ func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json
 	return jsonQueries, nil
 }
 
-func (ds *JsonDatasource) ParseQueryResponse(queries []*simplejson.Json, body []byte) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, body []byte) (*datasource.DatasourceResponse, error) {
 	response := &datasource.DatasourceResponse{}
 	responseBody := []TargetResponseDTO{}
 	err := json.Unmarshal(body, &responseBody)
@@ -258,7 +273,7 @@ func (ds *JsonDatasource) ParseQueryResponse(queries []*simplejson.Json, body []
 	return response, nil
 }
 
-func (ds *JsonDatasource) ParseSearchResponse(body []byte) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) ParseSearchResponse(body []byte) (*datasource.DatasourceResponse, error) {
 	jBody, err := simplejson.NewJson(body)
 	if err != nil {
 		return nil, err

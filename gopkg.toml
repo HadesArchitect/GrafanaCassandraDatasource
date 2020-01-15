@@ -3,9 +3,13 @@
   version = "0.5.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/grafana/grafana_plugin_model"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "golang.org/x/net"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/gocql/gocql"
+  branch = "master"

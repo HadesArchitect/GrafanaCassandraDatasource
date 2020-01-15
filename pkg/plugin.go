@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/grafana/grafana_plugin_model/go/datasource"
-	hclog "github.com/hashicorp/go-hclog"
-	plugin "github.com/hashicorp/go-plugin"
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-plugin"
 )
 
 var logger = hclog.New(&hclog.LoggerOptions{
@@ -22,7 +22,7 @@ func main() {
 			MagicCookieValue: "datasource",
 		},
 		Plugins: map[string]plugin.Plugin{
-			"cassandra-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &JsonDatasource{
+			"cassandra-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &CassandraDatasource{
 				logger: logger,
 			}},
 		},
