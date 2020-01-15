@@ -2,6 +2,8 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks("grunt-eslint");
+    grunt.loadNpmTasks("grunt-ts");
 
     grunt.initConfig({
   
@@ -12,7 +14,7 @@ module.exports = function(grunt) {
       copy: {
         src_to_dist: {
           cwd: 'src',
-          src: '**',
+          src: ['**', "!**/*.ts"],
           dest: 'dist/',
           expand: true
         },
@@ -21,8 +23,23 @@ module.exports = function(grunt) {
           src: ['README.md'],
           dest: 'dist/'
         }
+      },
+
+      eslint: {
+        target: ['src/*.ts', 'src/*.js']
+      },
+
+      ts: {
+        "build": {
+          src: ["src/*.ts"],
+          outDir: "dist/",
+          options: {
+            rootDir: "src/"
+          }
+        }
       }
+
     });
   
-    grunt.registerTask('default', ['clean', 'copy']);
-  };
+    grunt.registerTask('default', ['clean', 'eslint', 'copy', 'ts']);
+};
