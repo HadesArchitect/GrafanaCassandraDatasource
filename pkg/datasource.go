@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 	"errors"
-	// "github.com/gocql/gocql"
+	"github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
@@ -25,11 +25,24 @@ type CassandraDatasource struct {
 	logger hclog.Logger
 }
 
+var session gocql.Session;
+
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug("Query", "datasource", tsdbReq.Datasource.Name, "TimeRange", tsdbReq.TimeRange)
 
 	ds.logger.Debug(fmt.Sprintf("%+v\n", ctx))
 	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
+
+	cluster := gocql.NewCluster("cassandra")
+	cluster.Keyspace = "videodb"
+	cluster.Consistency = gocql.One
+	session, err := cluster.CreateSession()
+	defer session.Close()
+
+	if err := session.Query(`SELECT videoid FROM videos LIMIT 1`); err != nil {
+		ds.logger.Debug("SELECT FAIL")
+	}
+	ds.logger.Debug("SELECT OK")
 
     return nil, errors.New("PLANNEDFAIL");
 

@@ -1,9 +1,10 @@
-import {GenericDatasource} from './datasource';
+import {CassandraDatasource} from './datasource';
+import {CassandraDatasourceQueryCtrl} from './query_ctrl';
 
-class GenericConfigCtrl {}
-GenericConfigCtrl.templateUrl = 'partials/config.html';
+class CassandraConfigCtrl {}
+CassandraConfigCtrl.templateUrl = 'partials/config.html';
 
 export {
-  GenericDatasource as Datasource,
-  GenericConfigCtrl as ConfigCtrl,
+  CassandraDatasource as Datasource,
+  CassandraConfigCtrl as ConfigCtrl,
 };
