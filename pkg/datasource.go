@@ -28,23 +28,21 @@ type CassandraDatasource struct {
 var session gocql.Session;
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	ds.logger.Debug("Query", "datasource", tsdbReq.Datasource.Name, "TimeRange", tsdbReq.TimeRange)
-
-	ds.logger.Debug(fmt.Sprintf("%+v\n", ctx))
+	ds.logger.Debug("Received query...")
 	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
 
-	cluster := gocql.NewCluster("cassandra")
+	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
 	cluster.Keyspace = "videodb"
 	cluster.Consistency = gocql.One
 	session, err := cluster.CreateSession()
 	defer session.Close()
 
-	if err := session.Query(`SELECT videoid FROM videos LIMIT 1`); err != nil {
-		ds.logger.Debug("SELECT FAIL")
+	if err := session.Query(`SELECT videoid FROM videos LIMIT 1`).Exec(); err != nil {
+		return nil, errors.New("FAIL");
+
 	}
 	ds.logger.Debug("SELECT OK")
-
-    return nil, errors.New("PLANNEDFAIL");
+	return &datasource.DatasourceResponse{}, nil;
 
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {

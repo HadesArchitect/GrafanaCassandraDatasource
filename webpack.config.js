@@ -1,8 +1,10 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
   target: 'node',
   context: __dirname + "/src",
   entry: './module.ts',
@@ -26,7 +28,11 @@ module.exports = {
     new webpack.optimize.OccurrenceOrderPlugin(),
     new CopyWebpackPlugin([
       { from: 'plugin.json' },
-    ])
+      { from: '../README.md' },
+      { from: 'img/', to: 'img/' },
+      { from: 'partials/', to: 'partials/' },
+    ]),
+    new CleanWebpackPlugin()
   ],
   resolve: {
     extensions: [".ts", ".js"]
@@ -35,13 +41,7 @@ module.exports = {
     rules: [
       {
         test: /\.tsx?$/, 
-        loaders: [
-          {
-            loader: "babel-loader",
-            options: { presets: ['env'] }
-          },
-          "ts-loader"
-        ], 
+        loaders: ["ts-loader"], 
         exclude: /node_modules/,
       }
     ]
