@@ -36,11 +36,28 @@ First, clone the project. It has to be built with docker or with locally install
 
 docker-compose includes three services:
 
-- *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`
+- *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`. Verbose logging is enabled.
 - DataStax Enterprise (Enterprise version of Apache Cassandra, will be replaced by the OSS Cassandra soon)
 - DataStax Studio, web-based UI of the Cassandra to simplify development
 
-After the startup, the datasource should be available in the list of datasources.
+After the startup, the datasource should be available in the list of datasources. Also, following lines should appear in grafana logs:
+
+```
+# Frontend part registered
+lvl=info msg="Starting plugin search" logger=plugins
+lvl=info msg="Registering plugin" logger=plugins name="Apache Cassandra"
+...
+# Backend part is started and running
+msg="Plugins: Adding route" logger=http.server route=/public/plugins/hadesarchitect-cassandra-datasource dir=/var/lib/grafana/plugins/cassandra/dist
+msg="starting plugin" logger=plugins plugin-id=hadesarchitect-cassandra-datasource path=/var/lib/grafana/plugins/cassandra/dist/cassandra-plugin_linux_amd64 args=[/var/lib/grafana/plugins/cassandra/dist/cassandra-plugin_linux_amd64]
+msg="plugin started" logger=plugins plugin-id=hadesarchitect-cassandra-datasource path=/var/lib/grafana/plugins/cassandra/dist/cassandra-plugin_linux_amd64 pid=23
+msg="waiting for RPC address" logger=plugins plugin-id=hadesarchitect-cassandra-datasource path=/var/lib/grafana/plugins/cassandra/dist/cassandra-plugin_linux_amd64
+msg="2020-01-16T22:08:51.619Z [DEBUG] cassandra-backend-datasource: Running Cassandra backend datasource..." logger=plugins plugin-id=hadesarchitect-cassandra-datasource
+msg="plugin address" logger=plugins plugin-id=hadesarchitect-cassandra-datasource address=/tmp/plugin991218850 network=unix timestamp=2020-01-16T22:08:51.622Z
+msg="using plugin" logger=plugins plugin-id=hadesarchitect-cassandra-datasource version=1
+```
+
+To read the logs, use `docker-compose logs -f grafana`.
 
 ### Making Changes
 
