@@ -24,6 +24,19 @@ module.exports = {
       callback();
     }
   ],
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/, 
+        loaders: ["ts-loader"], 
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+      }
+    ]
+  },
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
     new CopyWebpackPlugin([
@@ -36,14 +49,5 @@ module.exports = {
   ],
   resolve: {
     extensions: [".ts", ".js"]
-  },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/, 
-        loaders: ["ts-loader"], 
-        exclude: /node_modules/,
-      }
-    ]
   }
 }
