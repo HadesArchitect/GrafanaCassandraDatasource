@@ -32,7 +32,7 @@ module.exports = {
       { from: 'img/', to: 'img/' },
       { from: 'partials/', to: 'partials/' },
     ]),
-    new CleanWebpackPlugin()
+    new CleanWebpackPlugin({cleanOnceBeforeBuildPatterns: ['**/*', '!cassandra-plugin_*']})
   ],
   resolve: {
     extensions: [".ts", ".js"]
