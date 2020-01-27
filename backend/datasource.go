@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"errors"
+	// "errors"
 	"github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -25,31 +25,40 @@ type CassandraDatasource struct {
 	logger hclog.Logger
 }
 
-var session gocql.Session;
+//var session gocql.Session;
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug("Received query...")
 	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
 
-	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-	cluster.Keyspace = "videodb"
-	cluster.Consistency = gocql.One
-	session, err := cluster.CreateSession()
-	defer session.Close()
+	//if session == nil || session.Closed() {
+		cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
+		cluster.Keyspace = "system"
+		cluster.Consistency = gocql.One
+		session, err := cluster.CreateSession()
+		if err != nil {
+			return nil, err;
+		}
+		defer session.Close()
+	// }
 
-	if err := session.Query(`SELECT videoid FROM videos LIMIT 1`).Exec(); err != nil {
-		return nil, errors.New("FAIL");
-
+	jsonQueries, err := parseJSONQueries(tsdbReq)
+	if err != nil {
+		return nil, err
 	}
-	ds.logger.Debug("SELECT OK")
+
+	//select key from system.local
+
+	ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawSql").MustString()))
+	if err := session.Query(jsonQueries[0].Get("rawSql").MustString()).Exec(); err != nil {
+		return nil, err;
+	}
 	return &datasource.DatasourceResponse{}, nil;
 
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {
 		return nil, err
 	}
-
-	ds.logger.Debug("createRequest", "queryType", queryType)
 
 	switch queryType {
 	case "search":
@@ -59,13 +68,18 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	}
 }
 
-// func initSession() {
-// 	cluster := gocql.NewCluster("cassandra")
-// 	cluster.Keyspace = "videodb"
-// 	cluster.Consistency = gocql.One
-// 	session, _ := cluster.CreateSession()
-// 	defer session.Close()
-// }
+func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
+	jsonQueries := make([]*simplejson.Json, 0)
+	for _, query := range tsdbReq.Queries {
+		json, err := simplejson.NewJson([]byte(query.ModelJson))
+		if err != nil {
+			return nil, err
+		}
+
+		jsonQueries = append(jsonQueries, json)
+	}
+	return jsonQueries, nil
+}
 
 func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	remoteDsReq, err := ds.CreateMetricRequest(tsdbReq)
@@ -184,19 +198,6 @@ func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
 		queryType = queryJson.Get("queryType").MustString("query")
 	}
 	return queryType, nil
-}
-
-func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
-	jsonQueries := make([]*simplejson.Json, 0)
-	for _, query := range tsdbReq.Queries {
-		json, err := simplejson.NewJson([]byte(query.ModelJson))
-		if err != nil {
-			return nil, err
-		}
-
-		jsonQueries = append(jsonQueries, json)
-	}
-	return jsonQueries, nil
 }
 
 func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, body []byte) (*datasource.DatasourceResponse, error) {
