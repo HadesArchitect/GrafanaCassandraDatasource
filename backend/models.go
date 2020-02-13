@@ -8,8 +8,6 @@ import (
 type TargetResponseDTO struct {
 	Target     string           `json:"target,omitempty"`
 	DataPoints TimeSeriesPoints `json:"datapoints,omitempty"`
-	Columns    []TableColumn    `json:"columns,omitempty"`
-	Rows       []RowValues      `json:"values,omitempty"`
 }
 
 type TimePoint [2]float64

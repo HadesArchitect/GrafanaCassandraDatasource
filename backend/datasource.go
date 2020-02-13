@@ -1,15 +1,14 @@
 package main
 
 import (
-	"crypto/tls"
-	"encoding/json"
+	// "crypto/tls"
+	// "encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"strings"
+	// "io/ioutil"
+	// "net"
+	// "strings"
 	"time"
-	// "errors"
+	"errors"
 	"github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -17,7 +16,6 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 type CassandraDatasource struct {
@@ -31,30 +29,6 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	ds.logger.Debug("Received query...")
 	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
 
-	//if session == nil || session.Closed() {
-		cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-		cluster.Keyspace = "system"
-		cluster.Consistency = gocql.One
-		session, err := cluster.CreateSession()
-		if err != nil {
-			return nil, err;
-		}
-		defer session.Close()
-	// }
-
-	jsonQueries, err := parseJSONQueries(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
-
-	//select key from system.local
-
-	ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawSql").MustString()))
-	if err := session.Query(jsonQueries[0].Get("rawSql").MustString()).Exec(); err != nil {
-		return nil, err;
-	}
-	return &datasource.DatasourceResponse{}, nil;
-
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {
 		return nil, err
@@ -63,9 +37,80 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	switch queryType {
 	case "search":
 		return ds.SearchQuery(ctx, tsdbReq)
-	default:
+	case "query":
 		return ds.MetricQuery(ctx, tsdbReq)
+	default:
+		return nil, errors.New(fmt.Sprintf("Unknown query type '%s'", queryType))
 	}
+}
+
+func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+	jsonQueries, err := parseJSONQueries(tsdbReq)
+	if err != nil {
+		return nil, err
+	}
+
+	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
+	cluster.Keyspace = "system"
+	cluster.Consistency = gocql.One
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, err;
+	}
+	defer session.Close()
+
+	ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawQuery").MustString()))
+	ds.logger.Debug(fmt.Sprintf("Target: %v\n", jsonQueries[0].Get("target").MustString()))
+
+	// if err := session.Query(jsonQueries[0].Get("target").MustString()).Exec(); err != nil {
+	// 	return nil, err;
+	// }
+
+	// [{
+	// 	"target":"upper_75",
+	// 	"datapoints":[
+	// 		[622, 1450754160000],
+	// 		[365, 1450754220000]
+	// 	]
+	// }]
+	response := &datasource.DatasourceResponse{}
+
+	qr := datasource.QueryResult{
+		RefId:  "A",
+		Series: make([]*datasource.TimeSeries, 0),
+	}
+
+	serie := &datasource.TimeSeries{Name: "select * from videodb.videos;"}
+
+	var created_at time.Time
+	var value int
+	iter := session.Query(`SELECT created_at, value FROM test.test WHERE id = ?`, jsonQueries[0].Get("valueId").MustString()).Iter()
+	for iter.Scan(&created_at, &value) {
+		serie.Points = append(serie.Points, &datasource.Point{
+			Timestamp: created_at.UnixNano() / int64(time.Millisecond),
+			Value:     float64(value),
+		})
+	}
+	if err := iter.Close(); err != nil {
+		return nil, err;
+	}
+
+	// serie.Points = append(serie.Points, &datasource.Point{
+	// 	Timestamp: int64(1581501415326),
+	//                   1581620093224000000
+	// 	Value:     17,
+	// })
+
+	// serie.Points = append(serie.Points, &datasource.Point{
+	// 	Timestamp: int64(1581531415326),
+	// 	Value:     19,
+	// })
+
+	qr.Series = append(qr.Series, serie)
+
+	response.Results = append(response.Results, &qr)
+
+	return response, nil
 }
 
 func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
@@ -81,110 +126,43 @@ func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json
 	return jsonQueries, nil
 }
 
-func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	remoteDsReq, err := ds.CreateMetricRequest(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
+// func (ds *CassandraDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
+	// jsonQueries, err := parseJSONQueries(tsdbReq)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	body, err := ds.MakeHttpRequest(ctx, remoteDsReq)
-	if err != nil {
-		return nil, err
-	}
+	// payload := simplejson.New()
+	// payload.SetPath([]string{"range", "to"}, tsdbReq.TimeRange.ToRaw)
+	// payload.SetPath([]string{"range", "from"}, tsdbReq.TimeRange.FromRaw)
+	// payload.Set("targets", jsonQueries)
 
-	return ds.ParseQueryResponse(remoteDsReq.queries, body)
-}
+	// rbody, err := payload.MarshalJSON()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-func (ds *CassandraDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
-	jsonQueries, err := parseJSONQueries(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
+	// url := tsdbReq.Datasource.Url + "/query"
+	// req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(rbody)))
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	payload := simplejson.New()
-	payload.SetPath([]string{"range", "to"}, tsdbReq.TimeRange.ToRaw)
-	payload.SetPath([]string{"range", "from"}, tsdbReq.TimeRange.FromRaw)
-	payload.Set("targets", jsonQueries)
+	// req.Header.Add("Content-Type", "application/json")
 
-	rbody, err := payload.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	url := tsdbReq.Datasource.Url + "/query"
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(rbody)))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	return &RemoteDatasourceRequest{
-		queryType: "query",
-		req:       req,
-		queries:   jsonQueries,
-	}, nil
-}
+	// return &RemoteDatasourceRequest{
+	// 	queryType: "query",
+	// 	req:       req,
+	// 	queries:   jsonQueries,
+	// }, nil
+// }
 
 func (ds *CassandraDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	remoteDsReq, err := ds.CreateSearchRequest(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := ds.MakeHttpRequest(ctx, remoteDsReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return ds.ParseSearchResponse(body)
+	return nil, errors.New("Not implemented yet")
 }
 
-func (ds *CassandraDatasource) CreateSearchRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
-	jsonQueries, err := parseJSONQueries(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
-
-	payload := simplejson.New()
-	payload.Set("target", jsonQueries[0].Get("target").MustString())
-
-	rbody, err := payload.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	url := tsdbReq.Datasource.Url + "/search"
-	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(rbody)))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	return &RemoteDatasourceRequest{
-		queryType: "search",
-		req:       req,
-		queries:   jsonQueries,
-	}, nil
-}
-
-func (ds *CassandraDatasource) MakeHttpRequest(ctx context.Context, remoteDsReq *RemoteDatasourceRequest) ([]byte, error) {
-	res, err := ctxhttp.Do(ctx, httpClient, remoteDsReq.req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code. status: %v", res.Status)
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
+func (ds *CassandraDatasource) Execute(ctx context.Context, remoteDsReq *RemoteDatasourceRequest) ([]byte, error) {
+	return nil, errors.New("Not implemented yet")
 }
 
 func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
@@ -203,10 +181,6 @@ func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
 func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, body []byte) (*datasource.DatasourceResponse, error) {
 	response := &datasource.DatasourceResponse{}
 	responseBody := []TargetResponseDTO{}
-	err := json.Unmarshal(body, &responseBody)
-	if err != nil {
-		return nil, err
-	}
 
 	for i, r := range responseBody {
 		refId := r.Target
@@ -218,67 +192,19 @@ func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, bo
 		qr := datasource.QueryResult{
 			RefId:  refId,
 			Series: make([]*datasource.TimeSeries, 0),
-			Tables: make([]*datasource.Table, 0),
 		}
 
-		if len(r.Columns) > 0 {
-			table := datasource.Table{
-				Columns: make([]*datasource.TableColumn, 0),
-				Rows:    make([]*datasource.TableRow, 0),
-			}
+		serie := &datasource.TimeSeries{Name: r.Target}
 
-			for _, c := range r.Columns {
-				table.Columns = append(table.Columns, &datasource.TableColumn{
-					Name: c.Text,
-				})
-			}
-
-			for _, row := range r.Rows {
-				values := make([]*datasource.RowValue, 0)
-
-				for i, cell := range row {
-					rv := datasource.RowValue{}
-
-					switch r.Columns[i].Type {
-					case "time":
-						if timeValue, ok := cell.(float64); ok {
-							rv.Int64Value = int64(timeValue)
-						}
-						rv.Kind = datasource.RowValue_TYPE_INT64
-					case "number":
-						if numberValue, ok := cell.(float64); ok {
-							rv.Int64Value = int64(numberValue)
-						}
-						rv.Kind = datasource.RowValue_TYPE_INT64
-					case "string":
-						if stringValue, ok := cell.(string); ok {
-							rv.StringValue = stringValue
-						}
-						rv.Kind = datasource.RowValue_TYPE_STRING
-					default:
-						ds.logger.Debug(fmt.Sprintf("failed to parse value %v of type %T", cell, cell))
-					}
-
-					values = append(values, &rv)
-				}
-
-				table.Rows = append(table.Rows, &datasource.TableRow{Values: values})
-			}
-
-			qr.Tables = append(qr.Tables, &table)
-		} else {
-			serie := &datasource.TimeSeries{Name: r.Target}
-
-			for _, p := range r.DataPoints {
-				serie.Points = append(serie.Points, &datasource.Point{
-					Timestamp: int64(p[1]),
-					Value:     p[0],
-				})
-			}
-
-			qr.Series = append(qr.Series, serie)
+		for _, p := range r.DataPoints {
+			serie.Points = append(serie.Points, &datasource.Point{
+				Timestamp: int64(p[1]),
+				Value:     p[0],
+			})
 		}
 
+		qr.Series = append(qr.Series, serie)
+	
 		response.Results = append(response.Results, &qr)
 	}
 
@@ -286,71 +212,5 @@ func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, bo
 }
 
 func (ds *CassandraDatasource) ParseSearchResponse(body []byte) (*datasource.DatasourceResponse, error) {
-	jBody, err := simplejson.NewJson(body)
-	if err != nil {
-		return nil, err
-	}
-
-	metricCount := len(jBody.MustArray())
-	table := datasource.Table{
-		Columns: []*datasource.TableColumn{
-			&datasource.TableColumn{Name: "text"},
-		},
-		Rows: make([]*datasource.TableRow, 0),
-	}
-
-	for n := 0; n < metricCount; n++ {
-		values := make([]*datasource.RowValue, 0)
-		jm := jBody.GetIndex(n)
-
-		if text, found := jm.CheckGet("text"); found {
-			values = append(values, &datasource.RowValue{
-				Kind:        datasource.RowValue_TYPE_STRING,
-				StringValue: text.MustString(),
-			})
-			values = append(values, &datasource.RowValue{
-				Kind:       datasource.RowValue_TYPE_INT64,
-				Int64Value: jm.Get("value").MustInt64(),
-			})
-
-			if len(table.Columns) == 1 {
-				table.Columns = append(table.Columns, &datasource.TableColumn{Name: "value"})
-			}
-		} else {
-			values = append(values, &datasource.RowValue{
-				Kind:        datasource.RowValue_TYPE_STRING,
-				StringValue: jm.MustString(),
-			})
-		}
-
-		table.Rows = append(table.Rows, &datasource.TableRow{Values: values})
-	}
-
-	return &datasource.DatasourceResponse{
-		Results: []*datasource.QueryResult{
-			&datasource.QueryResult{
-				RefId:  "search",
-				Tables: []*datasource.Table{&table},
-			},
-		},
-	}, nil
-}
-
-var httpClient = &http.Client{
-	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{
-			Renegotiation: tls.RenegotiateFreelyAsClient,
-		},
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).Dial,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-	},
-	Timeout: time.Duration(time.Second * 30),
+	return nil, errors.New("Not implemented yet")
 }

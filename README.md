@@ -40,6 +40,9 @@ docker-compose includes three services:
 - DataStax Enterprise (Enterprise version of Apache Cassandra, will be replaced by the OSS Cassandra soon)
 - DataStax Studio, web-based UI of the Cassandra to simplify development
 
+- *Grafana* http://localhost:3000, user `admin`, password `admin`
+- *Studio* http://localhost:9091 **NOTICE** To connect to Cassandra you have to setup connection in `connections` page. Set `host/IP` value to `cassandra`.
+
 After the startup, the datasource should be available in the list of datasources. Also, following lines should appear in grafana logs:
 
 ```
@@ -58,6 +61,25 @@ msg="using plugin" logger=plugins plugin-id=hadesarchitect-cassandra-datasource 
 ```
 
 To read the logs, use `docker-compose logs -f grafana`.
+
+#### Load Sample Data
+
+```
+docker-compose exec cassandra cqlsh
+
+CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+
+CREATE TABLE test.test (
+    id uuid,
+    created_at timestamp,
+    value int,
+    PRIMARY KEY ((id), created_at)
+);
+
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 18);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 19);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 30);
+```
 
 ### Making Changes
 

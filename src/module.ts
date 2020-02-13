@@ -1,5 +1,5 @@
 import {CassandraDatasource} from './datasource';
-import {CassandraDatasourceQueryCtrl} from './query_ctrl';
+import {CassandraQueryCtrl} from './query_ctrl';
 
 class CassandraConfigCtrl {
   static templateUrl = 'partials/config.html';
@@ -13,6 +13,6 @@ class CassandraQueryOptionsCtrl {
 export {
   CassandraDatasource as Datasource,
   CassandraConfigCtrl as ConfigCtrl,
-  CassandraDatasourceQueryCtrl as QueryCtrl,
+  CassandraQueryCtrl as QueryCtrl,
   CassandraQueryOptionsCtrl as QueryOptionsCtrl
 };

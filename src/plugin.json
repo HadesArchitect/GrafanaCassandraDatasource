@@ -16,8 +16,8 @@
     "info": {
       "description": "Apache Cassandra & DataStax Enterprise Datasource for Grafana",
       "author": {
-        "name": "Gamadrils Inc",
-        "url": "https://gamadrils-inc.com"
+        "name": "Aleksandr Volochnev",
+        "url": "https://github.com/HadesArchitect"
       },
       "logos": {
         "small": "img/cassandra.svg",

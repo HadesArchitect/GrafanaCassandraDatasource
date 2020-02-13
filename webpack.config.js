@@ -14,8 +14,7 @@ module.exports = {
     libraryTarget: "amd"
   },
   externals: [
-    // remove the line below if you don't want to use buildin versions
-    'jquery', 'lodash', 'moment',
+    'jquery', 'lodash', 'moment', 'angular',
     function(context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
@@ -35,7 +34,7 @@ module.exports = {
     new CleanWebpackPlugin({cleanOnceBeforeBuildPatterns: ['**/*', '!cassandra-plugin_*']})
   ],
   resolve: {
-    extensions: [".ts", ".js"]
+    extensions: [".ts", '.tsx', ".js"]
   },
   module: {
     rules: [
@@ -43,7 +42,11 @@ module.exports = {
         test: /\.tsx?$/, 
         loaders: ["ts-loader"], 
         exclude: /node_modules/,
-      }
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
     ]
   }
 }

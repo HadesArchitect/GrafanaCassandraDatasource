@@ -1,7 +1,7 @@
 import {QueryCtrl} from 'grafana/app/plugins/sdk';
 //import './css/query-editor.css';
 
-export class CassandraDatasourceQueryCtrl extends QueryCtrl {
+export class CassandraQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
   scope: any;
@@ -24,6 +24,6 @@ export class CassandraDatasourceQueryCtrl extends QueryCtrl {
   }
 
   onChangeInternal() {
-    this.panelCtrl.refresh(); // Asks the panel to refresh data.
+    this.panelCtrl.refresh();
   }
 }

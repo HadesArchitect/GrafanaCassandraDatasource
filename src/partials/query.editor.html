@@ -1,25 +1,32 @@
 <query-editor-row query-ctrl="ctrl" class="generic-datasource-query-row" has-text-edit-mode="true">
     <div class="gf-form-inline">
-      <div class="gf-form max-width-8">
-        <select class="gf-form-input" ng-model="ctrl.target.type" ng-options="f as f for f in ['table', 'timeserie']"></select>
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">Keyspace</label>
+          <input class="gf-form-input" ng-model="ctrl.target.keyspace" placeholder="keyspace_name" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
       </div>
-  
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">Table</label>
+          <input class="gf-form-input" ng-model="ctrl.target.table" placeholder="table_name" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+      </div>
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">Time Column</label>
+          <input class="gf-form-input" ng-model="ctrl.target.columnTime" placeholder="created_at" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+      </div>
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">Value Column</label>
+          <input class="gf-form-input" ng-model="ctrl.target.columnValue" placeholder="value" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+      </div>
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">ID Column</label>
+          <input class="gf-form-input" ng-model="ctrl.target.columnId" placeholder="sensor_id" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+      </div>
+      <div class="gf-form" ng-if="!ctrl.target.rawQuery">
+          <label class="gf-form-label width-8">ID</label>
+          <input class="gf-form-input" ng-model="ctrl.target.valueId" placeholder="123e4567-e89b-12d3-a456-426655440000" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+      </div>
       <div class="gf-form" ng-if="ctrl.target.rawQuery">
-        <textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
-      </div>
-  
-      <div ng-if="!ctrl.target.rawQuery">
-        <div class="gf-form">
-          <gf-form-dropdown model="ctrl.target.target"
-            allow-custom="true"
-            lookup-text="true"
-            get-options="ctrl.getOptions($query)"
-            on-change="ctrl.onChangeInternal()">
-        </gf-form-dropdown>
-        </div>
-      </div>
-      <div class="gf-form gf-form--grow">
-        <div class="gf-form-label gf-form-label--grow"></div>
+        <label class="gf-form-label width-8">Raw CQL</label>
+        <textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" placeholder="select value from keyspace.table where id=123e4567;" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
       </div>
     </div>
   </query-editor-row>
