@@ -69,7 +69,7 @@ To read the logs, use `docker-compose logs -f grafana`.
 #### Load Sample Data
 
 ```
-docker-compose exec cassandra cqlsh -u cassanrda -p cassandra
+docker-compose exec cassandra cqlsh -u cassandra -p cassandra
 
 CREATE KEYSPACE IF NOT EXISTS test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 
@@ -80,7 +80,6 @@ CREATE TABLE IF NOT EXISTS test.test (
     PRIMARY KEY ((id), created_at)
 );
 
-# Cassandra prior to 4.* doesn't support date math natively
 CREATE FUNCTION IF NOT EXISTS test.minutesAgo(minutes int) 
   CALLED ON NULL INPUT 
   RETURNS timestamp
