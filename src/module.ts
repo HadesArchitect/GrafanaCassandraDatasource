@@ -1,10 +1,6 @@
 import {CassandraDatasource} from './datasource';
 import {CassandraQueryCtrl} from './query_ctrl';
-
-class CassandraConfigCtrl {
-  static templateUrl = 'partials/config.html';
-  current: any;
-}
+import {CassandraConfigCtrl} from './config_ctrl';
 
 class CassandraQueryOptionsCtrl {
   static templateUrl = 'partials/query.options.html';

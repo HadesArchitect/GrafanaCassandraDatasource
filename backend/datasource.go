@@ -2,7 +2,7 @@ package main
 
 import (
 	// "crypto/tls"
-	// "encoding/json"
+	"encoding/json"
 	"fmt"
 	// "io/ioutil"
 	// "net"
@@ -34,24 +34,33 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		return nil, err
 	}
 
+	queries, err := parseJSONQueries(tsdbReq)
+	if err != nil {
+		return nil, err
+	}
+
+	var options map[string]string
+	json.Unmarshal([]byte(tsdbReq.Datasource.JsonData), &options)
+
 	switch queryType {
 	case "search":
-		return ds.SearchQuery(ctx, tsdbReq)
+		return ds.SearchQuery(ctx, tsdbReq, queries)
 	case "query":
-		return ds.MetricQuery(ctx, tsdbReq)
+		return ds.MetricQuery(ctx, tsdbReq, queries, options)
+	case "connection":
+		return ds.Connection(ctx, tsdbReq, queries, options)
 	default:
 		return nil, errors.New(fmt.Sprintf("Unknown query type '%s'", queryType))
 	}
 }
 
-func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	jsonQueries, err := parseJSONQueries(tsdbReq)
-	if err != nil {
-		return nil, err
-	}
-
+func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
 	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-	cluster.Keyspace = "system"
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: options["user"],
+		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+	}
+	cluster.Keyspace = options["keyspace"]
 	cluster.Consistency = gocql.One
 	session, err := cluster.CreateSession()
 	if err != nil {
@@ -59,8 +68,8 @@ func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasou
 	}
 	defer session.Close()
 
-	ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawQuery").MustString()))
-	ds.logger.Debug(fmt.Sprintf("Target: %v\n", jsonQueries[0].Get("target").MustString()))
+	// ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawQuery").MustString()))
+	ds.logger.Debug(fmt.Sprintf("Query: %v\n", jsonQueries[0]))
 
 	// if err := session.Query(jsonQueries[0].Get("target").MustString()).Exec(); err != nil {
 	// 	return nil, err;
@@ -113,6 +122,23 @@ func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasou
 	return response, nil
 }
 
+func (ds *CassandraDatasource) Connection(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
+	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: options["user"],
+		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+	}
+	cluster.Keyspace = options["keyspace"]
+	cluster.Consistency = gocql.One
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, err;
+	}
+	defer session.Close()
+
+	return &datasource.DatasourceResponse{}, nil;
+}
+
 func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
@@ -157,7 +183,7 @@ func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json
 	// }, nil
 // }
 
-func (ds *CassandraDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
 	return nil, errors.New("Not implemented yet")
 }
 

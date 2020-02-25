@@ -10,18 +10,9 @@ services:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
   cassandra:
-    image: datastax/dse-server:6.7.4
+    image: cassandra
     ports:
       - "9042:9042"
     volumes:
       - /var/lib/cassandra
-    environment:
-      DS_LICENSE: accept
-  studio:
-    image: datastax/dse-studio:6.7.0
-    ports:
-      - "9091:9091"
-    depends_on:
-      - cassandra
-    environment:
-      DS_LICENSE: accept
+      - ./cassandra.yaml:/etc/cassandra/cassandra.yaml

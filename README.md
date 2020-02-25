@@ -4,6 +4,14 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ## Usage
 
+### Installation 
+
+1. Follow the official instructions to install plugin as explained [here](https://grafana.com/docs/grafana/latest/plugins/installation/).
+2. Add the Cassandra DataSource as a datasource at the configuration page.
+3. Configure the datasource specifying contact point and port "10.12.13.14:9042", username, password and keyspace. All the fields are required. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+
+### Panel Setup
+
 [TBD]
 
 ## Development
@@ -34,14 +42,10 @@ First, clone the project. It has to be built with docker or with locally install
 
 `docker-compose up -d`
 
-docker-compose includes three services:
+docker-compose includes two services:
 
-- *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`. Verbose logging is enabled.
-- DataStax Enterprise (Enterprise version of Apache Cassandra, will be replaced by the OSS Cassandra soon)
-- DataStax Studio, web-based UI of the Cassandra to simplify development
-
-- *Grafana* http://localhost:3000, user `admin`, password `admin`
-- *Studio* http://localhost:9091 **NOTICE** To connect to Cassandra you have to setup connection in `connections` page. Set `host/IP` value to `cassandra`.
+- *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`. Verbose logging is enabled. Grafana is available at http://localhost:3000, user `admin`, password `admin`
+- *Apache Cassandra*, `localhost:9042`, user `cassandra`, password `cassandra`. `cqlsh` is available via `docker-compose exec cassandra cqlsh -u cassanrda -p cassandra`.
 
 After the startup, the datasource should be available in the list of datasources. Also, following lines should appear in grafana logs:
 
@@ -65,20 +69,40 @@ To read the logs, use `docker-compose logs -f grafana`.
 #### Load Sample Data
 
 ```
-docker-compose exec cassandra cqlsh
+docker-compose exec cassandra cqlsh -u cassanrda -p cassandra
 
-CREATE KEYSPACE test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+CREATE KEYSPACE IF NOT EXISTS test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 
-CREATE TABLE test.test (
+CREATE TABLE IF NOT EXISTS test.test (
     id uuid,
     created_at timestamp,
     value int,
     PRIMARY KEY ((id), created_at)
 );
 
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 18);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 19);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), 30);
+# Cassandra prior to 4.* doesn't support date math natively
+CREATE FUNCTION IF NOT EXISTS test.minutesAgo(minutes int) 
+  CALLED ON NULL INPUT 
+  RETURNS timestamp
+  LANGUAGE java AS '
+    long now = System.currentTimeMillis();
+    if (minutes == null)
+      return new Date(now);
+    return new Date(now - (minutes.intValue() * 60 * 1000));
+  ';
+
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(0), 18);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(5), 19);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(10), 20);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(15), 24);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(20), 22);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(25), 17);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(0), 15);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(5), 18);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(10), 18);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(15), 16);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(20), 14);
+insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(25), 12);
 ```
 
 ### Making Changes

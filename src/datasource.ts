@@ -9,7 +9,7 @@ interface TSDBRequest {
 interface TSDBQuery {
   datasourceId: string;
   target: any;
-  queryType?: TSDBQueryType;
+  queryType: TSDBQueryType;
   refId?: string;
   keyspace?: string;
   table?: string;
@@ -22,7 +22,7 @@ interface TSDBQuery {
   type?: 'timeserie' | 'table';
 }
 
-type TSDBQueryType = 'query' | 'search';
+type TSDBQueryType = 'query' | 'search' | 'connection';
 
 interface TSDBRequestOptions {
   range?: {
@@ -37,6 +37,8 @@ export class CassandraDatasource {
   type: string;
   id: string;
   url: string;
+  keyspace: string;
+  user: string;
   withCredentials: boolean;
   instanceSettings: any;
   headers: any;
@@ -45,6 +47,8 @@ export class CassandraDatasource {
   constructor(instanceSettings, private backendSrv, private templateSrv) {
     this.type = instanceSettings.type;
     this.url = instanceSettings.url;
+    this.keyspace = instanceSettings.jsonData.keyspace;
+    this.user = instanceSettings.jsonData.user;
     this.name = instanceSettings.name;
     this.id = instanceSettings.id;
     this.withCredentials = instanceSettings.withCredentials;
@@ -54,7 +58,9 @@ export class CassandraDatasource {
     }
   }
 
-  query(options) {
+  query(options: any) {
+    console.log("QUERY");
+    console.log("Options", options);
     const query = this.buildQueryParameters(options);
     query.targets = query.targets.filter(t => !t.hide);
 
@@ -62,6 +68,7 @@ export class CassandraDatasource {
       return Promise.resolve({data: []});
     }
 
+    console.log("Query", query);
     return this.doTsdbRequest(query).then(handleTsdbResponse);
   }
 
@@ -75,12 +82,9 @@ export class CassandraDatasource {
           to: 'now',
           queries: [
             {
-              refId: 'A',
-              intervalMs: 1,
-              maxDataPoints: 1,
               datasourceId: this.id,
-              target: 'SELECT key FROM system.local;',
-              format: 'timeserie',
+              queryType: 'connection',
+              keyspace: this.keyspace,
             },
           ],
         },
@@ -219,6 +223,7 @@ export class CassandraDatasource {
 }
 
 export function handleTsdbResponse(response) {
+  console.log("TSDB Response", response)
   const res= [];
   _.forEach(response.data.results, r => {
     _.forEach(r.series, s => {

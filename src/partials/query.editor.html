@@ -1,4 +1,4 @@
-<query-editor-row query-ctrl="ctrl" class="generic-datasource-query-row" has-text-edit-mode="true">
+<query-editor-row query-ctrl="ctrl" class="cassandra-datasource-query-row" has-text-edit-mode="false">
     <div class="gf-form-inline">
       <div class="gf-form" ng-if="!ctrl.target.rawQuery">
           <label class="gf-form-label width-8">Keyspace</label>
@@ -25,7 +25,7 @@
           <input class="gf-form-input" ng-model="ctrl.target.valueId" placeholder="123e4567-e89b-12d3-a456-426655440000" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
       </div>
       <div class="gf-form" ng-if="ctrl.target.rawQuery">
-        <label class="gf-form-label width-8">Raw CQL</label>
+        <label class="gf-form-label width-16">Raw CQL</label>
         <textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" placeholder="select value from keyspace.table where id=123e4567;" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
       </div>
     </div>

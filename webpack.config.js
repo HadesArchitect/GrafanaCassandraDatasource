@@ -14,7 +14,7 @@ module.exports = {
     libraryTarget: "amd"
   },
   externals: [
-    'jquery', 'lodash', 'moment', 'angular',
+    'jquery', 'lodash', 'moment', 'react', 'angular',
     function(context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {

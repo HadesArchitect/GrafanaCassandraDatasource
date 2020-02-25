@@ -15,9 +15,9 @@ export class CassandraQueryCtrl extends QueryCtrl {
     this.target.type = this.target.type || 'timeserie';
   }
 
-  getOptions(query) {
-    return this.datasource.metricFindQuery(query || '');
-  }
+  // getOptions(query) {
+  //   return this.datasource.metricFindQuery(query || '');
+  // }
 
   toggleEditorMode() {
     this.target.rawQuery = !this.target.rawQuery;
