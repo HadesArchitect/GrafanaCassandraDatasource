@@ -11,7 +11,7 @@ export class CassandraQueryCtrl extends QueryCtrl {
     super($scope, $injector);
 
     this.scope = $scope;
-    this.target.target = this.target.target || 'select metric';
+    this.target.target = this.target.target || 'select timestamp, value from keyspace.table where id=123e4567;';
     this.target.type = this.target.type || 'timeserie';
   }
 
