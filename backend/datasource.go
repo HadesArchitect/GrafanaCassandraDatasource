@@ -26,8 +26,7 @@ type CassandraDatasource struct {
 //var session gocql.Session;
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	ds.logger.Debug("Received query...")
-	ds.logger.Debug(fmt.Sprintf("%+v\n", tsdbReq))
+	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
 
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {
@@ -42,101 +41,73 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	var options map[string]string
 	json.Unmarshal([]byte(tsdbReq.Datasource.JsonData), &options)
 
+	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: options["user"],
+		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+	}
+	cluster.Keyspace = options["keyspace"]
+	cluster.Consistency = gocql.One
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, err;
+	}
+	defer session.Close()
+
 	switch queryType {
 	case "search":
 		return ds.SearchQuery(ctx, tsdbReq, queries)
 	case "query":
-		return ds.MetricQuery(ctx, tsdbReq, queries, options)
+		return ds.MetricQuery(session, tsdbReq, queries, options)
 	case "connection":
-		return ds.Connection(ctx, tsdbReq, queries, options)
+		return &datasource.DatasourceResponse{}, nil;
 	default:
 		return nil, errors.New(fmt.Sprintf("Unknown query type '%s'", queryType))
 	}
 }
 
-func (ds *CassandraDatasource) MetricQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
-	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: options["user"],
-		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
-	}
-	cluster.Keyspace = options["keyspace"]
-	cluster.Consistency = gocql.One
-	session, err := cluster.CreateSession()
-	if err != nil {
-		return nil, err;
-	}
-	defer session.Close()
+func (ds *CassandraDatasource) MetricQuery(session *gocql.Session, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
+	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
-	// ds.logger.Debug(fmt.Sprintf("Raw Query: %v\n", jsonQueries[0].Get("rawQuery").MustString()))
-	ds.logger.Debug(fmt.Sprintf("Query: %v\n", jsonQueries[0]))
-
-	// if err := session.Query(jsonQueries[0].Get("target").MustString()).Exec(); err != nil {
-	// 	return nil, err;
-	// }
-
-	// [{
-	// 	"target":"upper_75",
-	// 	"datapoints":[
-	// 		[622, 1450754160000],
-	// 		[365, 1450754220000]
-	// 	]
-	// }]
 	response := &datasource.DatasourceResponse{}
 
-	qr := datasource.QueryResult{
-		RefId:  "A",
-		Series: make([]*datasource.TimeSeries, 0),
+	for _, queryData := range jsonQueries {
+
+		queryResult := datasource.QueryResult{
+			RefId:  queryData.Get("refId").MustString(),
+			Series: make([]*datasource.TimeSeries, 0),
+		}
+
+		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
+
+		var created_at time.Time
+		var value int
+		preparedQuery := fmt.Sprintf(
+			"SELECT %s, %s FROM %s.%s WHERE %s = %s", 
+			queryData.Get("columnTime").MustString(),
+			queryData.Get("columnValue").MustString(),
+			queryData.Get("keyspace").MustString(),
+			queryData.Get("table").MustString(),
+			queryData.Get("columnId").MustString(),
+			queryData.Get("valueId").MustString(),
+		)
+		iter := session.Query(preparedQuery).Iter()
+		for iter.Scan(&created_at, &value) {
+			serie.Points = append(serie.Points, &datasource.Point{
+				Timestamp: created_at.UnixNano() / int64(time.Millisecond),
+				Value:     float64(value),
+			})
+		}
+		if err := iter.Close(); err != nil {
+			return nil, err;
+		}
+
+		queryResult.Series = append(queryResult.Series, serie)
+
+		response.Results = append(response.Results, &queryResult)
 	}
-
-	serie := &datasource.TimeSeries{Name: "select * from videodb.videos;"}
-
-	var created_at time.Time
-	var value int
-	iter := session.Query(`SELECT created_at, value FROM test.test WHERE id = ?`, jsonQueries[0].Get("valueId").MustString()).Iter()
-	for iter.Scan(&created_at, &value) {
-		serie.Points = append(serie.Points, &datasource.Point{
-			Timestamp: created_at.UnixNano() / int64(time.Millisecond),
-			Value:     float64(value),
-		})
-	}
-	if err := iter.Close(); err != nil {
-		return nil, err;
-	}
-
-	// serie.Points = append(serie.Points, &datasource.Point{
-	// 	Timestamp: int64(1581501415326),
-	//                   1581620093224000000
-	// 	Value:     17,
-	// })
-
-	// serie.Points = append(serie.Points, &datasource.Point{
-	// 	Timestamp: int64(1581531415326),
-	// 	Value:     19,
-	// })
-
-	qr.Series = append(qr.Series, serie)
-
-	response.Results = append(response.Results, &qr)
 
 	return response, nil
-}
-
-func (ds *CassandraDatasource) Connection(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
-	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: options["user"],
-		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
-	}
-	cluster.Keyspace = options["keyspace"]
-	cluster.Consistency = gocql.One
-	session, err := cluster.CreateSession()
-	if err != nil {
-		return nil, err;
-	}
-	defer session.Close()
-
-	return &datasource.DatasourceResponse{}, nil;
 }
 
 func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
