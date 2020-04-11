@@ -1,36 +1,5 @@
 import _ from "lodash";
-
-interface TSDBRequest {
-  queries: any[];
-  from?: string;
-  to?: string;
-}
-
-interface TSDBQuery {
-  datasourceId: string;
-  target: any;
-  queryType: TSDBQueryType;
-  refId?: string;
-  keyspace?: string;
-  table?: string;
-  columnTime?: string;
-  columnValue?: string;
-  columnId?: string;
-  valueId?: string;
-  hide?: boolean;
-  rawQuery?: boolean;
-  type?: 'timeserie' | 'table';
-}
-
-type TSDBQueryType = 'query' | 'search' | 'connection';
-
-interface TSDBRequestOptions {
-  range?: {
-    from: any;
-    to: any;
-  };
-  targets: TSDBQuery[];
-}
+import {TSDBRequest, TSDBQuery, TSDBRequestOptions, TableMetadata} from './models';
 
 export class CassandraDatasource {
   name: string;
@@ -59,8 +28,6 @@ export class CassandraDatasource {
   }
 
   query(options: any) {
-    console.log("QUERY");
-    console.log("Options", options);
     const query = this.buildQueryParameters(options);
     query.targets = query.targets.filter(t => !t.hide);
 
@@ -68,11 +35,10 @@ export class CassandraDatasource {
       return Promise.resolve({data: []});
     }
 
-    console.log("Query", query);
     return this.doTsdbRequest(query).then(handleTsdbResponse);
   }
 
-  testDatasource() {
+  testDatasource(): {} {
     return this.backendSrv
       .datasourceRequest({
         url: '/api/tsdb/query',
@@ -80,68 +46,36 @@ export class CassandraDatasource {
         data: {
           from: '5m',
           to: 'now',
-          queries: [
-            {
-              datasourceId: this.id,
-              queryType: 'connection',
-              keyspace: this.keyspace,
-            },
-          ],
+          queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }]
         },
       })
-      .then((res: any) => {
+      .then((result: any) => {
         return { status: 'success', message: 'Database Connection OK' };
       })
-      .catch((err: any) => {
-        console.log(err);
-        if (err.data && err.data.message) {
-          return { status: 'error', message: err.data.message };
-        } else {
-          return { status: 'error', message: err.status };
-        }
+      .catch((error: any) => {
+        return { status: 'error', message: error.data.message };
       });
   }
 
-  annotationQuery(options) {
-    var query = this.templateSrv.replace(options.annotation.query, {}, 'glob');
-    var annotationQuery = {
-      range: options.range,
-      annotation: {
-        name: options.annotation.name,
-        datasource: options.annotation.datasource,
-        enable: options.annotation.enable,
-        iconColor: options.annotation.iconColor,
-        query: query
-      },
-      rangeRaw: options.rangeRaw
-    };
-
-    return this.doRequest({
-      url: this.url + '/annotations',
-      method: 'POST',
-      data: annotationQuery
-    }).then(result => {
-      return result.data;
-    });
-  }
-
-  metricFindQuery(query) {
+  metricFindQuery(keyspace: string, table: string): TableMetadata {
     const interpolated: TSDBQuery = {
-      target: this.templateSrv.replace(query, null, 'regex'),
       datasourceId: this.id,
-      queryType: "search"
+      queryType: "search",
+      refId: "search",
+      keyspace: keyspace,
+      table: table
     };
-
+    
     return this.doTsdbRequest({
       targets: [interpolated]
     }).then(response => {
-      const res = handleTsdbResponse(response)
-      if (res && res.data && res.data.length) {
-        return res.data[0].rows;
-      } else {
-        return [];
-      }
-    }).then(mapToTextValue);
+      let tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
+      // return tmd.toSuggestion();
+      return tmd;
+    }).catch((error: any) => {
+      console.log(error);
+      return new TableMetadata();
+    });
   }
 
   doRequest(options) {
@@ -196,34 +130,9 @@ export class CassandraDatasource {
 
     return options;
   }
-
-  getTagKeys(options) {
-    return new Promise((resolve, reject) => {
-      this.doRequest({
-        url: this.url + '/tag-keys',
-        method: 'POST',
-        data: options
-      }).then(result => {
-        return resolve(result.data);
-      });
-    });
-  }
-
-  getTagValues(options) {
-    return new Promise((resolve, reject) => {
-      this.doRequest({
-        url: this.url + '/tag-values',
-        method: 'POST',
-        data: options
-      }).then(result => {
-        return resolve(result.data);
-      });
-    });
-  }
 }
 
 export function handleTsdbResponse(response) {
-  console.log("TSDB Response", response)
   const res= [];
   _.forEach(response.data.results, r => {
     _.forEach(r.series, s => {
@@ -235,9 +144,8 @@ export function handleTsdbResponse(response) {
       res.push(t);
     });
   });
-
   response.data = res;
-  console.log(res);
+
   return response;
 }
 

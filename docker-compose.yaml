@@ -1,7 +1,7 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana:6.5.2
+    image: grafana/grafana:6.6.2
     ports:
       - "3000:3000"
     environment:
@@ -16,3 +16,4 @@ services:
     volumes:
       - /var/lib/cassandra
       - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
+      - ./test_data.cql:/test_data.cql

@@ -38,7 +38,7 @@ First, clone the project. It has to be built with docker or with locally install
 * `dep ensure`
 * `go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 
-### Run Grafana, Cassandra & Studio
+#### Run Grafana and Cassandra
 
 `docker-compose up -d`
 
@@ -66,51 +66,19 @@ msg="using plugin" logger=plugins plugin-id=hadesarchitect-cassandra-datasource 
 
 To read the logs, use `docker-compose logs -f grafana`.
 
-#### Load Sample Data
+### Load Sample Data
 
 ```
-docker-compose exec cassandra cqlsh -u cassandra -p cassandra
-
-CREATE KEYSPACE IF NOT EXISTS test WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
-
-CREATE TABLE IF NOT EXISTS test.test (
-    id uuid,
-    created_at timestamp,
-    value int,
-    PRIMARY KEY ((id), created_at)
-);
-
-CREATE FUNCTION IF NOT EXISTS test.minutesAgo(minutes int) 
-  CALLED ON NULL INPUT 
-  RETURNS timestamp
-  LANGUAGE java AS '
-    long now = System.currentTimeMillis();
-    if (minutes == null)
-      return new Date(now);
-    return new Date(now - (minutes.intValue() * 60 * 1000));
-  ';
-
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(0), 18);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(5), 19);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(10), 20);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(15), 24);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(20), 22);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, minutesAgo(25), 17);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(0), 15);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(5), 18);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(10), 18);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(15), 16);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(20), 14);
-insert into test.test (id, created_at, value) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, minutesAgo(25), 12);
+docker-compose exec cassandra cqlsh -u cassandra -p cassandra -f ./test_data.cql
 ```
 
 ### Making Changes
 
 #### Frontend
 
-`watch` isn't implemented yet. After the frontend changes it should be rebuild and grafana container should be restarted.
+Run `webpack` with `--watch` option to enable watching:
 
-* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js`
+* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js --watch`
 * `docker-compose restart grafana`
 
 #### Backend

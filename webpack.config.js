@@ -5,6 +5,10 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
   mode: 'development',
+  // watch: true,
+  watchOptions: {
+    ignored: /node_modules/
+  },
   target: 'node',
   context: __dirname + "/src",
   entry: './module.ts',

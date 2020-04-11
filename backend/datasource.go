@@ -21,44 +21,53 @@ import (
 type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	logger hclog.Logger
+	session *gocql.Session
 }
 
-//var session gocql.Session;
+type ColumnInfo struct {
+	Name string
+	Type string
+}
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
 
-	queryType, err := GetQueryType(tsdbReq)
+	queries, err := ds.parseJSONQueries(tsdbReq)
 	if err != nil {
 		return nil, err
 	}
 
-	queries, err := parseJSONQueries(tsdbReq)
+	queryType, err := ds.GetRequestType(queries)
 	if err != nil {
 		return nil, err
 	}
 
-	var options map[string]string
-	json.Unmarshal([]byte(tsdbReq.Datasource.JsonData), &options)
-
-	cluster := gocql.NewCluster(tsdbReq.Datasource.Url)
-	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: options["user"],
-		Password: tsdbReq.Datasource.DecryptedSecureJsonData["password"],
-	}
-	cluster.Keyspace = options["keyspace"]
-	cluster.Consistency = gocql.One
-	session, err := cluster.CreateSession()
+	options, err := ds.GetRequestOptions(tsdbReq)
 	if err != nil {
-		return nil, err;
+		return nil, err
 	}
-	defer session.Close()
+
+    _, err = ds.Connect(
+		tsdbReq.Datasource.Url,
+		options["keyspace"],
+		options["user"],
+		tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+	)
+	if err != nil {
+		return &datasource.DatasourceResponse{
+			Results: []*datasource.QueryResult{
+				&datasource.QueryResult{
+					Error: "Unable to establish connection with the database",
+				},
+			},
+		}, nil
+	}
 
 	switch queryType {
 	case "search":
-		return ds.SearchQuery(ctx, tsdbReq, queries)
+		return ds.SearchQuery(tsdbReq, queries)
 	case "query":
-		return ds.MetricQuery(session, tsdbReq, queries, options)
+		return ds.MetricQuery(tsdbReq, queries, options)
 	case "connection":
 		return &datasource.DatasourceResponse{}, nil;
 	default:
@@ -66,7 +75,7 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	}
 }
 
-func (ds *CassandraDatasource) MetricQuery(session *gocql.Session, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
 	response := &datasource.DatasourceResponse{}
@@ -91,7 +100,7 @@ func (ds *CassandraDatasource) MetricQuery(session *gocql.Session, tsdbReq *data
 			queryData.Get("columnId").MustString(),
 			queryData.Get("valueId").MustString(),
 		)
-		iter := session.Query(preparedQuery).Iter()
+		iter := ds.session.Query(preparedQuery).Iter()
 		for iter.Scan(&created_at, &value) {
 			serie.Points = append(serie.Points, &datasource.Point{
 				Timestamp: created_at.UnixNano() / int64(time.Millisecond),
@@ -99,7 +108,14 @@ func (ds *CassandraDatasource) MetricQuery(session *gocql.Session, tsdbReq *data
 			})
 		}
 		if err := iter.Close(); err != nil {
-			return nil, err;
+			ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
+			return &datasource.DatasourceResponse{
+				Results: []*datasource.QueryResult{
+					&datasource.QueryResult{
+						Error: err.Error(),
+					},
+				},
+			}, nil
 		}
 
 		queryResult.Series = append(queryResult.Series, serie)
@@ -110,104 +126,131 @@ func (ds *CassandraDatasource) MetricQuery(session *gocql.Session, tsdbReq *data
 	return response, nil
 }
 
-func parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
-	jsonQueries := make([]*simplejson.Json, 0)
+func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {	
+	keyspaceName, keyspaceOk := jsonQueries[0].CheckGet("keyspace")
+	tableName, tableOk       := jsonQueries[0].CheckGet("table")
+
+	if !keyspaceOk || !tableOk {
+		ds.logger.Warn("Unable to search as keyspace or table is not set")
+		return nil, errors.New("Keyspace or table is not set")
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspaceName.MustString())
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Error while retrieving keyspace metadata: %s\n", err.Error()))
+		return nil, err
+	}
+
+	tableMetadata, ok := keyspaceMetadata.Tables[tableName.MustString()]
+	if !ok {
+		ds.logger.Debug(fmt.Sprintf("Unknown table '%s'\n", tableName))
+		return nil, errors.New("Unknown table")
+	}
+
+	columns := make([]*ColumnInfo, 0)
+	for name, column := range tableMetadata.Columns {
+		columns = append(
+			columns, 
+			&ColumnInfo{
+				Name: name,
+				Type: column.Type.Type().String(),
+			},
+		)
+	}
+
+	serialisedColumns, err := json.Marshal(columns)
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Error while serialising: %s\n", err.Error()))
+		return nil, errors.New("Unable to process request, see logs for more details")
+	}
+
+	return &datasource.DatasourceResponse{
+		Results: []*datasource.QueryResult{
+			&datasource.QueryResult{
+				RefId:  "search",
+				Tables: []*datasource.Table{
+					&datasource.Table{
+						Rows: []*datasource.TableRow{
+							&datasource.TableRow{
+								Values: []*datasource.RowValue{
+									&datasource.RowValue{
+										Kind:        datasource.RowValue_TYPE_STRING,
+										StringValue: string(serialisedColumns),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (ds *CassandraDatasource) parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
+	queries := make([]*simplejson.Json, 0)
+	if len(tsdbReq.Queries) < 1 {
+		ds.logger.Error("No queries to parse, unable to proceed")
+		return nil, errors.New("No queries in TSDB Request")
+	}
 	for _, query := range tsdbReq.Queries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
 		if err != nil {
+			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
 			return nil, err
 		}
-
-		jsonQueries = append(jsonQueries, json)
+		queries = append(queries, json)
 	}
-	return jsonQueries, nil
+	ds.logger.Debug(fmt.Sprintf("Parsed queries: %v\n", len(queries)))
+	return queries, nil
 }
 
-// func (ds *CassandraDatasource) CreateMetricRequest(tsdbReq *datasource.DatasourceRequest) (*RemoteDatasourceRequest, error) {
-	// jsonQueries, err := parseJSONQueries(tsdbReq)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// payload := simplejson.New()
-	// payload.SetPath([]string{"range", "to"}, tsdbReq.TimeRange.ToRaw)
-	// payload.SetPath([]string{"range", "from"}, tsdbReq.TimeRange.FromRaw)
-	// payload.Set("targets", jsonQueries)
-
-	// rbody, err := payload.MarshalJSON()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// url := tsdbReq.Datasource.Url + "/query"
-	// req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(string(rbody)))
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// req.Header.Add("Content-Type", "application/json")
-
-	// return &RemoteDatasourceRequest{
-	// 	queryType: "query",
-	// 	req:       req,
-	// 	queries:   jsonQueries,
-	// }, nil
-// }
-
-func (ds *CassandraDatasource) SearchQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
-	return nil, errors.New("Not implemented yet")
-}
-
-func (ds *CassandraDatasource) Execute(ctx context.Context, remoteDsReq *RemoteDatasourceRequest) ([]byte, error) {
-	return nil, errors.New("Not implemented yet")
-}
-
-func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
-	queryType := "query"
-	if len(tsdbReq.Queries) > 0 {
-		firstQuery := tsdbReq.Queries[0]
-		queryJson, err := simplejson.NewJson([]byte(firstQuery.ModelJson))
-		if err != nil {
-			return "", err
-		}
-		queryType = queryJson.Get("queryType").MustString("query")
+func (ds *CassandraDatasource) GetRequestType(queries []*simplejson.Json) (string, error) {
+	queryTypeProperty, exist := queries[0].CheckGet("queryType")
+	if !exist {
+		ds.logger.Error("Query type is not set, unable to proceed")
+		return "", errors.New("No query type specified")
 	}
+	queryType, err := queryTypeProperty.String()
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable to get QueryType: %s\n", err))
+		return "", err
+	}
+	ds.logger.Debug(fmt.Sprintf("Query type: %s\n", queryType))
 	return queryType, nil
 }
 
-func (ds *CassandraDatasource) ParseQueryResponse(queries []*simplejson.Json, body []byte) (*datasource.DatasourceResponse, error) {
-	response := &datasource.DatasourceResponse{}
-	responseBody := []TargetResponseDTO{}
-
-	for i, r := range responseBody {
-		refId := r.Target
-
-		if len(queries) > i {
-			refId = queries[i].Get("refId").MustString()
-		}
-
-		qr := datasource.QueryResult{
-			RefId:  refId,
-			Series: make([]*datasource.TimeSeries, 0),
-		}
-
-		serie := &datasource.TimeSeries{Name: r.Target}
-
-		for _, p := range r.DataPoints {
-			serie.Points = append(serie.Points, &datasource.Point{
-				Timestamp: int64(p[1]),
-				Value:     p[0],
-			})
-		}
-
-		qr.Series = append(qr.Series, serie)
-	
-		response.Results = append(response.Results, &qr)
+func (ds *CassandraDatasource) GetRequestOptions(tsdbReq *datasource.DatasourceRequest) (map[string]string, error) {
+	var options map[string]string
+	err := json.Unmarshal([]byte(tsdbReq.Datasource.JsonData), &options)
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable to get request JSON data: %s\n", err))
+		return nil, err
 	}
-
-	return response, nil
+	return options, nil
 }
 
-func (ds *CassandraDatasource) ParseSearchResponse(body []byte) (*datasource.DatasourceResponse, error) {
-	return nil, errors.New("Not implemented yet")
+func (ds *CassandraDatasource) Connect(host string, keyspace string, username string, password string) (bool, error) {
+	if (ds.session != nil) {
+		return true, nil
+	}
+
+	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
+	cluster := gocql.NewCluster(host)
+	cluster.Keyspace = keyspace
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: username,
+		Password: password,
+	}
+	cluster.Consistency = gocql.One
+
+	session, err := cluster.CreateSession()
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
+		return false, err;
+	}
+	ds.session = session
+
+	ds.logger.Debug(fmt.Sprintf("Connection successful.\n"))
+	return true, nil;
 }
