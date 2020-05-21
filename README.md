@@ -6,9 +6,9 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ### Installation 
 
-1. Follow the official instructions to install plugin as explained [here](https://grafana.com/docs/grafana/latest/plugins/installation/).
+1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.1.7), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
 2. Add the Cassandra DataSource as a datasource at the configuration page.
-3. Configure the datasource specifying contact point and port "10.12.13.14:9042", username, password and keyspace. All the fields are required. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username, password and keyspace. All the fields are required. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
 
 ### Panel Setup
 
