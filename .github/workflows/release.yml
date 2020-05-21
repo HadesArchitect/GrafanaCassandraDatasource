@@ -10,16 +10,18 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master
       - name: npm install
-        run: /usr/bin/docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 npm install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 npm install
       - name: webpack
-        run: /usr/bin/docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js
       - name: dep ensure
-        run: /usr/bin/docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp instrumentisto/dep ensure
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp instrumentisto/dep ensure
       - name: go build
-        run: /usr/bin/docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend
+      - name: Packaging
+        run: tar -zcvf cassandra-datasource-${{ github.ref }}.tar.gz ./dist
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: './dist/cassandra-plugin_linux_amd64'
+          args: './cassandra-datasource-${{ github.ref }}.tar.gz'
