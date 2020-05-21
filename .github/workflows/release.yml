@@ -28,4 +28,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: './cassandra-datasource-${{ github.event.release.tag_name }}.tar.gz'
+          args: './cassandra-datasource-${{ github.event.release.tag_name }}.*'
