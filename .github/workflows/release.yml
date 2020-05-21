@@ -18,10 +18,10 @@ jobs:
       - name: go build
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend
       - name: Packaging
-        run: tar -zcvf cassandra-datasource-${{ github.ref }}.tar.gz ./dist
+        run: tar -czvf cassandra-datasource-${{ github.event.release.tag_name }}.tar.gz ./dist
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: './cassandra-datasource-${{ github.ref }}.tar.gz'
+          args: './cassandra-datasource-${{ github.event.release.tag_name }}.tar.gz'
