@@ -90,9 +90,9 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
 
 		var created_at time.Time
-		var value int
+		var value float64
 		preparedQuery := fmt.Sprintf(
-			"SELECT %s, %s FROM %s.%s WHERE %s = %s", 
+			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s ALLOW FILTERING",
 			queryData.Get("columnTime").MustString(),
 			queryData.Get("columnValue").MustString(),
 			queryData.Get("keyspace").MustString(),
@@ -104,7 +104,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		for iter.Scan(&created_at, &value) {
 			serie.Points = append(serie.Points, &datasource.Point{
 				Timestamp: created_at.UnixNano() / int64(time.Millisecond),
-				Value:     float64(value),
+				Value:     value,
 			})
 		}
 		if err := iter.Close(); err != nil {
