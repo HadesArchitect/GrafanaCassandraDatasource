@@ -7,7 +7,7 @@ export class CassandraQueryCtrl extends QueryCtrl {
 
   datatsource: CassandraDatasource;
   scope: any;
-  hasRawMode: false;
+  hasRawMode: true;
 
   /** @ngInject */
   constructor($scope, $injector) {
