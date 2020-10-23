@@ -75,6 +75,8 @@ To read the logs, use `docker-compose logs -f grafana`.
 
 ### Load Sample Data
 
+Test data uses keyspace name `test`
+
 ```
 docker-compose exec cassandra cqlsh -u cassandra -p cassandra -f ./test_data.cql
 ```
