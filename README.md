@@ -2,6 +2,8 @@
 
 Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
+![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master)
+
 ## Usage
 
 ### Installation 
