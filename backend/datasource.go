@@ -101,7 +101,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			queryData.Get("valueId").MustString(),
 		)
 
-		ds.logger.Debug(fmt.Sprintf("Executing CQL query: %s ...\n", preparedQuery))
+		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
 		iter := ds.session.Query(preparedQuery).Iter()
 		for iter.Scan(&created_at, &value) {
