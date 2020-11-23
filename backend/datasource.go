@@ -100,6 +100,9 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			queryData.Get("columnId").MustString(),
 			queryData.Get("valueId").MustString(),
 		)
+
+		ds.logger.Debug(fmt.Sprintf("Executing CQL query: %s ...\n", preparedQuery))
+
 		iter := ds.session.Query(preparedQuery).Iter()
 		for iter.Scan(&created_at, &value) {
 			serie.Points = append(serie.Points, &datasource.Point{
