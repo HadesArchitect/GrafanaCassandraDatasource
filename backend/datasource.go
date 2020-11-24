@@ -80,7 +80,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 
 	response := &datasource.DatasourceResponse{}
 
-	for _, queryData := range jsonQueries {
+	for _, queryData := range jsonQueries {		
 
 		queryResult := datasource.QueryResult{
 			RefId:  queryData.Get("refId").MustString(),
@@ -91,21 +91,34 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 
 		var created_at time.Time
 		var value float64
+		
+		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", queryData.Get("rawQuery").MustBool()))
 
-		ds.logger.Debug(fmt.Sprintf("filtering: %s\n", queryData.Get("filtering").MustString()))
+		ds.logger.Debug(fmt.Sprintf("target: %s\n", queryData.Get("target").MustString()))
 
-		allowFiltering := func() string { if queryData.Get("filtering").MustString() == "Disallow" { return "" } else { return "ALLOW FILTERING" } }()	
+		var preparedQuery string
 
-		preparedQuery := fmt.Sprintf(
-			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s %s",
-			queryData.Get("columnTime").MustString(),
-			queryData.Get("columnValue").MustString(),
-			queryData.Get("keyspace").MustString(),
-			queryData.Get("table").MustString(),
-			queryData.Get("columnId").MustString(),
-			queryData.Get("valueId").MustString(),
-			allowFiltering,
-		)
+		if queryData.Get("rawQuery").MustBool() == true {
+
+			preparedQuery = queryData.Get("target").MustString()
+
+		} else if queryData.Get("rawQuery").MustBool() == false {
+
+			ds.logger.Debug(fmt.Sprintf("filtering: %s\n", queryData.Get("filtering").MustString()))
+			
+			allowFiltering := func() string { if queryData.Get("filtering").MustString() == "Disallow" { return "" } else { return "ALLOW FILTERING" } }()			
+				
+			preparedQuery = fmt.Sprintf(
+				"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s %s",
+				queryData.Get("columnTime").MustString(),
+				queryData.Get("columnValue").MustString(),
+				queryData.Get("keyspace").MustString(),
+				queryData.Get("table").MustString(),
+				queryData.Get("columnId").MustString(),
+				queryData.Get("valueId").MustString(),
+				allowFiltering,
+			)
+		} 		
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
