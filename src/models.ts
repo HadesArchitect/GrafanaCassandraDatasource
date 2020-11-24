@@ -9,6 +9,7 @@ export interface TSDBQuery {
     target?: any;
     queryType: TSDBQueryType;
     refId?: string;
+    filtering?: string;
     keyspace?: string;
     table?: string;
     columnTime?: string;

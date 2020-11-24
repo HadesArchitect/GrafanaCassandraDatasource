@@ -117,6 +117,7 @@ export class CassandraDatasource {
         rawQuery: target.rawQuery,
         type: target.type || 'timeserie',
         datasourceId: this.id,
+        filtering: target.filtering,
         keyspace: target.keyspace,
         table: target.table,
         columnTime: target.columnTime,
