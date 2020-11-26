@@ -1,17 +1,14 @@
 <query-editor-row query-ctrl="ctrl" class="cassandra-datasource-query-row" has-text-edit-mode="false">
     <div class="gf-form-inline" ng-if="!ctrl.target.rawQuery">
-
         <div class="gf-form">
             <label class="gf-form-label width-12">
                 Allow filtering
-                <info-popover>Allow / disallow filtering.</info-popover>
-            </label>            
-
+                <info-popover>"Allow Filtering" can be <a href="https://www.datastax.com/blog/allow-filtering-explained" target="_blank">dangerous practice</a> and we strongly discourage using it.</info-popover>
+            </label>
             <select class="gf-form-input width-28" ng-model="ctrl.target.filtering" spellcheck="false" ng-blur="ctrl.onChangeInternal()">
-                <option ng-selected="1" value="">Allow</option>
-                <option value="Disallow">Disallow</option>                   
-            </select> 
-                                   
+                <option ng-selected="0" value="">False</option>
+                <option value="1" ng-value="true">True</option>                   
+            </select>                                    
         </div>         
         <div class="gf-form">
             <label class="gf-form-label width-12">
