@@ -9,7 +9,7 @@ export interface TSDBQuery {
     target?: any;
     queryType: TSDBQueryType;
     refId?: string;
-    filtering?: string;
+    filtering?: boolean;
     keyspace?: string;
     table?: string;
     columnTime?: string;
