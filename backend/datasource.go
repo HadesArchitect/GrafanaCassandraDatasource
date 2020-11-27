@@ -92,12 +92,14 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var created_at time.Time
 		var value float64
 
-		ds.logger.Debug(fmt.Sprintf("filtering: %s\n", queryData.Get("filtering").MustString()))
-
-		allowFiltering := func() string { if queryData.Get("filtering").MustString() == "Disallow" { return "" } else { return "ALLOW FILTERING" } }()	
+		allowFiltering := ""		
+		if queryData.Get("filtering").MustBool() { 
+			ds.logger.Warn("Allow filtering enabled")
+			allowFiltering = " ALLOW FILTERING" 
+		}
 
 		preparedQuery := fmt.Sprintf(
-			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s %s",
+			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
 			queryData.Get("columnTime").MustString(),
 			queryData.Get("columnValue").MustString(),
 			queryData.Get("keyspace").MustString(),
