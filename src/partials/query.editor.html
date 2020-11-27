@@ -1,18 +1,5 @@
 <query-editor-row query-ctrl="ctrl" class="cassandra-datasource-query-row" has-text-edit-mode="false">
-    <div class="gf-form-inline" ng-if="!ctrl.target.rawQuery">
-
-        <div class="gf-form">
-            <label class="gf-form-label width-12">
-                Allow filtering
-                <info-popover>Allow / disallow filtering.</info-popover>
-            </label>            
-
-            <select class="gf-form-input width-28" ng-model="ctrl.target.filtering" spellcheck="false" ng-blur="ctrl.onChangeInternal()">
-                <option ng-selected="1" value="">Allow</option>
-                <option value="Disallow">Disallow</option>                   
-            </select> 
-                                   
-        </div>         
+    <div class="gf-form-inline" ng-if="!ctrl.target.rawQuery">         
         <div class="gf-form">
             <label class="gf-form-label width-12">
                 Keyspace
@@ -72,6 +59,16 @@
                 <info-popover>Specify UUID <b>value</b> of a column to identify the row (f.e. 123e4567-e89b-12d3-a456-426655440000)</info-popover>
             </label>
             <input class="gf-form-input width-28" ng-model="ctrl.target.valueId" placeholder="123e4567-e89b-12d3-a456-426655440000" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+        </div>
+        <div class="gf-form">
+            <label class="gf-form-label width-12">
+                Allow filtering
+                <info-popover>"Allow Filtering" can be <a href="https://www.datastax.com/blog/allow-filtering-explained" target="_blank">dangerous practice</a> and we strongly discourage using it.</info-popover>
+            </label>
+            <select class="gf-form-input width-28" ng-model="ctrl.target.filtering" spellcheck="false" ng-blur="ctrl.onChangeInternal()">
+                <option ng-selected="0" value="">False</option>
+                <option ng-value="true">True</option>                   
+            </select>                                    
         </div>
         <input class="gf-form-input" type="hidden" ng-model="ctrl.target.target" />
     </div>
