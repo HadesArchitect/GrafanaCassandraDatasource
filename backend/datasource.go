@@ -92,22 +92,34 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var created_at time.Time
 		var value float64
 
-		allowFiltering := ""		
-		if queryData.Get("filtering").MustBool() { 
-			ds.logger.Warn("Allow filtering enabled")
-			allowFiltering = " ALLOW FILTERING" 
-		}
+		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", queryData.Get("rawQuery").MustBool()))
+		ds.logger.Debug(fmt.Sprintf("target: %s\n", queryData.Get("target").MustString()))
 
-		preparedQuery := fmt.Sprintf(
-			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
-			queryData.Get("columnTime").MustString(),
-			queryData.Get("columnValue").MustString(),
-			queryData.Get("keyspace").MustString(),
-			queryData.Get("table").MustString(),
-			queryData.Get("columnId").MustString(),
-			queryData.Get("valueId").MustString(),
-			allowFiltering,
-		)
+		var preparedQuery string
+
+		if queryData.Get("rawQuery").MustBool() {
+
+			preparedQuery = queryData.Get("target").MustString()
+
+		} else {
+
+			allowFiltering := ""		
+			if queryData.Get("filtering").MustBool() { 
+				ds.logger.Warn("Allow filtering enabled")
+				allowFiltering = " ALLOW FILTERING" 
+			}
+			preparedQuery = fmt.Sprintf(
+				"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
+				queryData.Get("columnTime").MustString(),
+				queryData.Get("columnValue").MustString(),
+				queryData.Get("keyspace").MustString(),
+				queryData.Get("table").MustString(),
+				queryData.Get("columnId").MustString(),
+				queryData.Get("valueId").MustString(),
+				allowFiltering,
+			)
+			
+		} 		
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
