@@ -54,7 +54,7 @@ First, clone the project. It has to be built with docker or with locally install
 docker-compose includes two services:
 
 - *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`. Verbose logging is enabled. Grafana is available at http://localhost:3000, user `admin`, password `admin`
-- *Apache Cassandra*, host `cassandra:9042`, user `cassandra`, password `cassandra`. `cqlsh` is available via `docker-compose exec cassandra cqlsh -u cassanrda -p cassandra`.
+- *Apache Cassandra*, host `cassandra:9042`, user `cassandra`, password `cassandra`. `cqlsh` is available via `docker-compose exec cassandra cqlsh -u cassandra -p cassandra`.
 
 After the startup, the datasource should be available in the list of datasources. Also, following lines should appear in grafana logs:
 
