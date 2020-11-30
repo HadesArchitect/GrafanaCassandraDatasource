@@ -87,11 +87,6 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			Series: make([]*datasource.TimeSeries, 0),
 		}
 
-		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
-
-		var created_at time.Time
-		var value float64
-
 		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", queryData.Get("rawQuery").MustBool()))
 		ds.logger.Debug(fmt.Sprintf("target: %s\n", queryData.Get("target").MustString()))
 
@@ -124,12 +119,51 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
 		iter := ds.session.Query(preparedQuery).Iter()
+
+		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
+
+		var id = ""
+		var timestamp time.Time
+
+		var created_at time.Time
+		var value float64
+
+//		series := [key][value]
+		series := make(map[string]string)
+
+/*
+		for iter.Scan(&id, &value, &timestamp) {
+
+		if (series[id] not exists) {
+			series[id] := &datasource.TimeSeries{Name: id}
+		}
+
+		series[id].Points = append(serie.Points, &datasource.Point{
+			Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+			Value:     value,
+		})
+		}
+*/
+
+		for iter.Scan(&id, &value, &timestamp) {
+
+			if series["id"] =="" {
+			 	series["id"] = &datasource.TimeSeries{Name: id}
+			}
+		 
+			series["id"].Points = append(serie.Points, &datasource.Point{
+			 	Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+			 	Value:     value,
+			})
+		}
+
 		for iter.Scan(&created_at, &value) {
 			serie.Points = append(serie.Points, &datasource.Point{
 				Timestamp: created_at.UnixNano() / int64(time.Millisecond),
 				Value:     value,
 			})
 		}
+
 		if err := iter.Close(); err != nil {
 			ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
 			return &datasource.DatasourceResponse{
@@ -141,8 +175,14 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			}, nil
 		}
 
-		queryResult.Series = append(queryResult.Series, serie)
+/*
+		for _, serie2 := range series{
+			queryResult.Series = append(queryResult.Series, serie)
+		}
+*/
 
+		queryResult.Series = append(queryResult.Series, serie)
+		
 		response.Results = append(response.Results, &queryResult)
 	}
 
