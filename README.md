@@ -10,7 +10,8 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.2.0), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
 2. The plugin is yet unsigned by Grafana so it may require additional step to enable the plugin:
-  2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
+
+    2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
     ```
     [plugins]
     allow_loading_unsigned_plugins = "hadesarchitect-cassandra-datasource"
