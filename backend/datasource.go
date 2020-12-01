@@ -132,7 +132,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 
 			for iter.Scan(&id, &value, &timestamp) {
 
-				if _, ok := series[id]; ok {
+				if _, ok := series[id]; !ok {
 					series[id] = datasource.TimeSeries{Name: id}
 				}
 
