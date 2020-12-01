@@ -4,7 +4,14 @@
     "version": "0.1.0",
     "license": "MIT",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
-    "dependencies": {},
+    "dependencies": {
+        "karma": "^5.2.3",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-cli": "^2.0.0",
+        "karma-coverage-istanbul-reporter": "^3.0.3",
+        "karma-jasmine": "^4.0.1",
+        "karma-jasmine-html-reporter": "^1.5.4"
+    },
     "devDependencies": {
         "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
         "@types/lodash": "^4.14.149",
