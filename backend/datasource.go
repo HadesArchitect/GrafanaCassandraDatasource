@@ -120,65 +120,71 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 
 		iter := ds.session.Query(preparedQuery).Iter()
 
-//		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
-
-		var id = ""
+		var id string
 		var timestamp time.Time
-
-//		var created_at time.Time
 		var value float64
 
-//		series := [key][value]
-		series := make(map[string]datasource.TimeSeries)
 
-/*
+		if queryData.Get("rawQuery").MustBool() {
 
-if val, ok := dict["foo"]; ok {
-    //do something here
-}
+			series := make(map[string]datasource.TimeSeries)
 
-*/
+			for iter.Scan(&id, &value, &timestamp) {
+				if _, ok := series[id]; ok {
+					series[id] = datasource.TimeSeries{
+						Name: id,
+						Points: append(series[id].Points, &datasource.Point{
+							Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+							Value:     value,
+						}),
+					}
+				}				
+			}
 
-		for iter.Scan(&id, &value, &timestamp) {
+			if err := iter.Close(); err != nil {
+				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
+				return &datasource.DatasourceResponse{
+					Results: []*datasource.QueryResult{
+						&datasource.QueryResult{
+							Error: err.Error(),
+						},
+					},
+				}, nil
+			}
 
-			if _, ok := series[id]; ok {
-			 	series[id] = datasource.TimeSeries{Name: id}
+			for _, serie2 := range series{
+				queryResult.Series = append(queryResult.Series, &serie2)
 			}
 			
-			var timepoint = datasource.Point{
-				Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
-				Value:     value,
-		   	}
+			response.Results = append(response.Results, &queryResult)
 
-			series[id].Points = append(series[id].Points, timepoint)
-		}
+		} else {
 
-		// for iter.Scan(&created_at, &value) {
-		// 	serie.Points = append(serie.Points, &datasource.Point{
-		// 		Timestamp: created_at.UnixNano() / int64(time.Millisecond),
-		// 		Value:     value,
-		// 	})
-		// }
+			serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
 
-		if err := iter.Close(); err != nil {
-			ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
-			return &datasource.DatasourceResponse{
-				Results: []*datasource.QueryResult{
-					&datasource.QueryResult{
-						Error: err.Error(),
+			for iter.Scan(&timestamp, &value) {
+				serie.Points = append(serie.Points, &datasource.Point{
+					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+					Value:     value,
+				})
+			}
+			if err := iter.Close(); err != nil {
+				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
+				return &datasource.DatasourceResponse{
+					Results: []*datasource.QueryResult{
+						&datasource.QueryResult{
+							Error: err.Error(),
+						},
 					},
-				},
-			}, nil
+				}, nil
+			}
+	
+			queryResult.Series = append(queryResult.Series, serie)
+	
+			response.Results = append(response.Results, &queryResult)
+
 		}
 
-		for _, serie2 := range series{
-			queryResult.Series = append(queryResult.Series, serie2)
-		}
-
-
-//		queryResult.Series = append(queryResult.Series, serie)
-		
-		response.Results = append(response.Results, &queryResult)
 	}
 
 	return response, nil
