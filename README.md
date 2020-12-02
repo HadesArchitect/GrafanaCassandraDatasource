@@ -8,9 +8,10 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ### Installation 
 
-1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.1.7), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
+1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.2.0), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
 2. The plugin is yet unsigned by Grafana so it may require additional step to enable the plugin:
-  2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
+
+    2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
     ```
     [plugins]
     allow_loading_unsigned_plugins = "hadesarchitect-cassandra-datasource"
@@ -54,7 +55,7 @@ First, clone the project. It has to be built with docker or with locally install
 docker-compose includes two services:
 
 - *Grafana* by itself, the plugin is mounted as a volume to `/var/lib/grafana/plugins/cassandra`. Verbose logging is enabled. Grafana is available at http://localhost:3000, user `admin`, password `admin`
-- *Apache Cassandra*, host `cassandra:9042`, user `cassandra`, password `cassandra`. `cqlsh` is available via `docker-compose exec cassandra cqlsh -u cassanrda -p cassandra`.
+- *Apache Cassandra*, host `cassandra:9042`, user `cassandra`, password `cassandra`. `cqlsh` is available via `docker-compose exec cassandra cqlsh -u cassandra -p cassandra`.
 
 After the startup, the datasource should be available in the list of datasources. Also, following lines should appear in grafana logs:
 
