@@ -128,21 +128,19 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 
 		if queryData.Get("rawQuery").MustBool() {
 
-			series := make(map[string]datasource.TimeSeries)
+			series := make(map[string]*datasource.TimeSeries)
 
 			for iter.Scan(&id, &value, &timestamp) {
 
 				if _, ok := series[id]; !ok {
-					series[id] = datasource.TimeSeries{Name: id}
+					series[id] = &datasource.TimeSeries{Name: id}
 				}
 
-				series[id] = datasource.TimeSeries{
-					Name: id,
-					Points: append(series[id].Points, &datasource.Point{
-						Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
-						Value:     value,
-					}),
-				}
+				series[id].Points = append(series[id].Points, &datasource.Point{
+					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+					Value:     value,
+				})
+
 			}
 
 			if err := iter.Close(); err != nil {
@@ -157,7 +155,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			}
 
 			for _, serie2 := range series {
-				queryResult.Series = append(queryResult.Series, &serie2)
+				queryResult.Series = append(queryResult.Series, serie2)
 			}
 
 			response.Results = append(response.Results, &queryResult)
