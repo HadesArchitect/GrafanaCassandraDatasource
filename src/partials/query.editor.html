@@ -1,4 +1,4 @@
-<query-editor-row query-ctrl="ctrl" class="cassandra-datasource-query-row" has-text-edit-mode="false">
+<query-editor-row query-ctrl="ctrl" class="cassandra-datasource-query-row" has-text-edit-mode="true">
     <div class="gf-form-inline" ng-if="!ctrl.target.rawQuery">         
         <div class="gf-form">
             <label class="gf-form-label width-12">
@@ -74,8 +74,8 @@
     </div>
     <div class="gf-form-inline" ng-if="ctrl.target.rawQuery">
         <div class="gf-form">
-            <label class="gf-form-label width-16">Raw CQL</label>
-            <textarea class="gf-form-input" rows="5" ng-model="ctrl.target.target" placeholder="select timestamp, value from keyspace.table where id=123e4567;" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
+            <label class="gf-form-label width-12">Raw CQL</label>
+            <textarea class="gf-form-input width-28" cols="10" rows="10" ng-model="ctrl.target.target" placeholder="select timestamp, value from keyspace.table where id=123e4567;" spellcheck="false" ng-blur="ctrl.onChangeInternal()" />
         </div>
     </div>
 </query-editor-row>
