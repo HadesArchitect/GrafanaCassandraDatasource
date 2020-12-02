@@ -4,11 +4,13 @@ import (
 	// "crypto/tls"
 	"encoding/json"
 	"fmt"
+
 	// "io/ioutil"
 	// "net"
 	// "strings"
-	"time"
 	"errors"
+	"time"
+
 	"github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -20,7 +22,8 @@ import (
 
 type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
-	logger hclog.Logger
+	logger  hclog.Logger
+	builder *QueryBuilder
 	session *gocql.Session
 }
 
@@ -47,7 +50,7 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		return nil, err
 	}
 
-    _, err = ds.Connect(
+	_, err = ds.Connect(
 		tsdbReq.Datasource.Url,
 		options["keyspace"],
 		options["user"],
@@ -69,7 +72,7 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	case "query":
 		return ds.MetricQuery(tsdbReq, queries, options)
 	case "connection":
-		return &datasource.DatasourceResponse{}, nil;
+		return &datasource.DatasourceResponse{}, nil
 	default:
 		return nil, errors.New(fmt.Sprintf("Unknown query type '%s'", queryType))
 	}
@@ -92,22 +95,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var created_at time.Time
 		var value float64
 
-		allowFiltering := ""		
-		if queryData.Get("filtering").MustBool() { 
-			ds.logger.Warn("Allow filtering enabled")
-			allowFiltering = " ALLOW FILTERING" 
-		}
-
-		preparedQuery := fmt.Sprintf(
-			"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
-			queryData.Get("columnTime").MustString(),
-			queryData.Get("columnValue").MustString(),
-			queryData.Get("keyspace").MustString(),
-			queryData.Get("table").MustString(),
-			queryData.Get("columnId").MustString(),
-			queryData.Get("valueId").MustString(),
-			allowFiltering,
-		)
+		preparedQuery := ds.builder.MetricQuery(queryData)
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
@@ -137,9 +125,9 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 	return response, nil
 }
 
-func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {	
+func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
 	keyspaceName, keyspaceOk := jsonQueries[0].CheckGet("keyspace")
-	tableName, tableOk       := jsonQueries[0].CheckGet("table")
+	tableName, tableOk := jsonQueries[0].CheckGet("table")
 
 	if !keyspaceOk || !tableOk {
 		ds.logger.Warn("Unable to search as keyspace or table is not set")
@@ -161,7 +149,7 @@ func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest
 	columns := make([]*ColumnInfo, 0)
 	for name, column := range tableMetadata.Columns {
 		columns = append(
-			columns, 
+			columns,
 			&ColumnInfo{
 				Name: name,
 				Type: column.Type.Type().String(),
@@ -178,7 +166,7 @@ func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest
 	return &datasource.DatasourceResponse{
 		Results: []*datasource.QueryResult{
 			&datasource.QueryResult{
-				RefId:  "search",
+				RefId: "search",
 				Tables: []*datasource.Table{
 					&datasource.Table{
 						Rows: []*datasource.TableRow{
@@ -242,7 +230,7 @@ func (ds *CassandraDatasource) GetRequestOptions(tsdbReq *datasource.DatasourceR
 }
 
 func (ds *CassandraDatasource) Connect(host string, keyspace string, username string, password string) (bool, error) {
-	if (ds.session != nil) {
+	if ds.session != nil {
 		return true, nil
 	}
 
@@ -258,10 +246,10 @@ func (ds *CassandraDatasource) Connect(host string, keyspace string, username st
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
-		return false, err;
+		return false, err
 	}
 	ds.session = session
 
 	ds.logger.Debug(fmt.Sprintf("Connection successful.\n"))
-	return true, nil;
+	return true, nil
 }
