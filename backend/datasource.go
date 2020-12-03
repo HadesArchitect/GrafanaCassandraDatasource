@@ -101,7 +101,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		if queryData.Get("rawQuery").MustBool() {
 			preparedQuery = queryData.Get("target").MustString()
 		} else {
-			preparedQuery := ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
+			preparedQuery = ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 		}
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
