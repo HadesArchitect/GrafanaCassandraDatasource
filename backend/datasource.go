@@ -93,38 +93,86 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 			Series: make([]*datasource.TimeSeries, 0),
 		}
 
-		serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
+		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", queryData.Get("rawQuery").MustBool()))
+		ds.logger.Debug(fmt.Sprintf("target: %s\n", queryData.Get("target").MustString()))
 
-		var created_at time.Time
-		var value float64
+		var preparedQuery string
 
-		ds.logger.Debug("Testing metric query")
-
-		preparedQuery := ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
+		if queryData.Get("rawQuery").MustBool() {
+			preparedQuery = queryData.Get("target").MustString()
+		} else {
+			preparedQuery := ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
+		}
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
 		iter := ds.session.Query(preparedQuery).Iter()
-		for iter.Scan(&created_at, &value) {
-			serie.Points = append(serie.Points, &datasource.Point{
-				Timestamp: created_at.UnixNano() / int64(time.Millisecond),
-				Value:     value,
-			})
-		}
-		if err := iter.Close(); err != nil {
-			ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
-			return &datasource.DatasourceResponse{
-				Results: []*datasource.QueryResult{
-					&datasource.QueryResult{
-						Error: err.Error(),
+
+		var id string
+		var timestamp time.Time
+		var value float64
+
+		if queryData.Get("rawQuery").MustBool() {
+
+			series := make(map[string]*datasource.TimeSeries)
+
+			for iter.Scan(&id, &value, &timestamp) {
+
+				if _, ok := series[id]; !ok {
+					series[id] = &datasource.TimeSeries{Name: id}
+				}
+
+				series[id].Points = append(series[id].Points, &datasource.Point{
+					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+					Value:     value,
+				})
+
+			}
+
+			if err := iter.Close(); err != nil {
+				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
+				return &datasource.DatasourceResponse{
+					Results: []*datasource.QueryResult{
+						&datasource.QueryResult{
+							Error: err.Error(),
+						},
 					},
-				},
-			}, nil
+				}, nil
+			}
+
+			for _, serie2 := range series {
+				queryResult.Series = append(queryResult.Series, serie2)
+			}
+
+			response.Results = append(response.Results, &queryResult)
+
+		} else {
+
+			serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
+
+			for iter.Scan(&timestamp, &value) {
+				serie.Points = append(serie.Points, &datasource.Point{
+					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+					Value:     value,
+				})
+			}
+			if err := iter.Close(); err != nil {
+				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
+				return &datasource.DatasourceResponse{
+					Results: []*datasource.QueryResult{
+						&datasource.QueryResult{
+							Error: err.Error(),
+						},
+					},
+				}, nil
+			}
+
+			queryResult.Series = append(queryResult.Series, serie)
+
+			response.Results = append(response.Results, &queryResult)
+
 		}
 
-		queryResult.Series = append(queryResult.Series, serie)
-
-		response.Results = append(response.Results, &queryResult)
 	}
 
 	return response, nil
