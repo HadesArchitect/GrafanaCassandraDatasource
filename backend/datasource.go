@@ -23,6 +23,7 @@ import (
 type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	logger  hclog.Logger
+	builder *QueryBuilder
 	session *gocql.Session
 }
 
@@ -80,6 +81,9 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
+	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", tsdbReq.TimeRange.FromRaw))
+	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", tsdbReq.TimeRange.ToRaw))
+
 	response := &datasource.DatasourceResponse{}
 
 	for _, queryData := range jsonQueries {
@@ -95,27 +99,9 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var preparedQuery string
 
 		if queryData.Get("rawQuery").MustBool() {
-
 			preparedQuery = queryData.Get("target").MustString()
-
 		} else {
-
-			allowFiltering := ""
-			if queryData.Get("filtering").MustBool() {
-				ds.logger.Warn("Allow filtering enabled")
-				allowFiltering = " ALLOW FILTERING"
-			}
-			preparedQuery = fmt.Sprintf(
-				"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
-				queryData.Get("columnTime").MustString(),
-				queryData.Get("columnValue").MustString(),
-				queryData.Get("keyspace").MustString(),
-				queryData.Get("table").MustString(),
-				queryData.Get("columnId").MustString(),
-				queryData.Get("valueId").MustString(),
-				allowFiltering,
-			)
-
+			preparedQuery = ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 		}
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
