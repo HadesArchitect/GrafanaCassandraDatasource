@@ -81,6 +81,9 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
+	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", tsdbReq.TimeRange.FromRaw))
+	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", tsdbReq.TimeRange.ToRaw))
+
 	response := &datasource.DatasourceResponse{}
 
 	for _, queryData := range jsonQueries {
@@ -95,7 +98,9 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var created_at time.Time
 		var value float64
 
-		preparedQuery := ds.builder.MetricQuery(queryData)
+		ds.logger.Debug("Testing metric query")
+
+		preparedQuery := ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
