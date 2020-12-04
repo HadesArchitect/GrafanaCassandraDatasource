@@ -4,14 +4,6 @@
     "version": "0.1.0",
     "license": "MIT",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
-    "dependencies": {
-        "karma": "^5.2.3",
-        "karma-chrome-launcher": "^3.1.0",
-        "karma-cli": "^2.0.0",
-        "karma-coverage-istanbul-reporter": "^3.0.3",
-        "karma-jasmine": "^4.0.1",
-        "karma-jasmine-html-reporter": "^1.5.4"
-    },
     "devDependencies": {
         "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
         "@types/lodash": "^4.14.149",
@@ -20,6 +12,12 @@
         "clean-webpack-plugin": "^3.0.0",
         "copy-webpack-plugin": "^5.1.2",
         "eslint": "^6.8.0",
+        "jasmine-core": "^3.6.0",
+        "karma": "^5.2.3",
+        "karma-chrome-launcher": "^3.1.0",
+        "karma-coverage-istanbul-reporter": "^3.0.3",
+        "karma-jasmine": "^4.0.1",
+        "karma-jasmine-html-reporter": "^1.5.4",
         "loader-utils": "^1.2.0",
         "lodash": "^4.17.19",
         "ts-loader": "^6.2.1",
