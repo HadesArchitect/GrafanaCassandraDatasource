@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	simplejson "github.com/bitly/go-simplejson"
 )
@@ -30,4 +31,16 @@ func (qb *QueryBuilder) MetricQuery(queryData *simplejson.Json, timeRangeFrom st
 	)
 
 	return preparedQuery
+}
+
+func (qb *QueryBuilder) RawMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
+	if !queryData.Get("rawQuery").MustBool() {
+		return qb.MetricQuery(queryData, timeRangeFrom, timeRangeTo)
+	}
+
+	timeRangeReplacer := strings.NewReplacer("$__timeFrom", timeRangeFrom, "$__timeTo", timeRangeTo)
+
+	preparedQuery := queryData.Get("target").MustString()
+
+	return timeRangeReplacer.Replace(preparedQuery)
 }
