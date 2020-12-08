@@ -108,7 +108,7 @@ To build:
 To run:
 * `docker run -p 9876:9876 -v $PWD:/opt/karma -i -t docker-karma`
 
-To view detailed Unit test report, open in browser: `http://localhost:9876/`  
+To view detailed Unit testing report, open in browser: http://localhost:9876  
   
 #### Frontend, Locally
 To run:
