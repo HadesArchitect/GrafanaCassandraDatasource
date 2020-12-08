@@ -97,3 +97,20 @@ With any changes done to backend, the binary file should be recompiled and *graf
 
 * `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 * `docker-compose restart grafana`
+
+### Unit Tests
+
+#### Frontend, Docker Way (Recommended)
+
+To build:
+* `docker build -t docker-karma .`
+    
+To run:
+* `docker run -p 9876:9876 -v $PWD:/opt/karma -i -t docker-karma`
+
+#### Locally
+To run:
+* `karma start`    
+    
+To view detailed coverage report of the Unit tests, open in the browser: `coverage/index.html`  
+  
