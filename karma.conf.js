@@ -1,7 +1,4 @@
-// const isDocker = require('is-docker')();  
-
-// Karma configuration
-// Generated on Tue Dec 01 2020 23:36:58 GMT+0300 (GMT+03:00)
+const isDocker = require('is-docker')();
 
 module.exports = function(config) {
   config.set({
@@ -85,14 +82,14 @@ module.exports = function(config) {
     customLaunchers: {
       ChromeNoSandboxHeadless: {
         base: 'Chromium',
-        flags: [
+        flags: isDocker ? [
           '--no-sandbox',
           // See https://chromium.googlesource.com/chromium/src/+/lkgr/headless/README.md
           '--headless',
           '--disable-gpu',
           // Without a remote debugging port, Google Chrome exits immediately.
           ' --remote-debugging-port=9222'
-        ]
+        ] : []
       }
     },
 
@@ -106,5 +103,5 @@ module.exports = function(config) {
     // Concurrency level
     // how many browser should be started simultaneous
     concurrency: Infinity
-  })
+  });
 }
