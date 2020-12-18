@@ -24,6 +24,11 @@ module.exports = function(config) {
       require('karma-typescript')
     ],
 
+    // specifying for karma-typescript on tsconfig.json
+    karmaTypescriptConfig: {
+      tsconfig: "./tsconfig.json",
+    },
+
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
