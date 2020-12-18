@@ -8,24 +8,26 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'src/tests/*spec.ts',
       'src/tests/*spec.js'
     ],
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'karma-typescript'],
 
     plugins: [
       require('karma-jasmine'),
       require('karma-chrome-launcher'),       
       require('karma-jasmine-html-reporter'),     
-      require('karma-coverage-istanbul-reporter')
+      require('karma-coverage-istanbul-reporter'),
+      require('karma-typescript')
     ],
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress', 'kjhtml', 'coverage-istanbul'],    
+    reporters: ['progress', 'kjhtml', 'coverage-istanbul', 'karma-typescript'],    
 
     client: {
       clearContext: false // leave Jasmine Spec Runner output visible in browser
@@ -55,7 +57,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-    },
+      "**/*.ts": "karma-typescript" // *.tsx for React Jsx
+    },    
 
     // web server port
     port: 9876,
