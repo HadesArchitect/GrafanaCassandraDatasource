@@ -8,7 +8,7 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ### Installation 
 
-1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.2.0), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
+1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.3.3), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
 2. The plugin is yet unsigned by Grafana so it may require additional step to enable the plugin:
 
     2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
@@ -22,7 +22,28 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ### Panel Setup
 
+#### Query Configurator
+
 [TBD]
+
+#### Query Editor
+
+Query Editor is more powerful tool to visualise data. To enable query editor, press "toggle text edit mode" button.
+
+<img src="https://user-images.githubusercontent.com/1742301/102781863-a8bd4b80-4398-11eb-8c28-4d06a1f29279.png" width="300">
+
+Example using [test_data.cql](./test_data.cql):
+
+```
+SELECT id, CAST(value as double), created_at FROM test.test WHERE id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND created_at > $__timeFrom and created_at < $__timeTo
+```
+
+1. Follow the order of the SELECT expressions, it's important! 
+* Identifier
+* Value
+* Timestamp
+
+2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel.
 
 ## Development
 
@@ -81,6 +102,16 @@ To read the logs, use `docker-compose logs -f grafana`.
 ```
 docker-compose exec cassandra cqlsh -u cassandra -p cassandra -f ./test_data.cql
 ```
+
+### Testing
+
+#### Docker Way (Recommended)
+
+Backend tests: `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go test ./backend`
+
+#### Locally
+
+Backend tests: `go test ./backend`
 
 ### Making Changes
 

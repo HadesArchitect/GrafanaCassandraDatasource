@@ -9,7 +9,6 @@ import (
 	// "net"
 	// "strings"
 	"errors"
-	"time"
 
 	"github.com/gocql/gocql"
 
@@ -22,8 +21,10 @@ import (
 
 type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
-	logger  hclog.Logger
-	session *gocql.Session
+	logger    hclog.Logger
+	builder   *QueryBuilder
+	processor *QueryProcessor
+	session   *gocql.Session
 }
 
 type ColumnInfo struct {
@@ -80,6 +81,9 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
+	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", tsdbReq.TimeRange.FromRaw))
+	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", tsdbReq.TimeRange.ToRaw))
+
 	response := &datasource.DatasourceResponse{}
 
 	for _, queryData := range jsonQueries {
@@ -95,98 +99,23 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		var preparedQuery string
 
 		if queryData.Get("rawQuery").MustBool() {
-
-			preparedQuery = queryData.Get("target").MustString()
-
+			preparedQuery = ds.builder.RawMetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 		} else {
-
-			allowFiltering := ""
-			if queryData.Get("filtering").MustBool() {
-				ds.logger.Warn("Allow filtering enabled")
-				allowFiltering = " ALLOW FILTERING"
-			}
-			preparedQuery = fmt.Sprintf(
-				"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s%s",
-				queryData.Get("columnTime").MustString(),
-				queryData.Get("columnValue").MustString(),
-				queryData.Get("keyspace").MustString(),
-				queryData.Get("table").MustString(),
-				queryData.Get("columnId").MustString(),
-				queryData.Get("valueId").MustString(),
-				allowFiltering,
-			)
-
+			preparedQuery = ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 		}
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
-		iter := ds.session.Query(preparedQuery).Iter()
-
-		var id string
-		var timestamp time.Time
-		var value float64
-
 		if queryData.Get("rawQuery").MustBool() {
 
-			series := make(map[string]*datasource.TimeSeries)
-
-			for iter.Scan(&id, &value, &timestamp) {
-
-				if _, ok := series[id]; !ok {
-					series[id] = &datasource.TimeSeries{Name: id}
-				}
-
-				series[id].Points = append(series[id].Points, &datasource.Point{
-					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
-					Value:     value,
-				})
-
-			}
-
-			if err := iter.Close(); err != nil {
-				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
-				return &datasource.DatasourceResponse{
-					Results: []*datasource.QueryResult{
-						&datasource.QueryResult{
-							Error: err.Error(),
-						},
-					},
-				}, nil
-			}
-
-			for _, serie2 := range series {
-				queryResult.Series = append(queryResult.Series, serie2)
-			}
-
-			response.Results = append(response.Results, &queryResult)
-
+			ds.processor.RawMetricQuery(&queryResult, preparedQuery, ds)
 		} else {
 
-			serie := &datasource.TimeSeries{Name: queryData.Get("valueId").MustString()}
-
-			for iter.Scan(&timestamp, &value) {
-				serie.Points = append(serie.Points, &datasource.Point{
-					Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
-					Value:     value,
-				})
-			}
-			if err := iter.Close(); err != nil {
-				ds.logger.Error(fmt.Sprintf("Error while processing a query: %s\n", err.Error()))
-				return &datasource.DatasourceResponse{
-					Results: []*datasource.QueryResult{
-						&datasource.QueryResult{
-							Error: err.Error(),
-						},
-					},
-				}, nil
-			}
-
-			queryResult.Series = append(queryResult.Series, serie)
-
-			response.Results = append(response.Results, &queryResult)
-
+			valueId := queryData.Get("valueId").MustString()
+			ds.processor.FramedMetricQuery(&queryResult, preparedQuery, valueId, ds)
 		}
 
+		response.Results = append(response.Results, &queryResult)
 	}
 
 	return response, nil
