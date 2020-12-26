@@ -29,12 +29,7 @@
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/grafana-cassandra-source/blob/master/LICENSE"}
       ],
       "version": "0.3.9",
-      "updated": "2020-12-26",
-      "screenshots": [
-          {"name": "Datasource Config", "path": "https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png"},
-          {"name": "Query Configurator", "path": "https://user-images.githubusercontent.com/1742301/103153577-d12ab880-4791-11eb-9a6b-50c86423134d.png"},
-          {"name": "Query Editor", "path": "https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png"}
-      ]
+      "updated": "2020-12-26"
     },
     "dependencies": {
       "grafanaDependency": ">=5.0.0",
