@@ -1,14 +1,16 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana:6.6.2
+    image: grafana/grafana:7.3.6
     ports:
       - "3000:3000"
     environment:
       GF_LOG_LEVEL: debug
+      GF_PATHS_CONFIG: /custom_config/grafana.ini
     volumes:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
+      - ./config/:/custom_config/
   cassandra:
     image: cassandra
     ports:
