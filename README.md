@@ -103,6 +103,16 @@ To read the logs, use `docker-compose logs -f grafana`.
 docker-compose exec cassandra cqlsh -u cassandra -p cassandra -f ./test_data.cql
 ```
 
+### Testing
+
+#### Docker Way (Recommended)
+
+Backend tests: `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go test ./backend`
+
+#### Locally
+
+Backend tests: `go test ./backend`
+
 ### Making Changes
 
 #### Frontend

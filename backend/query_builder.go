@@ -12,7 +12,7 @@ type QueryBuilder struct{}
 func (qb *QueryBuilder) MetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
 	allowFiltering := ""
 	if queryData.Get("filtering").MustBool() {
-		allowFiltering = " ALLOW FILTERING"
+		allowFiltering = "ALLOW FILTERING"
 	}
 
 	preparedQuery := fmt.Sprintf(
