@@ -2,7 +2,6 @@
     "name": "Apache Cassandra",
     "id": "hadesarchitect-cassandra-datasource",
     "type": "datasource",
-    "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax", "datastax enterprise"],
   
     "partials": {
       "config": "public/app/plugins/datasource/hadesarchitect-cassandra-datasource/partials/config.html"
@@ -16,6 +15,7 @@
   
     "info": {
       "description": "Apache Cassandra & DataStax Enterprise Datasource for Grafana",
+      "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax", "datastax enterprise"],
       "author": {
         "name": "Aleksandr Volochnev",
         "url": "https://github.com/HadesArchitect"
