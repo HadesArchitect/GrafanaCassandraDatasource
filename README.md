@@ -70,8 +70,8 @@ First, clone the project. It has to be built with docker or with locally install
 
 #### Docker Way (Recommended)
 
-* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 npm install`
-* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js`
+* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 npm install`
+* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 node node_modules/webpack/bin/webpack.js`
 * `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp instrumentisto/dep ensure`
 * `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 
@@ -132,7 +132,7 @@ Backend tests: `go test ./backend`
 
 Run `webpack` with `--watch` option to enable watching:
 
-* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js --watch`
+* `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 node node_modules/webpack/bin/webpack.js --watch`
 * `docker-compose restart grafana`
 
 #### Backend
