@@ -14,7 +14,9 @@ services:
     image: cassandra
     ports:
       - "9042:9042"
+    environment:
+     CASSANDRA_ENABLE_USER_DEFINED_FUNCTIONS: "true"
     volumes:
       - /var/lib/cassandra
-      - ./cassandra.yaml:/etc/cassandra/cassandra.yaml
+      - ./cassandra-entrypoint.sh:/docker-entrypoint.sh
       - ./test_data.cql:/test_data.cql
