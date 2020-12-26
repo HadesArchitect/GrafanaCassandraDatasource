@@ -15,7 +15,7 @@ Supports:
 
 ### Installation 
 
-1. Download the plugin using [latest release](https://github.com/HadesArchitect/grafana-cassandra-source/releases/tag/0.3.3), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory.
+1. Download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
 2. The plugin is yet unsigned by Grafana so it may require additional step to enable the plugin:
 
     2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
