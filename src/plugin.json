@@ -2,6 +2,7 @@
     "name": "Apache Cassandra",
     "id": "hadesarchitect-cassandra-datasource",
     "type": "datasource",
+    "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax", "datastax enterprise"],
   
     "partials": {
       "config": "public/app/plugins/datasource/hadesarchitect-cassandra-datasource/partials/config.html"
