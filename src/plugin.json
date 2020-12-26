@@ -15,6 +15,7 @@
   
     "info": {
       "description": "Apache Cassandra & DataStax Enterprise Datasource for Grafana",
+      "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax", "datastax enterprise"],
       "author": {
         "name": "Aleksandr Volochnev",
         "url": "https://github.com/HadesArchitect"
@@ -27,12 +28,11 @@
         {"name": "GitHub", "url": "https://github.com/HadesArchitect/grafana-cassandra-source"},
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/grafana-cassandra-source/blob/master/LICENSE"}
       ],
-      "version": "0.1.0",
-      "updated": "2020-01-10"
+      "version": "0.3.9",
+      "updated": "2020-12-26"
     },
-  
     "dependencies": {
-      "grafanaVersion": "6.5.2",
+      "grafanaDependency": ">=5.0.0",
       "plugins": [ ]
     }
 }

@@ -23,12 +23,14 @@ jobs:
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp -e GOOS=windows -e GOARCH=amd64 golang go build -i -o ./dist/cassandra-plugin_windows_amd64 ./backend
       - name: go build darwin
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp -e GOOS=darwin -e GOARCH=amd64 golang go build -i -o ./dist/cassandra-plugin_darwin_amd64 ./backend
+      - name: Prepare dist
+        run: mv dist/ hadesarchitect-cassandra-datasource
       - name: Package tar
-        run: tar -czvf cassandra-datasource-${{ github.event.release.tag_name }}.tar.gz ./dist
+        run: tar -czvf cassandra-datasource-${{ github.event.release.tag_name }}.tar.gz ./hadesarchitect-cassandra-datasource
       - name: Package zip
         uses: jjkaram/archive-action@master
         with:
-          args: "zip -r cassandra-datasource-${{ github.event.release.tag_name }}.zip ./dist"
+          args: "zip -r cassandra-datasource-${{ github.event.release.tag_name }}.zip ./hadesarchitect-cassandra-datasource"
       - name: Upload the artifacts
         uses: skx/github-action-publish-binaries@master
         env:

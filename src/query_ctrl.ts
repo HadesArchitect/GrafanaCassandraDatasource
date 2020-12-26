@@ -1,13 +1,13 @@
 import {QueryCtrl} from 'grafana/app/plugins/sdk';
 import { CassandraDatasource } from 'datasource';
-import {TableMetadata} from './models';
+//import {TableMetadata} from './models';
 
 export class CassandraQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
-  datatsource: CassandraDatasource;
+  datatsource!: CassandraDatasource;
   scope: any;
-  hasRawMode: false;
+  hasRawMode = false;
 
   /** @ngInject */
   constructor($scope, $injector) {
@@ -23,7 +23,7 @@ export class CassandraQueryCtrl extends QueryCtrl {
     // TODO if keyspace and table are set load column suggestions
   }
 
-  getOptions(keyspace: string, table: string, type: string) {
+  getOptions(keyspace: string, table: string): any {
     if (!keyspace || !table) {
       return Promise.resolve([]);
     }

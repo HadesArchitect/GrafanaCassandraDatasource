@@ -49,7 +49,7 @@ export class CassandraDatasource {
           queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }]
         },
       })
-      .then((result: any) => {
+      .then(() => {
         return { status: 'success', message: 'Database Connection OK' };
       })
       .catch((error: any) => {
@@ -69,7 +69,7 @@ export class CassandraDatasource {
     return this.doTsdbRequest({
       targets: [interpolated]
     }).then(response => {
-      let tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
+      const tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
       // return tmd.toSuggestion();
       return tmd;
     }).catch((error: any) => {
@@ -134,7 +134,7 @@ export class CassandraDatasource {
 }
 
 export function handleTsdbResponse(response) {
-  const res= [];
+  const res : object[] = [];
   _.forEach(response.data.results, r => {
     _.forEach(r.series, s => {
       res.push({target: s.name, datapoints: s.points});

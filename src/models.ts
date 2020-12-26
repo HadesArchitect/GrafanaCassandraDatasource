@@ -42,9 +42,9 @@ export class TableMetadata {
         }
     }
 
-    toSuggestion(): Object[] {
-        let suggestions = [];
-        for (let column of this.columns) {
+    toSuggestion(): Record<string, any> {
+        const suggestions : Record<string, any>[] = [];
+        for (const column of this.columns) {
             suggestions.push(column.toSuggestion());
         }
         return suggestions;

@@ -4,8 +4,16 @@
     "version": "0.1.0",
     "license": "MIT",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
+    "scripts": {
+        "build": "grafana-toolkit plugin:build",
+        "test": "grafana-toolkit plugin:test",
+        "dev": "grafana-toolkit plugin:dev",
+        "watch": "grafana-toolkit plugin:dev --watch",
+        "sign": "grafana-toolkit plugin:sign --signatureType community"
+    },
     "dependencies": {},
     "devDependencies": {
+        "@grafana/toolkit": "^7.3.6",
         "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
         "@types/lodash": "^4.14.149",
         "@typescript-eslint/eslint-plugin": "^2.15.0",
