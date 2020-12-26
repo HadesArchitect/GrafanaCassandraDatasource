@@ -134,7 +134,7 @@ export class CassandraDatasource {
 }
 
 export function handleTsdbResponse(response) {
-  const res= [];
+  const res : object[] = [];
   _.forEach(response.data.results, r => {
     _.forEach(r.series, s => {
       res.push({target: s.name, datapoints: s.points});

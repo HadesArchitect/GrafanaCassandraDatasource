@@ -43,7 +43,7 @@ export class TableMetadata {
     }
 
     toSuggestion(): Record<string, any> {
-        const suggestions = [];
+        const suggestions : Record<string, any>[] = [];
         for (const column of this.columns) {
             suggestions.push(column.toSuggestion());
         }
