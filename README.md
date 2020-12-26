@@ -39,7 +39,7 @@ Query Editor is more powerful tool to visualise data. To enable query editor, pr
 
 <img src="https://user-images.githubusercontent.com/1742301/102781863-a8bd4b80-4398-11eb-8c28-4d06a1f29279.png" width="300">
 
-Example using [test_data.cql](./test_data.cql):
+Example using [test_data.cql](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/test_data.cql):
 
 ```
 SELECT id, CAST(value as double), created_at FROM test.test WHERE id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND created_at > $__timeFrom and created_at < $__timeTo
