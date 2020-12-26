@@ -4,6 +4,13 @@ Apache Cassandra & DataStax Enterprise Datasource for Grafana.
 
 ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master)
 
+Supports:
+
+* Grafana 5.x, 6.x, 7.x (4.x not tested)
+* Cassandra 3.x, 4.x (2.x not tested)
+* DSE 6.x
+* Linux, OSX (Windows not tested but should work)
+
 ## Usage
 
 ### Installation 
