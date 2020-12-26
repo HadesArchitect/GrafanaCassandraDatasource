@@ -25,11 +25,13 @@ Supports:
     ```
     2.2 If you use dockerized Grafana, you need to set environment variable `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=hadesarchitect-cassandra-datasource`.
 3. Add the Cassandra DataSource as a datasource at the configuration page.
-4. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username, password and keyspace. All the fields are required. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+4. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
 
 ### Panel Setup
 
 #### Query Configurator
+
+![image](https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png)
 
 [TBD]
 
@@ -51,6 +53,8 @@ SELECT id, CAST(value as double), created_at FROM test.test WHERE id IN (99051fe
 * Timestamp
 
 2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel.
+
+![image](https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png)
 
 ## Development
 
