@@ -49,7 +49,7 @@ export class CassandraDatasource {
           queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }]
         },
       })
-      .then((result: any) => {
+      .then(() => {
         return { status: 'success', message: 'Database Connection OK' };
       })
       .catch((error: any) => {
