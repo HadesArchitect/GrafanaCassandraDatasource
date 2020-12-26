@@ -27,11 +27,13 @@ Supports:
 3. Add the Cassandra DataSource as a datasource at the configuration page.
 4. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
 
+<img src="https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png" width="500">
+
 ### Panel Setup
 
 #### Query Configurator
 
-![image](https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png)
+<img src="https://user-images.githubusercontent.com/1742301/103153577-d12ab880-4791-11eb-9a6b-50c86423134d.png" width="500">
 
 [TBD]
 
@@ -54,7 +56,7 @@ SELECT id, CAST(value as double), created_at FROM test.test WHERE id IN (99051fe
 
 2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel.
 
-![image](https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png)
+<img src="https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png" width="500">
 
 ## Development
 
