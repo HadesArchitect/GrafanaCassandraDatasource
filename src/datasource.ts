@@ -69,7 +69,7 @@ export class CassandraDatasource {
     return this.doTsdbRequest({
       targets: [interpolated]
     }).then(response => {
-      let tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
+      const tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
       // return tmd.toSuggestion();
       return tmd;
     }).catch((error: any) => {

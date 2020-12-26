@@ -10,6 +10,6 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
     ],   
     "rules": {
-        "@typescript-eslint/no-use-before-define": off
+        "@typescript-eslint/no-use-before-define": 0
     }
 };
