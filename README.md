@@ -1,6 +1,6 @@
 # Cassandra DataSource for Grafana 
 
-Apache Cassandra & DataStax Enterprise Datasource for Grafana.
+Apache Cassandra & DataStax Enterprise Datasource for Grafana. This datasource is to visualise **time-series data** stored in Cassandra/DSE, if you are looking for Cassandra **metrics**, you may need [datastax/metric-collector-for-apache-cassandra](https://github.com/datastax/metric-collector-for-apache-cassandra) instead.
 
 ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master)
 
