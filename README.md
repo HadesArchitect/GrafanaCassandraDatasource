@@ -39,7 +39,7 @@ There are **two ways** to query data from Cassandra/DSE, Query Configurator and 
 
 <img src="https://user-images.githubusercontent.com/1742301/103153577-d12ab880-4791-11eb-9a6b-50c86423134d.png" width="500">
 
-Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table name sre given correctly, thge datasource will suggest you the column names automatically.
+Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table name are given correctly, the datasource will suggest you the column names automatically.
 
 * **Time Column** - the column storing the timestamp value, it's used to answer "when" question. 
 * **Value Column** - the column storing the value you'd like to show. It can be the `value`, `temperature` or whatever property you need.
