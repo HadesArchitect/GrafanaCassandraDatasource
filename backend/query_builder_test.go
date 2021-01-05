@@ -18,7 +18,7 @@ func TestMetricQuery(t *testing.T) {
 	var rawString string = `{"queryType":"query","target":"select id, cast(value as double), created_at from test.test where id in (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd1) and created_at > $__timeFrom","refId":"A","rawQuery":false,"type":"timeserie","datasourceId":1,"keyspace":"test","table":"test","columnTime":"created_at","columnValue":"value","columnId":"id","valueId":"99051fe9-6a9c-46c2-b949-38ef78858dd0"}`
 
 	queryData, _ := simplejson.NewJson([]byte(rawString))
-	var result string = builder.MetricQuery(queryData, "1607364105184", "1607623305184")
+	var result string = builder.prepareStrictMetricQuery(queryData, "1607364105184", "1607623305184")
 
 	if result != expected {
 		Errorf(t, &result, &expected)
@@ -33,7 +33,7 @@ func TestRawMetricQuery(t *testing.T) {
 	var rawString string = `{"queryType":"query","target":"select id, cast(value as double), created_at from test.test where id in (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd1) and created_at > $__timeFrom","refId":"A","rawQuery":true,"type":"timeserie","datasourceId":1,"keyspace":"test","table":"test","columnTime":"created_at","columnValue":"value","columnId":"id","valueId":"99051fe9-6a9c-46c2-b949-38ef78858dd0"}`
 
 	queryData, _ := simplejson.NewJson([]byte(rawString))
-	var result string = builder.RawMetricQuery(queryData, "1607364105184", "1607623305184")
+	var result string = builder.prepareRawMetricQuery(queryData, "1607364105184", "1607623305184")
 
 	if result != expected {
 		Errorf(t, &result, &expected)

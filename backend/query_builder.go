@@ -9,7 +9,7 @@ import (
 
 type QueryBuilder struct{}
 
-func (qb *QueryBuilder) MetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
+func (qb *QueryBuilder) prepareStrictMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
 	allowFiltering := ""
 	if queryData.Get("filtering").MustBool() {
 		allowFiltering = " ALLOW FILTERING"
@@ -33,9 +33,9 @@ func (qb *QueryBuilder) MetricQuery(queryData *simplejson.Json, timeRangeFrom st
 	return preparedQuery
 }
 
-func (qb *QueryBuilder) RawMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
+func (qb *QueryBuilder) prepareRawMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
 	if !queryData.Get("rawQuery").MustBool() {
-		return qb.MetricQuery(queryData, timeRangeFrom, timeRangeTo)
+		return qb.prepareStrictMetricQuery(queryData, timeRangeFrom, timeRangeTo)
 	}
 
 	timeRangeReplacer := strings.NewReplacer("$__timeFrom", timeRangeFrom, "$__timeTo", timeRangeTo)
