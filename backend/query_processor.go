@@ -9,7 +9,7 @@ import (
 
 type QueryProcessor struct{}
 
-func (qp *QueryProcessor) RawMetricQuery(result *datasource.QueryResult, query string, ds *CassandraDatasource) {
+func (qp *QueryProcessor) processRawMetricQuery(result *datasource.QueryResult, query string, ds *CassandraDatasource) {
 
 	iter := ds.session.Query(query).Iter()
 
@@ -43,7 +43,7 @@ func (qp *QueryProcessor) RawMetricQuery(result *datasource.QueryResult, query s
 	}
 }
 
-func (qp *QueryProcessor) FramedMetricQuery(result *datasource.QueryResult, query string, valueId string, ds *CassandraDatasource) {
+func (qp *QueryProcessor) processStrictMetricQuery(result *datasource.QueryResult, query string, valueId string, ds *CassandraDatasource) {
 
 	iter := ds.session.Query(query).Iter()
 

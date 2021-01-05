@@ -35,17 +35,17 @@ type ColumnInfo struct {
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
 
-	queries, err := ds.parseJSONQueries(tsdbReq)
+	queries, err := ds.parseJSONQueries(tsdbReq.Queries)
 	if err != nil {
 		return nil, err
 	}
 
-	queryType, err := ds.GetRequestType(queries)
+	queryType, err := ds.getRequestType(queries)
 	if err != nil {
 		return nil, err
 	}
 
-	options, err := ds.GetRequestOptions(tsdbReq)
+	options, err := ds.getRequestOptions(tsdbReq.Datasource.JsonData)
 	if err != nil {
 		return nil, err
 	}
@@ -68,21 +68,21 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 
 	switch queryType {
 	case "search":
-		return ds.SearchQuery(tsdbReq, queries)
+		return ds.searchQuery(queries)
 	case "query":
-		return ds.MetricQuery(tsdbReq, queries, options)
+		return ds.metricQuery(queries, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
 	case "connection":
 		return &datasource.DatasourceResponse{}, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Unknown query type '%s'", queryType))
+		return nil, fmt.Errorf("Unknown query type '%s'", queryType)
 	}
 }
 
-func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json, options map[string]string) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) metricQuery(jsonQueries []*simplejson.Json, timeFrom string, timeTo string) (*datasource.DatasourceResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
 
-	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", tsdbReq.TimeRange.FromRaw))
-	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", tsdbReq.TimeRange.ToRaw))
+	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", timeFrom))
+	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", timeTo))
 
 	response := &datasource.DatasourceResponse{}
 
@@ -97,22 +97,19 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 		ds.logger.Debug(fmt.Sprintf("target: %s\n", queryData.Get("target").MustString()))
 
 		var preparedQuery string
-
 		if queryData.Get("rawQuery").MustBool() {
-			preparedQuery = ds.builder.RawMetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
+			preparedQuery = ds.builder.prepareRawMetricQuery(queryData, timeFrom, timeTo)
 		} else {
-			preparedQuery = ds.builder.MetricQuery(queryData, tsdbReq.TimeRange.FromRaw, tsdbReq.TimeRange.ToRaw)
+			preparedQuery = ds.builder.prepareStrictMetricQuery(queryData, timeFrom, timeTo)
 		}
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
 		if queryData.Get("rawQuery").MustBool() {
-
-			ds.processor.RawMetricQuery(&queryResult, preparedQuery, ds)
+			ds.processor.processRawMetricQuery(&queryResult, preparedQuery, ds)
 		} else {
-
-			valueId := queryData.Get("valueId").MustString()
-			ds.processor.FramedMetricQuery(&queryResult, preparedQuery, valueId, ds)
+			valueID := queryData.Get("valueId").MustString()
+			ds.processor.processStrictMetricQuery(&queryResult, preparedQuery, valueID, ds)
 		}
 
 		response.Results = append(response.Results, &queryResult)
@@ -121,7 +118,7 @@ func (ds *CassandraDatasource) MetricQuery(tsdbReq *datasource.DatasourceRequest
 	return response, nil
 }
 
-func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest, jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
+func (ds *CassandraDatasource) searchQuery(jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
 	keyspaceName, keyspaceOk := jsonQueries[0].CheckGet("keyspace")
 	tableName, tableOk := jsonQueries[0].CheckGet("table")
 
@@ -182,13 +179,13 @@ func (ds *CassandraDatasource) SearchQuery(tsdbReq *datasource.DatasourceRequest
 	}, nil
 }
 
-func (ds *CassandraDatasource) parseJSONQueries(tsdbReq *datasource.DatasourceRequest) ([]*simplejson.Json, error) {
+func (ds *CassandraDatasource) parseJSONQueries(rawQueries []*datasource.Query) ([]*simplejson.Json, error) {
 	queries := make([]*simplejson.Json, 0)
-	if len(tsdbReq.Queries) < 1 {
+	if len(rawQueries) < 1 {
 		ds.logger.Error("No queries to parse, unable to proceed")
 		return nil, errors.New("No queries in TSDB Request")
 	}
-	for _, query := range tsdbReq.Queries {
+	for _, query := range rawQueries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
 		if err != nil {
 			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
@@ -200,7 +197,7 @@ func (ds *CassandraDatasource) parseJSONQueries(tsdbReq *datasource.DatasourceRe
 	return queries, nil
 }
 
-func (ds *CassandraDatasource) GetRequestType(queries []*simplejson.Json) (string, error) {
+func (ds *CassandraDatasource) getRequestType(queries []*simplejson.Json) (string, error) {
 	queryTypeProperty, exist := queries[0].CheckGet("queryType")
 	if !exist {
 		ds.logger.Error("Query type is not set, unable to proceed")
@@ -215,9 +212,9 @@ func (ds *CassandraDatasource) GetRequestType(queries []*simplejson.Json) (strin
 	return queryType, nil
 }
 
-func (ds *CassandraDatasource) GetRequestOptions(tsdbReq *datasource.DatasourceRequest) (map[string]string, error) {
+func (ds *CassandraDatasource) getRequestOptions(jsonData string) (map[string]string, error) {
 	var options map[string]string
-	err := json.Unmarshal([]byte(tsdbReq.Datasource.JsonData), &options)
+	err := json.Unmarshal([]byte(jsonData), &options)
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to get request JSON data: %s\n", err))
 		return nil, err
