@@ -123,6 +123,14 @@ First, clone the project. It has to be built with docker or with locally install
 * `dep ensure`
 * `go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 
+#### Building the backend with TLS support:
+
+1) `go get -u github.com/go-bindata/go-bindata/...` - downloading the bindata package
+2) Place your tls certificate and tls key into `./backend/creds` folder
+3) `cd ./backend && go-bindata -o assets.go ./creds` - move credentials files as a `.go` files
+4) `go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend -ldflags "-X main.CertPath=/creds/cert_file_name -X main.KeyPath=/creds/key_file_name -X main.InsecureSkipVerify=true"` - build binary with required variables filled in.
+
+
 #### Run Grafana and Cassandra
 
 `docker-compose up -d`
