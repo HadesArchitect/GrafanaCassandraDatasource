@@ -13,7 +13,7 @@ import (
 	"github.com/gocql/gocql"
 
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/grafana/grafana_plugin_model/go/datasource"
+	"github.com/grafana/grafana-plugin-model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
@@ -55,6 +55,7 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		options["keyspace"],
 		options["user"],
 		tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+		WithConsistency(options["consistency"]),
 	)
 	if err != nil {
 		return &datasource.DatasourceResponse{
@@ -222,20 +223,43 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData string) (map[string]st
 	return options, nil
 }
 
-func (ds *CassandraDatasource) Connect(host string, keyspace string, username string, password string) (bool, error) {
+type Option func(config *gocql.ClusterConfig) error
+
+func WithConsistency(consistencyStr string) Option {
+	return func(config *gocql.ClusterConfig) error {
+		consistency, err := parseConsistency(consistencyStr)
+		if err != nil {
+			return err
+		}
+		config.Consistency = consistency
+		return nil
+	}
+}
+
+func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, opts ...Option) (bool, error) {
 	if ds.session != nil {
 		return true, nil
 	}
-
 	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
 	cluster := gocql.NewCluster(host)
+	for _, opt := range opts {
+		if err := opt(cluster); err != nil {
+			ds.logger.Error(fmt.Sprintf("Failed to apply option: %s\n", err.Error()))
+			return false, err
+		}
+	}
 	cluster.Keyspace = keyspace
 	cluster.Authenticator = gocql.PasswordAuthenticator{
 		Username: username,
 		Password: password,
 	}
-	cluster.Consistency = gocql.One
-
+	cluster.DisableInitialHostLookup = true // AWS Specific Required
+	tlsConfig, err := PrepareTLSCfg()
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
+		return false, err
+	}
+	cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
@@ -245,4 +269,18 @@ func (ds *CassandraDatasource) Connect(host string, keyspace string, username st
 
 	ds.logger.Debug(fmt.Sprintf("Connection successful.\n"))
 	return true, nil
+}
+
+func parseConsistency(consistencyStr string) (consistency gocql.Consistency, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("failed to parse consistency \"%s\": %v", consistencyStr, r)
+			}
+		}
+	}()
+	consistency = gocql.ParseConsistency(consistencyStr)
+	return
 }

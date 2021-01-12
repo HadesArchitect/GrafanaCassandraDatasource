@@ -244,7 +244,7 @@
   input-imports = [
     "github.com/bitly/go-simplejson",
     "github.com/gocql/gocql",
-    "github.com/grafana/grafana_plugin_model/go/datasource",
+    "github.com/grafana/grafana-plugin-model/go/datasource",
     "github.com/hashicorp/go-hclog",
     "github.com/hashicorp/go-plugin",
     "golang.org/x/net/context",
