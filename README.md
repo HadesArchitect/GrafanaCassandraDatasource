@@ -113,14 +113,14 @@ First, clone the project. It has to be built with docker or with locally install
 
 * `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 npm install`
 * `docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 node node_modules/webpack/bin/webpack.js`
-* `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp instrumentisto/dep ensure`
+* `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang go mod vendor`
 * `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 
 #### Locally
 
 * `npm install`
 * `webpack`
-* `dep ensure`
+* `cd backend && go mod vendor`
 * `go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend`
 
 #### Building the backend with TLS support:
@@ -170,7 +170,7 @@ docker-compose exec cassandra cqlsh -u cassandra -p cassandra -f ./test_data.cql
 
 #### Docker Way (Recommended)
 
-Backend tests: `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go test ./backend`
+Backend tests: `docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go mod vendor && go test ./backend`
 
 #### Locally
 
