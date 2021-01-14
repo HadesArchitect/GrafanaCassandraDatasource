@@ -1,8 +1,8 @@
 package main
 
 import (
-	"net/http"
 	simplejson "github.com/bitly/go-simplejson"
+	"net/http"
 )
 
 type TargetResponseDTO struct {
