@@ -103,7 +103,7 @@ All other properties will be ignored
 
 *This part of the documentation relates only to development of the plugin and not required if you only intended to use it.*
 
-The frontend part is implemented using *Typescript*, *WebPack*, *ESLint* and *NPM*. The backend is written on *Golang* and uses *Dep* as a dependency manager. The plugin development uses docker actively and it's recommended to have at least basic understanding of docker and docker-compose.
+The frontend part is implemented using *Typescript*, *WebPack*, *ESLint* and *NPM*. The backend is written on *Golang* and based on [Hashicorp Plugin System](https://github.com/hashicorp/go-plugin). The plugin development uses docker actively and it's recommended to have at least basic understanding of docker and docker-compose.
 
 ### Installation and Build
 
