@@ -227,6 +227,9 @@ type Option func(config *gocql.ClusterConfig) error
 
 func WithConsistency(consistencyStr string) Option {
 	return func(config *gocql.ClusterConfig) error {
+		if consistencyStr == "" {
+			consistencyStr = "QUORUM"
+		}		
 		consistency, err := parseConsistency(consistencyStr)
 		if err != nil {
 			return err
