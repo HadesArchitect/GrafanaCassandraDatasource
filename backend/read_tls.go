@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	EnableTLS          string
 	CertPath           string
 	KeyPath            string
 	RootCA             string
@@ -16,9 +17,7 @@ var (
 
 func PrepareTLSCfg() (*tls.Config, error) {
 	skipVerify, _ := strconv.ParseBool(InsecureSkipVerify)
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: skipVerify,
-	}
+	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
 	if CertPath != "" && KeyPath != "" {
 		cert, err := Asset(CertPath)
 		if err != nil {

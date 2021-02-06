@@ -4,6 +4,7 @@ import (
 	// "crypto/tls"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	// "io/ioutil"
 	// "net"
@@ -229,7 +230,7 @@ func WithConsistency(consistencyStr string) Option {
 	return func(config *gocql.ClusterConfig) error {
 		if consistencyStr == "" {
 			consistencyStr = "QUORUM"
-		}		
+		}
 		consistency, err := parseConsistency(consistencyStr)
 		if err != nil {
 			return err
@@ -257,12 +258,14 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 		Password: password,
 	}
 	cluster.DisableInitialHostLookup = true // AWS Specific Required
-	tlsConfig, err := PrepareTLSCfg()
-	if err != nil {
-		ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
-		return false, err
+	if enableTLS, _ := strconv.ParseBool(EnableTLS); enableTLS {
+		tlsConfig, err := PrepareTLSCfg()
+		if err != nil {
+			ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
+			return false, err
+		}
+		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
 	}
-	cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
