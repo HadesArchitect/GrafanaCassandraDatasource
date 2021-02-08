@@ -3,10 +3,6 @@
     "id": "hadesarchitect-cassandra-datasource",
     "type": "datasource",
   
-    "partials": {
-      "config": "public/app/plugins/datasource/hadesarchitect-cassandra-datasource/partials/config.html"
-    },
-  
     "backend": true,
     "alerting": false,
     "executable": "cassandra-plugin",
