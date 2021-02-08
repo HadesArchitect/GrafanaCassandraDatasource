@@ -9,8 +9,13 @@ Supports:
 
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
 * Cassandra 3.x, 4.x (2.x not tested)
-* DSE 6.x
+* DataStax Enterprise 6.x
 * Linux, OSX (Windows not tested but should work)
+
+Plans to support:
+
+* DataStax Astra (blocked by missing GoCQL Astra support [PR#1487](https://github.com/gocql/gocql/pull/1487))
+* AWS Keyspaces (in progress)
 
 Contacts:
 
