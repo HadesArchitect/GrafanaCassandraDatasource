@@ -113,4 +113,4 @@ All other properties will be ignored
 
 ## Development
 
-[Developer documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Development)
+[Developer documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Developer-Guide)
