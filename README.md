@@ -3,7 +3,7 @@
 Apache Cassandra Datasource for Grafana. This datasource is to visualise **time-series data** stored in Cassandra/DSE, if you are looking for Cassandra **metrics**, you may need [datastax/metric-collector-for-apache-cassandra](https://github.com/datastax/metric-collector-for-apache-cassandra) instead.
 
 ![Release Status](https://github.com/HadesArchitect/GrafanaCassandraDatasource/workflows/Handle%20Release/badge.svg)
- ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master)
+ ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master) 
 
 Supports:
 
@@ -12,7 +12,14 @@ Supports:
 * DSE 6.x
 * Linux, OSX (Windows not tested but should work)
 
+Contacts:
+
+* [![Discord Chat](https://img.shields.io/badge/discord-chat%20with%20us-green)](https://discord.gg/FU2Cb4KTyp) 
+* [![Github discossions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions) 
+
 ## Usage
+
+You can find more detailed instructions in [the datasource wiki](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki).
 
 ### Installation 
 
