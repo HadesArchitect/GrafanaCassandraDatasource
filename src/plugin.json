@@ -10,7 +10,7 @@
     "annotations": false,
   
     "info": {
-      "description": "Apache Cassandra & DataStax Enterprise Datasource for Grafana",
+      "description": "Apache Cassandra Datasource for Grafana",
       "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax", "datastax enterprise"],
       "author": {
         "name": "Aleksandr Volochnev",
