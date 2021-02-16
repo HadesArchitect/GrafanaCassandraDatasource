@@ -4,12 +4,13 @@ import (
 	// "crypto/tls"
 	"encoding/json"
 	"fmt"
-	"strconv"
+	//"strconv"
 
 	// "io/ioutil"
 	// "net"
 	// "strings"
 	"errors"
+	"os"
 
 	"github.com/gocql/gocql"
 
@@ -258,14 +259,22 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 		Password: password,
 	}
 	cluster.DisableInitialHostLookup = true // AWS Specific Required
-	if enableTLS, _ := strconv.ParseBool(EnableTLS); enableTLS {
-		tlsConfig, err := PrepareTLSCfg()
-		if err != nil {
-			ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
-			return false, err
-		}
-		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
+	// if enableTLS, _ := strconv.ParseBool(EnableTLS); enableTLS {
+	// 	tlsConfig, err := PrepareTLSCfg()
+	// 	if err != nil {
+	// 		ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
+	// 		return false, err
+	// 	}
+	// 	cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
+	// }
+	cluster.SslOpts = &gocql.SslOptions{
+		CaPath: "/var/lib/grafana/plugins/cassandra/dist/sf-class2-root.crt",
+ 	}
+	dir, err := os.Getwd()
+	if err != nil {
+		ds.logger.Error(err.Error())
 	}
+	ds.logger.Info(dir)
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
