@@ -14,13 +14,13 @@ Supports:
 
 Plans to support:
 
-* DataStax Astra (blocked by missing GoCQL Astra support [PR#1487](https://github.com/gocql/gocql/pull/1487))
+* DataStax Astra (in progress)
 * AWS Keyspaces (in progress)
 
 Contacts:
 
 * [![Discord Chat](https://img.shields.io/badge/discord-chat%20with%20us-green)](https://discord.gg/FU2Cb4KTyp) 
-* [![Github discossions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions) 
+* [![Github discussions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions) 
 
 ## Usage
 
