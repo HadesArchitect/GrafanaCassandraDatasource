@@ -5,6 +5,8 @@ Apache Cassandra Datasource for Grafana. This datasource is to visualise **time-
 ![Release Status](https://github.com/HadesArchitect/GrafanaCassandraDatasource/workflows/Handle%20Release/badge.svg)
  ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master) ![GitHub all releases](https://img.shields.io/github/downloads/hadesarchitect/grafanacassandradatasource/total?color=%2326c458&label=Downloads&logo=github)
 
+To see the datasource in action, please follow the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Quick-Demo) steps.
+
 Supports:
 
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
