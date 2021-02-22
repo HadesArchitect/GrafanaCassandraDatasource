@@ -4,26 +4,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"strconv"
 )
 
-var (
-	EnableTLS          string
-	CertPath           string
-	KeyPath            string
-	RootCA             string
-	InsecureSkipVerify string
-)
-
-func PrepareTLSCfg() (*tls.Config, error) {
-	skipVerify, _ := strconv.ParseBool(InsecureSkipVerify)
-	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
-	if CertPath != "" && KeyPath != "" {
-		cert, err := Asset(CertPath)
+func PrepareTLSCfg(certPath string, rootPath string, caPath string) (*tls.Config, error) {
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	if certPath != "" && rootPath != "" {
+		cert, err := Asset(certPath)
 		if err != nil {
 			return nil, err
 		}
-		key, err := Asset(KeyPath)
+		key, err := Asset(rootPath)
 		if err != nil {
 			return nil, err
 		}
@@ -33,8 +23,8 @@ func PrepareTLSCfg() (*tls.Config, error) {
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
-	if RootCA != "" {
-		caCertPEM, err := Asset(RootCA)
+	if caPath != "" {
+		caCertPEM, err := Asset(caPath)
 		if err != nil {
 			return nil, err
 		}
