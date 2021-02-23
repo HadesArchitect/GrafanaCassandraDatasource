@@ -10,7 +10,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 Supports:
 
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
-* Cassandra 3.x, 4.x (2.x not tested)
+* Cassandra 3.x (4.x experimental, 2.x not tested)
 * DataStax Enterprise 6.x
 * Linux, OSX (Windows not tested but should work)
 
