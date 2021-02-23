@@ -9,7 +9,7 @@ import (
 )
 
 func PrepareTLSCfg(certPath string, rootPath string, caPath string) (*tls.Config, error) {
-	tlsConfig := &tls.Config{InsecureSkipVerify: false}
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	if certPath != "" && rootPath != "" {
 		cert, err := filepath.Abs(certPath)
 		if err != nil {
