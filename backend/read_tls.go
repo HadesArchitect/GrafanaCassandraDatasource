@@ -4,27 +4,33 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"io/ioutil"
+	"path/filepath"
 )
 
 func PrepareTLSCfg(certPath string, rootPath string, caPath string) (*tls.Config, error) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	if certPath != "" && rootPath != "" {
-		cert, err := Asset(certPath)
+		cert, err := filepath.Abs(certPath)
 		if err != nil {
 			return nil, err
 		}
-		key, err := Asset(rootPath)
+		key, err := filepath.Abs(rootPath)
 		if err != nil {
 			return nil, err
 		}
-		certificate, err := tls.X509KeyPair(cert, key)
+		certificate, err := tls.LoadX509KeyPair(cert, key)
 		if err != nil {
 			return nil, err
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
 	if caPath != "" {
-		caCertPEM, err := Asset(caPath)
+		caCertPEMPath, err := filepath.Abs(caPath)
+		if err != nil {
+			return nil, err
+		}
+		caCertPEM, err := ioutil.ReadFile(caCertPEMPath)
 		if err != nil {
 			return nil, err
 		}
