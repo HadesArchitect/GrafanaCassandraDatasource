@@ -7,7 +7,7 @@ Apache Cassandra Datasource for Grafana. This datasource is to visualise **time-
 
 To see the datasource in action, please follow the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Quick-Demo) steps.
 
-Supports:
+**Supports**:
 
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
 * Cassandra 3.x (4.x experimental, 2.x not tested)
@@ -16,7 +16,7 @@ Supports:
 * AWS Keyspaces (limited support)
 * Linux, OSX (Windows not tested but should work)
 
-Contacts:
+**Contacts**:
 
 * [![Discord Chat](https://img.shields.io/badge/discord-chat%20with%20us-green)](https://discord.gg/FU2Cb4KTyp) 
 * [![Github discussions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions) 
