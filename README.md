@@ -12,12 +12,9 @@ Supports:
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
 * Cassandra 3.x (4.x experimental, 2.x not tested)
 * DataStax Enterprise 6.x
+* DataStax Astra
+* AWS Keyspaces (limited support)
 * Linux, OSX (Windows not tested but should work)
-
-Plans to support:
-
-* DataStax Astra (in progress)
-* AWS Keyspaces (in progress)
 
 Contacts:
 
