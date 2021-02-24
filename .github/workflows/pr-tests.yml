@@ -9,12 +9,12 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master
       - name: npm install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 npm install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 npm install
       - name: webpack
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:11 node node_modules/webpack/bin/webpack.js
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:12 node node_modules/webpack/bin/webpack.js
       - name: go mod vendor
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang go mod vendor
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go mod vendor
       - name: go build linux
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go build -i -o ./dist/cassandra-plugin_linux_amd64 ./backend
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go build -o ../dist/cassandra-plugin_linux_amd64 .
       - name: backend tests
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp golang go test ./backend
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go test .
