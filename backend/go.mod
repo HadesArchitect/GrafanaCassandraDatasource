@@ -1,4 +1,4 @@
-module github.com/90poe/GrafanaCassandraDatasource/backend
+module github.com/HadesArchitect/GrafanaCassandraDatasource/backend
 
 go 1.15
 

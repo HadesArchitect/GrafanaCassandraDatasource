@@ -4,7 +4,6 @@ import (
 	// "crypto/tls"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	// "io/ioutil"
 	// "net"
@@ -56,6 +55,9 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		options["keyspace"],
 		options["user"],
 		tsdbReq.Datasource.DecryptedSecureJsonData["password"],
+		options["certPath"],
+		options["rootPath"],
+		options["caPath"],
 		WithConsistency(options["consistency"]),
 	)
 	if err != nil {
@@ -240,7 +242,7 @@ func WithConsistency(consistencyStr string) Option {
 	}
 }
 
-func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, opts ...Option) (bool, error) {
+func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, certPath string, rootPath string, caPath string, opts ...Option) (bool, error) {
 	if ds.session != nil {
 		return true, nil
 	}
@@ -258,14 +260,16 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 		Password: password,
 	}
 	cluster.DisableInitialHostLookup = true // AWS Specific Required
-	if enableTLS, _ := strconv.ParseBool(EnableTLS); enableTLS {
-		tlsConfig, err := PrepareTLSCfg()
+	enableTLS := (certPath != "" && rootPath != "") || caPath != ""
+	if enableTLS {
+		tlsConfig, err := PrepareTLSCfg(certPath, rootPath, caPath)
 		if err != nil {
 			ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
 			return false, err
 		}
 		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
 	}
+
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
