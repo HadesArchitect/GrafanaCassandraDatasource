@@ -4,37 +4,33 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"strconv"
+	"io/ioutil"
+	"path/filepath"
 )
 
-var (
-	EnableTLS          string
-	CertPath           string
-	KeyPath            string
-	RootCA             string
-	InsecureSkipVerify string
-)
-
-func PrepareTLSCfg() (*tls.Config, error) {
-	skipVerify, _ := strconv.ParseBool(InsecureSkipVerify)
-	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
-	if CertPath != "" && KeyPath != "" {
-		cert, err := Asset(CertPath)
+func PrepareTLSCfg(certPath string, rootPath string, caPath string) (*tls.Config, error) {
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	if certPath != "" && rootPath != "" {
+		cert, err := filepath.Abs(certPath)
 		if err != nil {
 			return nil, err
 		}
-		key, err := Asset(KeyPath)
+		key, err := filepath.Abs(rootPath)
 		if err != nil {
 			return nil, err
 		}
-		certificate, err := tls.X509KeyPair(cert, key)
+		certificate, err := tls.LoadX509KeyPair(cert, key)
 		if err != nil {
 			return nil, err
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
-	if RootCA != "" {
-		caCertPEM, err := Asset(RootCA)
+	if caPath != "" {
+		caCertPEMPath, err := filepath.Abs(caPath)
+		if err != nil {
+			return nil, err
+		}
+		caCertPEM, err := ioutil.ReadFile(caCertPEMPath)
 		if err != nil {
 			return nil, err
 		}
