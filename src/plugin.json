@@ -24,8 +24,8 @@
         {"name": "GitHub", "url": "https://github.com/HadesArchitect/grafana-cassandra-source"},
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/grafana-cassandra-source/blob/master/LICENSE"}
       ],
-      "version": "0.4.2",
-      "updated": "2021-02-08"
+      "version": "0.5.0",
+      "updated": "2021-02-25"
     },
     "dependencies": {
       "grafanaDependency": ">=5.0.0",
