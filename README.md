@@ -12,8 +12,8 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 * Grafana 5.x, 6.x, 7.x (4.x not tested)
 * Cassandra 3.x (4.x experimental, 2.x not tested)
 * DataStax Enterprise 6.x
-* DataStax Astra
-* AWS Keyspaces (limited support)
+* DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/DataStax-Astra))
+* AWS Keyspaces (limited support)  ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/AWS-Keyspaces))
 * Linux, OSX (Windows not tested but should work)
 
 **Contacts**:
