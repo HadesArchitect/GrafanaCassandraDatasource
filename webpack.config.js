@@ -5,7 +5,6 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
   mode: 'development',
-  // watch: true,
   watchOptions: {
     ignored: /node_modules/
   },
@@ -38,14 +37,17 @@ module.exports = {
     new CleanWebpackPlugin({cleanOnceBeforeBuildPatterns: ['**/*', '!cassandra-plugin_*']})
   ],
   resolve: {
-    extensions: [".ts", '.tsx', ".js"]
+    extensions: ['.ts', '.tsx', '.js']
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/, 
-        loaders: ["ts-loader"], 
+        use: 'ts-loader',
         exclude: /node_modules/,
+        include: [
+          path.resolve(__dirname, "src")
+        ],        
       },
       {
         test: /\.css$/,

@@ -7,7 +7,7 @@
     "lib": ["es6", "dom"],
     "rootDir": "./src",
     "jsx": "react",
-    "module": "esnext",
+    "module": "commonjs",
     "baseUrl": "./src",
     "declaration": false,
     "allowSyntheticDefaultImports": true,
@@ -26,7 +26,6 @@
     "noImplicitUseStrict": false,
     "noImplicitAny": false,
     "downlevelIteration": true,
-    // "noUnusedLocals": true,
     "pretty": true,
     "typeRoots": ["node_modules/@types"],
     "skipLibCheck": true

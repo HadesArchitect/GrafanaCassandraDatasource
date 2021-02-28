@@ -9,21 +9,27 @@
         "test": "grafana-toolkit plugin:test",
         "dev": "grafana-toolkit plugin:dev",
         "watch": "grafana-toolkit plugin:dev --watch",
-        "sign": "grafana-toolkit plugin:sign --signatureType community"
+        "sign": "grafana-toolkit plugin:sign --signatureType community",
+        "unit-front": "jasmine-ts --config=jasmine.json"
     },
     "dependencies": {},
     "devDependencies": {
         "@grafana/toolkit": "^7.3.6",
         "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
+        "@types/jasmine": "^3.6.4",
         "@types/lodash": "^4.14.149",
         "@typescript-eslint/eslint-plugin": "^2.15.0",
         "@typescript-eslint/parser": "^2.15.0",
         "clean-webpack-plugin": "^3.0.0",
         "copy-webpack-plugin": "^5.1.2",
         "eslint": "^6.8.0",
+        "jasmine": "^3.6.4",
+        "jasmine-spec-reporter": "^6.0.0",
+        "jasmine-ts": "^0.3.0",
         "loader-utils": "^1.2.0",
         "lodash": "^4.17.19",
         "ts-loader": "^6.2.1",
+        "ts-node": "8.10.2",
         "typescript": "^3.7.4",
         "webpack": "^4.44.2",
         "webpack-cli": "^3.3.10"
