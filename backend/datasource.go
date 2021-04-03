@@ -265,8 +265,12 @@ func WithConsistency(consistencyStr string) Option {
 }
 
 func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, certPath string, rootPath string, caPath string, datasourceID int, opts ...Option) (bool, error) {
-	if ds.sessions[datasourceID] != nil {
 
+	if ds.sessions == nil {
+		ds.sessions = make(map[int]*gocql.Session)
+	}
+
+	if ds.sessions[datasourceID] != nil {
 		ds.session = ds.sessions[datasourceID]
 		return true, nil
 	}
