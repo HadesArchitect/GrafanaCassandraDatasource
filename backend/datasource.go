@@ -45,12 +45,18 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	if err != nil {
 		return nil, err
 	}
-
+	
 	datasourceID, err := ds.getDatasourceID(queries)
 	if err != nil {
 		return nil, err
 	}
-
+	
+	// reset connection in case "save & test" in datasource configuration
+	if queryType == "connection" && ds.sessions != nil {
+		ds.sessions[datasourceID] = nil;
+		ds.session = nil;
+	}
+	
 	options, err := ds.getRequestOptions(tsdbReq.Datasource.JsonData)
 	if err != nil {
 		return nil, err
