@@ -14,14 +14,14 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	hclog "github.com/hashicorp/go-hclog"
+	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
 )
 
 type CassandraDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
-	logger    hclog.Logger
+	logger    gflog.Logger
 	builder   *QueryBuilder
 	processor *QueryProcessor
 	session   *gocql.Session
