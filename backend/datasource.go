@@ -14,6 +14,7 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
@@ -30,6 +31,12 @@ type CassandraDatasource struct {
 type ColumnInfo struct {
 	Name string
 	Type string
+}
+
+func (ds *CassandraDatasource) QueryData(ctx context.Context, tsdbReq *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
+
+	return nil, fmt.Errorf("Unknown query type")
 }
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {

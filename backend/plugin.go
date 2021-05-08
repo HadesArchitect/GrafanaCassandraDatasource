@@ -1,28 +1,38 @@
 package main
 
 import (
-	"github.com/grafana/grafana-plugin-model/go/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/hashicorp/go-plugin"
+	//"github.com/hashicorp/go-plugin"
+	//"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 var logger = gflog.New()
 
+type Handler struct {
+	// The instance manager can help with lifecycle management
+	// of datasource instances in plugins. It's not a requirement
+	// but a best practice that we recommend that you follow.
+	im instancemgmt.InstanceManager
+}
+
+/*func newInstanceOpts(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+
+}*/
+
 func main() {
 	logger.Debug("Running Cassandra backend datasource...")
 
-	plugin.Serve(&plugin.ServeConfig{
+	//im := datasource.NewInstanceManager()
+	/*ds := Handler{
+		im: im,
+	}*/
 
-		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  1,
-			MagicCookieKey:   "grafana_plugin_type",
-			MagicCookieValue: "datasource",
+	datasource.Serve(datasource.ServeOpts{
+		QueryDataHandler: &CassandraDatasource{
+			logger: logger,
 		},
-		Plugins: map[string]plugin.Plugin{
-			"cassandra-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &CassandraDatasource{
-				logger: logger,
-			}},
-		},
-		GRPCServer: plugin.DefaultGRPCServer,
 	})
+
 }
