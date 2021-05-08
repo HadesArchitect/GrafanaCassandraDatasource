@@ -24,6 +24,7 @@ type CassandraDatasource struct {
 	logger    hclog.Logger
 	builder   *QueryBuilder
 	processor *QueryProcessor
+	sessions  map[int]*gocql.Session
 	session   *gocql.Session
 }
 
@@ -44,7 +45,18 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	if err != nil {
 		return nil, err
 	}
-
+	
+	datasourceID, err := ds.getDatasourceID(queries)
+	if err != nil {
+		return nil, err
+	}
+	
+	// reset connection in case "save & test" in datasource configuration
+	if queryType == "connection" && ds.sessions != nil {
+		ds.sessions[datasourceID] = nil;
+		ds.session = nil;
+	}
+	
 	options, err := ds.getRequestOptions(tsdbReq.Datasource.JsonData)
 	if err != nil {
 		return nil, err
@@ -58,6 +70,7 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		options["certPath"],
 		options["rootPath"],
 		options["caPath"],
+		datasourceID,
 		WithConsistency(options["consistency"]),
 	)
 	if err != nil {
@@ -216,6 +229,21 @@ func (ds *CassandraDatasource) getRequestType(queries []*simplejson.Json) (strin
 	return queryType, nil
 }
 
+func (ds *CassandraDatasource) getDatasourceID(queries []*simplejson.Json) (int, error) {
+	datasourceIDRaw, idOk := queries[0].CheckGet("datasourceId")
+	if !idOk {
+		ds.logger.Error("ID is not set")
+		return -1, errors.New("No datasource ID")
+	}
+	datasourceID, err := datasourceIDRaw.Int()
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable to get datasource ID: %s\n", err))
+		return -1, err
+	}
+	ds.logger.Debug(fmt.Sprintf("Datasource ID: %d\n", datasourceID))
+	return datasourceID, nil
+}
+
 func (ds *CassandraDatasource) getRequestOptions(jsonData string) (map[string]string, error) {
 	var options map[string]string
 	err := json.Unmarshal([]byte(jsonData), &options)
@@ -242,8 +270,14 @@ func WithConsistency(consistencyStr string) Option {
 	}
 }
 
-func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, certPath string, rootPath string, caPath string, opts ...Option) (bool, error) {
-	if ds.session != nil {
+func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, certPath string, rootPath string, caPath string, datasourceID int, opts ...Option) (bool, error) {
+
+	if ds.sessions == nil {
+		ds.sessions = make(map[int]*gocql.Session)
+	}
+
+	if ds.sessions[datasourceID] != nil {
+		ds.session = ds.sessions[datasourceID]
 		return true, nil
 	}
 	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
@@ -275,6 +309,8 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
 		return false, err
 	}
+
+	ds.sessions[datasourceID] = session
 	ds.session = session
 
 	ds.logger.Debug(fmt.Sprintf("Connection successful.\n"))
