@@ -2,14 +2,11 @@ package main
 
 import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	"github.com/hashicorp/go-hclog"
+	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/hashicorp/go-plugin"
 )
 
-var logger = hclog.New(&hclog.LoggerOptions{
-	Name:  "cassandra-backend-datasource",
-	Level: hclog.LevelFromString("DEBUG"),
-})
+var logger = gflog.New()
 
 func main() {
 	logger.Debug("Running Cassandra backend datasource...")
