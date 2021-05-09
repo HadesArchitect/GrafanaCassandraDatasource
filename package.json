@@ -1,7 +1,7 @@
 {
     "name": "grafana-cassandra-datasource",
     "main": "dist/module",
-    "version": "0.5.0",
+    "version": "1.0.0",
     "license": "MIT",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
     "scripts": {
