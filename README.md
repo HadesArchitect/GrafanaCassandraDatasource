@@ -5,7 +5,7 @@ Apache Cassandra Datasource for Grafana. This datasource is to visualise **time-
 ![Release Status](https://github.com/HadesArchitect/GrafanaCassandraDatasource/workflows/Handle%20Release/badge.svg)
  ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master) ![GitHub all releases](https://img.shields.io/github/downloads/hadesarchitect/grafanacassandradatasource/total?color=%2326c458&label=Downloads&logo=github)
 
-To see the datasource in action, please follow the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Quick-Demo) steps.
+To see the datasource in action, please follow the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Quick-Demo) steps. Documentation is available [here](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki)
 
 **Supports**:
 
@@ -27,24 +27,16 @@ You can find more detailed instructions in [the datasource wiki](https://github.
 
 ### Installation 
 
-1. Download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` or `cassandra-datasource-VERSION.tar.gz` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
-2. The plugin is yet unsigned by Grafana ([WiP #58](https://github.com/HadesArchitect/GrafanaCassandraDatasource/issues/58)) so it may require additional step to enable the plugin if you are using Grafana 7.x:
-
-    2.1. If you use a local version, enable plugin in `/etc/grafana/grafana.ini`
-    ```
-    [plugins]
-    allow_loading_unsigned_plugins = "hadesarchitect-cassandra-datasource"
-    ```
-    2.2 If you use dockerized Grafana, you need to set environment variable `GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=hadesarchitect-cassandra-datasource`.
-3. Add the Cassandra DataSource as a datasource at the datasource configuration page.
-4. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password, skip the keyspace. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
-5. Push the "Save and Test" button, if there is an error message, check the credentials and connection. 
+1. Download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
+2. Add the Cassandra DataSource as a datasource at the datasource configuration page.
+3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password, skip the keyspace. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+4. Push the "Save and Test" button, if there is an error message, check the credentials and connection. 
 
 <img src="https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png" width="500">
 
 ### Panel Setup
 
-There are **two ways** to query data from Cassandra/DSE, Query Configurator and Query Editor. Configurator is easier to use but has limited capabilities, Editor is more powerful but requires understanding of [CQL](https://cassandra.apache.org/doc/latest/cql/). 
+There are **two ways** to query data from Cassandra/DSE, **Query Configurator** and **Query Editor**. Configurator is easier to use but has limited capabilities, Editor is more powerful but requires understanding of [CQL](https://cassandra.apache.org/doc/latest/cql/). 
 
 #### Query Configurator
 
