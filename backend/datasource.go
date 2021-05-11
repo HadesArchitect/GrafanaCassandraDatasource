@@ -9,6 +9,8 @@ import (
 	// "net"
 	// "strings"
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/gocql/gocql"
 
@@ -16,6 +18,7 @@ import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
 )
@@ -27,6 +30,7 @@ type CassandraDatasource struct {
 	processor *QueryProcessor
 	sessions  map[int]*gocql.Session
 	session   *gocql.Session
+	settings  backend.DataSourceInstanceSettings
 }
 
 type ColumnInfo struct {
@@ -34,8 +38,62 @@ type ColumnInfo struct {
 	Type string
 }
 
-func (ds *CassandraDatasource) QueryData(ctx context.Context, tsdbReq *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
+func (ds *CassandraDatasource) QueryData(ctx context.Context, request *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", request))
+
+	queries, err := ds.parseJSONQueries1(request.Queries)
+	if err != nil {
+		return nil, err
+	}
+
+	/*for _, query := range queries {
+		logger.Debug(fmt.Sprintf("Queries: %+v\n", query))
+	}*/
+
+	queryType, err := ds.getRequestType(queries)
+	if err != nil {
+		return nil, err
+	}
+
+	options, err := ds.getRequestOptions1(request.PluginContext.DataSourceInstanceSettings.JSONData)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = ds.Connect(
+		request.PluginContext.DataSourceInstanceSettings.URL,
+		options["keyspace"],
+		options["user"],
+		request.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData["password"],
+		options["certPath"],
+		options["rootPath"],
+		options["caPath"],
+		WithConsistency(options["consistency"]),
+	)
+
+	if err != nil {
+
+		errResponse := backend.QueryDataResponse{
+			Responses: make(map[string]backend.DataResponse),
+		}
+
+		errResponse.Responses[tsdbReq.Queries[0].RefID] = backend.DataResponse{
+			Error: errors.New("Unable to establish connection with the database"),
+		}
+
+		return &errResponse, nil
+	}
+
+	switch queryType {
+	//case "search":
+	//	return ds.searchQuery(queries)
+	case "query":
+		return ds.metricQuery(queries /*strconv.Itoa(request.Queries[0].TimeRange.From.Unix()), strconv.Itoa(request.Quesrie[0].TimeRUnix()ange.To.)*/)
+	case "connection":
+		return &backend.QueryDataResponse{}, nil
+	default:
+		return nil, fmt.Errorf("Unknown query type '%s'", queryType)
+	}
 
 	return nil, fmt.Errorf("Unknown query type")
 }
@@ -142,6 +200,63 @@ func (ds *CassandraDatasource) metricQuery(jsonQueries []*simplejson.Json, timeF
 	return response, nil
 }
 
+func (ds *CassandraDatasource) metricQuery1(jsonQueries []*simplejson.Json, from time.Time, to time.Time) (*backend.QueryDataResponse, error) {
+	ds.logger.Debug(fmt.Sprintf("Query[0]: %v\n", jsonQueries[0]))
+
+	ds.logger.Debug(fmt.Sprintf("Timeframe from: %+v\n", from.Unix()))
+	ds.logger.Debug(fmt.Sprintf("Timeframe to: %+v\n", to.Unix()))
+
+	response := &backend.QueryDataResponse{
+		Responses: make(map[string]backend.DataResponse),
+	}
+
+	for _, query := range jsonQueries {
+
+		dataResponse := backend.DataResponse{
+
+			//RefId:  queryData.Get("RefID").MustString(),
+			//Series: make([]*datasource.TimeSeries, 0),
+		}
+
+		frame := data.NewFrame("response")
+
+		frame.Fields = append(frame.Fields,
+			data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
+		)
+
+		// add values
+		frame.Fields = append(frame.Fields,
+			data.NewField("values", nil, []int64{10, 20}),
+		)
+
+		// add the frames to the response
+		response.Frames = append(response.Frames, frame)
+
+		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", query.Get("rawQuery").MustBool()))
+		ds.logger.Debug(fmt.Sprintf("target: %s\n", query.Get("target").MustString()))
+
+		var preparedQuery string
+		if query.Get("rawQuery").MustBool() {
+			preparedQuery = ds.builder.prepareRawMetricQuery(query, strconv.FormatInt(from.Unix(), 10), strconv.FormatInt(to.Unix(), 10))
+		} else {
+			preparedQuery = ds.builder.prepareStrictMetricQuery(query, strconv.FormatInt(from.Unix(), 10), strconv.FormatInt(to.Unix(), 10))
+		}
+
+		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
+
+		if query.Get("rawQuery").MustBool() {
+			ds.processor.processRawMetricQuery(&queryResult, preparedQuery, ds)
+		} else {
+			valueID := query.Get("valueId").MustString()
+			ds.processor.processStrictMetricQuery(&queryResult, preparedQuery, valueID, ds)
+		}
+
+		response.Results = append(response.Results, &queryResult)
+	}
+
+	return response, nil
+}
+
 func (ds *CassandraDatasource) searchQuery(jsonQueries []*simplejson.Json) (*datasource.DatasourceResponse, error) {
 	keyspaceName, keyspaceOk := jsonQueries[0].CheckGet("keyspace")
 	tableName, tableOk := jsonQueries[0].CheckGet("table")
@@ -215,8 +330,30 @@ func (ds *CassandraDatasource) parseJSONQueries(rawQueries []*datasource.Query) 
 			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
 			return nil, err
 		}
+
 		queries = append(queries, json)
 	}
+
+	ds.logger.Debug(fmt.Sprintf("Parsed queries: %v\n", len(queries)))
+	return queries, nil
+}
+
+func (ds *CassandraDatasource) parseJSONQueries1(rawQueries []backend.DataQuery) ([]*simplejson.Json, error) {
+	queries := make([]*simplejson.Json, 0)
+	if len(rawQueries) < 1 {
+		ds.logger.Error("No queries to parse, unable to proceed")
+		return nil, errors.New("No queries in TSDB Request")
+	}
+	for _, query := range rawQueries {
+		json, err := simplejson.NewJson(query.JSON)
+		if err != nil {
+			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
+			return nil, err
+		}
+
+		queries = append(queries, json)
+	}
+
 	ds.logger.Debug(fmt.Sprintf("Parsed queries: %v\n", len(queries)))
 	return queries, nil
 }
@@ -254,6 +391,16 @@ func (ds *CassandraDatasource) getDatasourceID(queries []*simplejson.Json) (int,
 func (ds *CassandraDatasource) getRequestOptions(jsonData string) (map[string]string, error) {
 	var options map[string]string
 	err := json.Unmarshal([]byte(jsonData), &options)
+	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Unable to get request JSON data: %s\n", err))
+		return nil, err
+	}
+	return options, nil
+}
+
+func (ds *CassandraDatasource) getRequestOptions1(jsonData []byte) (map[string]string, error) {
+	var options map[string]string
+	err := json.Unmarshal(jsonData, &options)
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to get request JSON data: %s\n", err))
 		return nil, err
