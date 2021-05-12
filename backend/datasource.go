@@ -26,6 +26,7 @@ type CassandraDatasource struct {
 	builder   *QueryBuilder
 	processor *QueryProcessor
 	session   *gocql.Session
+	ID        int64
 }
 
 type ColumnInfo struct {
