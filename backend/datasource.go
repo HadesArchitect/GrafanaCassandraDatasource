@@ -26,7 +26,7 @@ type CassandraDatasource struct {
 	builder   *QueryBuilder
 	processor *QueryProcessor
 	session   *gocql.Session
-	ID        int64
+	settings  backend.DataSourceInstanceSettings
 }
 
 type ColumnInfo struct {
@@ -36,6 +36,17 @@ type ColumnInfo struct {
 
 func (ds *CassandraDatasource) QueryData(ctx context.Context, tsdbReq *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	ds.logger.Debug(fmt.Sprintf("TSDB Request: %+v\n", tsdbReq))
+
+	queries, err := ds.parseJSONQueries1(tsdbReq.Queries)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, query := range queries {
+		logger.Debug(fmt.Sprintf("Queries: %+v\n", query))
+	}
+
+	logger.Debug(fmt.Sprintf("Queries: %+v\n", queries))
 
 	return nil, fmt.Errorf("Unknown query type")
 }
@@ -203,8 +214,30 @@ func (ds *CassandraDatasource) parseJSONQueries(rawQueries []*datasource.Query) 
 			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
 			return nil, err
 		}
+
 		queries = append(queries, json)
 	}
+
+	ds.logger.Debug(fmt.Sprintf("Parsed queries: %v\n", len(queries)))
+	return queries, nil
+}
+
+func (ds *CassandraDatasource) parseJSONQueries1(rawQueries []backend.DataQuery) ([]*simplejson.Json, error) {
+	queries := make([]*simplejson.Json, 0)
+	if len(rawQueries) < 1 {
+		ds.logger.Error("No queries to parse, unable to proceed")
+		return nil, errors.New("No queries in TSDB Request")
+	}
+	for _, query := range rawQueries {
+		json, err := simplejson.NewJson(query.JSON)
+		if err != nil {
+			ds.logger.Error(fmt.Sprintf("Unable to parse json query: %s\n", err.Error()))
+			return nil, err
+		}
+
+		queries = append(queries, json)
+	}
+
 	ds.logger.Debug(fmt.Sprintf("Parsed queries: %v\n", len(queries)))
 	return queries, nil
 }

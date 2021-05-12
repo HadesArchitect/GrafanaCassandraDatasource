@@ -3,69 +3,54 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
 
-	//"github.com/hashicorp/go-plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 var logger = gflog.New()
 
-type DataHandler struct {
-	// The instance manager can help with lifecycle management
-	// of datasource instances in plugins. It's not a requirement
-	// but a best practice that we recommend that you follow.
+type QueryHandler struct {
 	im instancemgmt.InstanceManager
 }
 
-func (Handler DataHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	datasource := mainInstance.datasources[req.PluginContext.DataSourceInstanceSettings.ID]
-	if datasource == nil {
-		return nil, errors.New("No datasource with such ID")
-	}
+func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	logger.Debug(fmt.Sprintf("Created datasource, ID: %d\n", settings.ID))
 
-	return datasource.QueryData(ctx, req), nil
+	return CassandraDatasource{
+		logger:   logger,
+		settings: settings,
+	}, nil
 }
 
-/*func newInstanceOpts(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func (handler QueryHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	instance, err := handler.im.Get(req.PluginContext)
 
-}*/
+	logger.Debug(fmt.Sprintf("Handle request: %+v\n", req))
 
-var mainInstance Plugin
-
-func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	if mainInstance.datasources == nil {
-		mainInstance.datasources = make(map[int64]*CassandraDatasource)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Can not found datasource instance with ID: %d\n"))
 	}
 
-	datasource := CassandraDatasource{
-		ID:     settings.ID,
-		logger: logger,
+	datasource, ok := instance.(CassandraDatasource)
+
+	if !ok {
+		return nil, errors.New("Can not convert datasource instance to Cassandra Datasource")
 	}
 
-	mainInstance.datasources[settings.ID] = &datasource
-
-	return datasource, nil
+	return datasource.QueryData(ctx, req)
 }
 
 func main() {
 	logger.Debug("Running Cassandra backend datasource...")
 
-	//im := datasource.NewInstanceManager()
-	/*ds := Handler{
-		im: im,
-	}*/
 	datasource.Serve(datasource.ServeOpts{
-		QueryDataHandler: &DataHandler{
+		QueryDataHandler: &QueryHandler{
 			im: datasource.NewInstanceManager(newDataSource),
 		},
 	})
-
-}
-
-type Plugin struct {
-	datasources map[int64]*CassandraDatasource
 }
