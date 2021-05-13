@@ -18,7 +18,6 @@ import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	plugin "github.com/hashicorp/go-plugin"
 	"golang.org/x/net/context"
 )
@@ -68,6 +67,7 @@ func (ds *CassandraDatasource) QueryData(ctx context.Context, request *backend.Q
 		options["certPath"],
 		options["rootPath"],
 		options["caPath"],
+		int(request.PluginContext.DataSourceInstanceSettings.ID),
 		WithConsistency(options["consistency"]),
 	)
 
@@ -77,7 +77,7 @@ func (ds *CassandraDatasource) QueryData(ctx context.Context, request *backend.Q
 			Responses: make(map[string]backend.DataResponse),
 		}
 
-		errResponse.Responses[tsdbReq.Queries[0].RefID] = backend.DataResponse{
+		errResponse.Responses[request.Queries[0].RefID] = backend.DataResponse{
 			Error: errors.New("Unable to establish connection with the database"),
 		}
 
@@ -88,7 +88,7 @@ func (ds *CassandraDatasource) QueryData(ctx context.Context, request *backend.Q
 	//case "search":
 	//	return ds.searchQuery(queries)
 	case "query":
-		return ds.metricQuery(queries /*strconv.Itoa(request.Queries[0].TimeRange.From.Unix()), strconv.Itoa(request.Quesrie[0].TimeRUnix()ange.To.)*/)
+		return ds.metricQuery1(queries, request.Queries[0].TimeRange.From, request.Queries[0].TimeRange.To)
 	case "connection":
 		return &backend.QueryDataResponse{}, nil
 	default:
@@ -212,26 +212,6 @@ func (ds *CassandraDatasource) metricQuery1(jsonQueries []*simplejson.Json, from
 
 	for _, query := range jsonQueries {
 
-		dataResponse := backend.DataResponse{
-
-			//RefId:  queryData.Get("RefID").MustString(),
-			//Series: make([]*datasource.TimeSeries, 0),
-		}
-
-		frame := data.NewFrame("response")
-
-		frame.Fields = append(frame.Fields,
-			data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
-		)
-
-		// add values
-		frame.Fields = append(frame.Fields,
-			data.NewField("values", nil, []int64{10, 20}),
-		)
-
-		// add the frames to the response
-		response.Frames = append(response.Frames, frame)
-
 		ds.logger.Debug(fmt.Sprintf("rawQuery: %v\n", query.Get("rawQuery").MustBool()))
 		ds.logger.Debug(fmt.Sprintf("target: %s\n", query.Get("target").MustString()))
 
@@ -244,16 +224,19 @@ func (ds *CassandraDatasource) metricQuery1(jsonQueries []*simplejson.Json, from
 
 		ds.logger.Debug(fmt.Sprintf("Executing CQL query: '%s' ...\n", preparedQuery))
 
+		dataResponse := backend.DataResponse{}
 		if query.Get("rawQuery").MustBool() {
-			ds.processor.processRawMetricQuery(&queryResult, preparedQuery, ds)
-		} else {
+			ds.processor.processRawMetricQuery1(&dataResponse, preparedQuery, ds)
+		}/* else {
 			valueID := query.Get("valueId").MustString()
 			ds.processor.processStrictMetricQuery(&queryResult, preparedQuery, valueID, ds)
-		}
+		}*/
 
-		response.Results = append(response.Results, &queryResult)
+		response.Responses[query.Get("RefID").MustString()] = dataResponse
+		//response.Results = append(response.Results, &queryResult)
+		ds.logger.Debug("6666666666666666666666666666666666666666666")
 	}
-
+	ds.logger.Debug("777777777777777777777777777777777777777777")
 	return response, nil
 }
 
