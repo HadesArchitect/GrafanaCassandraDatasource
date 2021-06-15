@@ -11,7 +11,8 @@ export interface TSDBQuery {
     refId?: string;
     filtering?: boolean;
     keyspace?: string;
-    table?: string;
+    table?: string,
+    type?: TSDBDataType;
     columnTime?: string;
     columnValue?: string;
     columnId?: string;
@@ -21,7 +22,8 @@ export interface TSDBQuery {
 }
   
 type TSDBQueryType = 'query' | 'search' | 'connection';
-  
+type TSDBDataType = 'timeserie' | 'table';
+
 export interface TSDBRequestOptions {
     range?: {
       from: any;
