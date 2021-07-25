@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 type QueryProcessor struct{}
@@ -61,7 +61,7 @@ func (qp *QueryProcessor) processRawMetricQuery1(result *backend.DataResponse, q
 		}
 
 		series[id].Points = append(series[id].Points, &datasource.Point{
-			Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+			Timestamp: timestamp.UnixNano(),
 			Value:     value,
 		})
 	}
@@ -72,32 +72,27 @@ func (qp *QueryProcessor) processRawMetricQuery1(result *backend.DataResponse, q
 
 		return
 	}
-	logger.Debug("111111111111111111111111111111111111111111111")
+
 	frames := make([]*data.Frame, len(series))
 	i := 0
 	for _, serie := range series {
-		logger.Debug("2222222222222222222222222222222222222")
+
 		frame := data.NewFrame(serie.Name,
 			data.NewField("time", nil, make([]time.Time, len(serie.Points))),
 			data.NewField(serie.Name, serie.Tags, make([]float64, len(serie.Points))),
 		)
-		
+
 		for pIdx, point := range serie.Points {
-			frame.Set(0, pIdx, time.Unix(point.Timestamp, 0))
+			frame.Set(0, pIdx, time.Unix(0, point.Timestamp))
 			frame.Set(1, pIdx, point.Value)
+			//frame.RefID = "A"
 		}
-		logger.Debug("333333333333333333333333333333333333333333")
+
 		frames[i] = frame
 		i = i + 1
 	}
-	logger.Debug("44444444444444444444444444444444444444444444")
 
 	result.Frames = frames
-	logger.Debug("555555555555555555555555555555555555555555555")
-
-	/*for _, serie2 := range series {
-		result.Series = append(result.Series, serie2)
-	}*/
 }
 
 func (qp *QueryProcessor) processStrictMetricQuery(result *datasource.QueryResult, query string, valueId string, ds *CassandraDatasource) {

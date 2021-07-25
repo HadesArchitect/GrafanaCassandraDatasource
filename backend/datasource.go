@@ -110,18 +110,18 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 	if err != nil {
 		return nil, err
 	}
-	
+
 	datasourceID, err := ds.getDatasourceID(queries)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// reset connection in case "save & test" in datasource configuration
 	if queryType == "connection" && ds.sessions != nil {
-		ds.sessions[datasourceID] = nil;
-		ds.session = nil;
+		ds.sessions[datasourceID] = nil
+		ds.session = nil
 	}
-	
+
 	options, err := ds.getRequestOptions(tsdbReq.Datasource.JsonData)
 	if err != nil {
 		return nil, err
@@ -227,16 +227,23 @@ func (ds *CassandraDatasource) metricQuery1(jsonQueries []*simplejson.Json, from
 		dataResponse := backend.DataResponse{}
 		if query.Get("rawQuery").MustBool() {
 			ds.processor.processRawMetricQuery1(&dataResponse, preparedQuery, ds)
-		}/* else {
+		} /* else {
 			valueID := query.Get("valueId").MustString()
 			ds.processor.processStrictMetricQuery(&queryResult, preparedQuery, valueID, ds)
 		}*/
 
-		response.Responses[query.Get("RefID").MustString()] = dataResponse
+		ds.logger.Debug("%v", dataResponse)
+
+		response.Responses[query.Get("refId").MustString()] = dataResponse
+
+		ds.logger.Debug("%v", response)
+		ds.logger.Debug("%v", dataResponse.Frames)
+		for _, frame := range dataResponse.Frames {
+			ds.logger.Debug("%v", frame)
+		}
 		//response.Results = append(response.Results, &queryResult)
-		ds.logger.Debug("6666666666666666666666666666666666666666666")
 	}
-	ds.logger.Debug("777777777777777777777777777777777777777777")
+
 	return response, nil
 }
 

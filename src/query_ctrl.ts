@@ -15,7 +15,7 @@ export class CassandraQueryCtrl extends QueryCtrl {
 
     this.scope = $scope;
     this.target.target = this.target.target || 'select timestamp, value from keyspace.table where id=123e4567;';
-    this.target.type = this.target.type || 'timeserie';
+    //this.target.type = this.target.type || 'timeserie';
     this.target.columnTime = this.target.columnTime || ' ';
     this.target.columnValue = this.target.columnValue || ' ';
     this.target.columnId = this.target.columnId || ' ';

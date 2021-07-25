@@ -1,5 +1,6 @@
 import _ from "lodash";
 import {TSDBRequest, TSDBQuery, TSDBRequestOptions, TableMetadata} from './models';
+//import { DataFrame } from '@grafana/data';
 
 export class CassandraDatasource {
   name: string;
@@ -108,6 +109,7 @@ export class CassandraDatasource {
       return target.target !== 'select metric';
     });
 
+    console.log(options.targets);
     const targets = _.map(options.targets, target => {
       return {
         queryType: 'query',
@@ -115,7 +117,7 @@ export class CassandraDatasource {
         refId: target.refId,
         hide: target.hide,
         rawQuery: target.rawQuery,
-        type: target.type || 'timeserie',
+        //type: target.type || 'timeserie',
         datasourceId: this.id,
         filtering: target.filtering,
         keyspace: target.keyspace,
@@ -128,24 +130,59 @@ export class CassandraDatasource {
     });
 
     options.targets = targets;
-
+    console.log(options.targets);
     return options;
   }
 }
 
 export function handleTsdbResponse(response) {
+
+  console.log(response);
+  console.log("data");
+  console.log(response.data);
+  console.log("responses");
+  console.log(response.data.responses);
+  console.log("results");
+  console.log(response.data.results);
+
   const res : object[] = [];
-  _.forEach(response.data.results, r => {
-    _.forEach(r.series, s => {
+  //_.forEach(response.data.results, r => {
+
+  for(var key in response.data.results) {
+    response.data.results[key].refId = key;
+    //res.push(response.data.results[key]);
+    console.log(response.data.results[key]);
+
+    response.data.results[key].dataframes.forEach(value  => {
+      console.log(value);
+      //value.refId = key;
+      res.push(value);
+    });
+  }
+
+    /*var frames = new Map<string, DataFrame>(JSON.parse(response.data));
+    console.log(frames);
+    frames.forEach((value: DataFrame, key: string, frames) => {
+      console.log("value");
+      console.log(value);
+      console.log("key");
+      console.log(key);
+      value.refId = key;
+      res.push(value);
+    });*/
+    
+    /*_.forEach(r.series, s => {
       res.push({target: s.name, datapoints: s.points});
     });
     _.forEach(r.tables, t => {
       t.type = 'table';
       t.refId = r.refId;
       res.push(t);
-    });
-  });
+    });*/
+  //});
   response.data = res;
+
+  console.log(response);
 
   return response;
 }

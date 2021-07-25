@@ -33,7 +33,7 @@ func (handler QueryHandler) QueryData(ctx context.Context, req *backend.QueryDat
 	logger.Debug(fmt.Sprintf("Handle request: %+v\n", req))
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Can not found datasource instance with ID: %d\n"))
+		return nil, errors.New(fmt.Sprintf("Can not found datasource instance with ID: %d\n", backend.QueryDataRequest.DataSourceInstanceSettings.ID))
 	}
 
 	datasource, ok := instance.(CassandraDatasource)
@@ -42,7 +42,9 @@ func (handler QueryHandler) QueryData(ctx context.Context, req *backend.QueryDat
 		return nil, errors.New("Can not convert datasource instance to Cassandra Datasource")
 	}
 
-	return datasource.QueryData(ctx, req)
+	response, error := datasource.QueryData(ctx, req)
+
+	return response, error
 }
 
 func main() {
