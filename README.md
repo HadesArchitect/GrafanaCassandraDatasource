@@ -9,7 +9,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 
 **Supports**:
 
-* Grafana 5.x, 6.x, 7.x (4.x not tested)
+* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x not supported yet)
 * Cassandra 3.x (4.x experimental, 2.x not tested)
 * DataStax Enterprise 6.x
 * DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/DataStax-Astra))
