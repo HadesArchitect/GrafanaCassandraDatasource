@@ -33,7 +33,7 @@ func (handler QueryHandler) QueryData(ctx context.Context, req *backend.QueryDat
 	logger.Debug(fmt.Sprintf("Handle request: %+v\n", req))
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Can not found datasource instance with ID: %d\n", backend.QueryDataRequest.DataSourceInstanceSettings.ID))
+		return nil, errors.New(fmt.Sprintf("Can not found datasource instance with ID: %d\n", req.PluginContext.DataSourceInstanceSettings.ID))
 	}
 
 	datasource, ok := instance.(CassandraDatasource)

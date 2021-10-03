@@ -1,14 +1,15 @@
+import { DataQuery } from '@grafana/data';
+
+
 export interface TSDBRequest {
-    queries: TSDBQuery[];
+    queries: CassandraQuery[];
     from?: string;
     to?: string;
 }
   
-export interface TSDBQuery {
-    datasourceId: string;
+export interface CassandraQuery extends DataQuery {
     target?: any;
-    queryType: TSDBQueryType;
-    refId?: string;
+    queryType: CassandraQueryType;
     filtering?: boolean;
     keyspace?: string;
     table?: string;
@@ -20,14 +21,14 @@ export interface TSDBQuery {
     rawQuery?: boolean;
 }
   
-type TSDBQueryType = 'query' | 'search' | 'connection';
+type CassandraQueryType = 'query' | 'search' | 'connection';
   
 export interface TSDBRequestOptions {
     range?: {
       from: any;
       to: any;
     };
-    targets: TSDBQuery[];
+    targets: CassandraQuery[];
 }
 
 export class TableMetadata {

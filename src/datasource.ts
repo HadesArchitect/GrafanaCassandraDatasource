@@ -1,27 +1,28 @@
 import _ from "lodash";
-import {TSDBRequest, TSDBQuery, TSDBRequestOptions, TableMetadata} from './models';
+import { DataSourceWithBackend } from '@grafana/runtime';
+import { 
+  DataSourceJsonData
+} from '@grafana/data';
+import {TSDBRequest, CassandraQuery, TSDBRequestOptions/*TableMetadata*/} from './models';
 //import { DataFrame } from '@grafana/data';
 
-export class CassandraDatasource {
-  name: string;
-  type: string;
-  id: string;
-  url: string;
+export interface CassandraDataSourceOptions extends DataSourceJsonData {
   keyspace: string;
+  consistency: string;
   user: string;
-  withCredentials: boolean;
-  instanceSettings: any;
+  certPath: string;
+  rootPath: string;
+  caPath: string;
+}
+
+export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
+  keyspace: string;
   headers: any;
 
   /** @ngInject */
   constructor(instanceSettings, private backendSrv, private templateSrv) {
-    this.type = instanceSettings.type;
-    this.url = instanceSettings.url;
+    super(instanceSettings);
     this.keyspace = instanceSettings.jsonData.keyspace;
-    this.user = instanceSettings.jsonData.user;
-    this.name = instanceSettings.name;
-    this.id = instanceSettings.id;
-    this.withCredentials = instanceSettings.withCredentials;
     this.headers = {'Content-Type': 'application/json'};
     if (typeof instanceSettings.basicAuth === 'string' && instanceSettings.basicAuth.length > 0) {
       this.headers['Authorization'] = instanceSettings.basicAuth;
@@ -39,7 +40,7 @@ export class CassandraDatasource {
     return this.doTsdbRequest(query).then(handleTsdbResponse);
   }
 
-  testDatasource(): {} {
+  async testDatasource(): Promise<any> {
     return this.backendSrv
       .datasourceRequest({
         url: '/api/tsdb/query',
@@ -47,7 +48,7 @@ export class CassandraDatasource {
         data: {
           from: '5m',
           to: 'now',
-          queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }]
+          queries: [{ queryType: 'connection', keyspace: this.keyspace }]
         },
       })
       .then(() => {
@@ -58,7 +59,7 @@ export class CassandraDatasource {
       });
   }
 
-  metricFindQuery(keyspace: string, table: string): TableMetadata {
+  /*metricFindQuery(keyspace: string, table: string): TableMetadata {
     const interpolated: TSDBQuery = {
       datasourceId: this.id,
       queryType: "search",
@@ -77,10 +78,9 @@ export class CassandraDatasource {
       console.log(error);
       return new TableMetadata();
     });
-  }
+  }*/
 
   doRequest(options) {
-    options.withCredentials = this.withCredentials;
     options.headers = this.headers;
 
     return this.backendSrv.datasourceRequest(options);
@@ -118,7 +118,6 @@ export class CassandraDatasource {
         hide: target.hide,
         rawQuery: target.rawQuery,
         //type: target.type || 'timeserie',
-        datasourceId: this.id,
         filtering: target.filtering,
         keyspace: target.keyspace,
         table: target.table,

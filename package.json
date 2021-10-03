@@ -11,9 +11,14 @@
         "watch": "grafana-toolkit plugin:dev --watch",
         "sign": "grafana-toolkit plugin:sign --signatureType community"
     },
-    "dependencies": {},
+    "dependencies": {
+        "@testing-library/react": "^12.1.2"
+    },
     "devDependencies": {
-        "@grafana/toolkit": "^7.3.6",
+        "@grafana/data": "next",
+        "@grafana/runtime": "next",
+        "@grafana/toolkit": "next",
+        "@grafana/ui": "^8.1.4",
         "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
         "@types/lodash": "^4.14.149",
         "@typescript-eslint/eslint-plugin": "^2.15.0",
@@ -24,7 +29,7 @@
         "loader-utils": "^1.2.0",
         "lodash": "^4.17.21",
         "ts-loader": "^6.2.1",
-        "typescript": "^3.7.4",
+        "typescript": "^4.4.3",
         "webpack": "^4.44.2",
         "webpack-cli": "^3.3.10"
     }
