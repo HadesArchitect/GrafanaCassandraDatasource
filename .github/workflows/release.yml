@@ -23,6 +23,8 @@ jobs:
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=windows -e GOARCH=amd64 golang:1 go build -o ../dist/cassandra-plugin_windows_amd64.exe .
       - name: go build darwin
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=darwin -e GOARCH=amd64 golang:1 go build -o ../dist/cassandra-plugin_darwin_amd64 .
+      - name: go build arm64 (m1)
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=linux -e GOARCH=arm64 golang:1 go build -o ../dist/cassandra-plugin_linux_arm64 .
       - name: sign the build
         run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} node:12 npm run-script sign
       - name: Package plugin
