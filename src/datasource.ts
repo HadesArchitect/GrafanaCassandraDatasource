@@ -1,8 +1,7 @@
 import _ from "lodash";
 import { DataSourceWithBackend } from '@grafana/runtime';
-import { 
-  DataSourceJsonData
-} from '@grafana/data';
+import { DataSourcePluginMeta } from '@grafana/data'
+import { DataSourceJsonData} from '@grafana/data';
 import {TSDBRequest, CassandraQuery, TSDBRequestOptions/*TableMetadata*/} from './models';
 //import { DataFrame } from '@grafana/data';
 
@@ -18,6 +17,9 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
   keyspace: string;
   headers: any;
+  name: string;
+  id: number;
+  meta: DataSourcePluginMeta;
 
   /** @ngInject */
   constructor(instanceSettings, private backendSrv, private templateSrv) {

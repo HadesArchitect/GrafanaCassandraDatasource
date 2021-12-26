@@ -6,7 +6,7 @@ import { CassandraDataSourceOptions } from './datasource';
 
 const { SecretFormField, FormField } = LegacyForms;
 
-interface Props extends DataSourcePluginOptionsEditorProps<CassandraDataSourceOptions> {}
+interface Props extends DataSourcePluginOptionsEditorProps<CassandraDataSourceOptions, {}> {}
 
 interface State {}
 
@@ -71,7 +71,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <SecretFormField
               isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
               value={secureJsonData.apiKey || ''}
-              label="API Key"
+              label="API ololo Key"
               placeholder="secure json field (backend only)"
               labelWidth={6}
               inputWidth={20}
