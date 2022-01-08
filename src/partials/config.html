@@ -1,20 +1,22 @@
-<h3 class="page-heading">Cassandra Connection</h3>
+<h3 class="page-heading">Connection Settings</h3>
 
 <div class="gf-form-group">
 	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-7">Host</span>
-		<input type="text" class="gf-form-input" ng-model='ctrl.current.url' placeholder="cassandra:9042" required></input>
+		<span class="gf-form-label width-8">Host</span>
+		<input type="text" class="gf-form-input max-width-22" ng-model='ctrl.current.url' placeholder="cassandra:9042" required></input>
+		<info-popover mode="right-absolute">
+			Specify host and port like `host:9042`
+		</info-popover>
 	</div>
 
 	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-7">Keyspace</span>
-		<input type="text" class="gf-form-input" ng-model='ctrl.current.jsonData.keyspace' placeholder="keyspace name" required></input>
+		<span class="gf-form-label width-8">Keyspace</span>
+		<input type="text" class="gf-form-input max-width-22" ng-model='ctrl.current.jsonData.keyspace' placeholder="keyspace name" required></input>
 	</div>
 
 	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-7">Consistency</span>
-		<select class="gf-form-select-wrapper" ng-model='ctrl.current.jsonData.consistency' placeholder="consistency" required>
-			<option value="ANY">ANY</option>
+		<span class="gf-form-label width-8">Consistency</span>
+		<select class="gf-form-select-wrapper max-width-22" ng-model='ctrl.current.jsonData.consistency' placeholder="consistency" required>
 			<option value="ONE">ONE</option>
 			<option value="TWO">TWO</option>
 			<option value="THREE">THREE</option>
@@ -26,32 +28,50 @@
 		</select>
 	</div>
 
-	<div class="gf-form-inline">
-		<div class="gf-form max-width-15">
-			<span class="gf-form-label width-7">User</span>
-			<input type="text" class="gf-form-input" ng-model='ctrl.current.jsonData.user' placeholder="user"></input>
-		</div>
+	<div class="gf-form max-width-30">
+		<span class="gf-form-label width-8">Credentials</span>
 		<div class="gf-form">
-			<input type="password" class="gf-form-input" ng-model='ctrl.current.secureJsonData.password' placeholder="password"></input>
-			<!-- <secret-form-field
-				isConfigured="ctrl.current.secureJsonFields.password"
-				value="ctrl.current.secureJsonData.password"
-				on-reset="ctrl.onPasswordReset"
-				on-change="ctrl.onPasswordChange"
-				inputWidth="9"
-			/> -->
+			<input type="text" class="gf-form-input max-width-11" ng-model='ctrl.current.jsonData.user' placeholder="user"></input>
+			<info-popover mode="right-absolute">
+				We strongly recommend to create a custom Cassandra user with strictly read-only permissions!
+			</info-popover>
 		</div>
+		<input type="password" class="gf-form-input max-width-11" ng-model='ctrl.current.secureJsonData.password' placeholder="password"></input>
+	</div>
+
+	<div class="gf-form max-width-30">
+		<span class="gf-form-label width-8">Timeout</span>
+		<input type="text" class="gf-form-input max-width-22" ng-model='ctrl.current.jsonData.timeout' placeholder="" data-placement="right" required></input>
+		<info-popover mode="right-absolute">
+			Timeout in seconds. Keep empty for the default value.
+		</info-popover>
+	</div>
+</div>	
+
+<h3 class="page-heading">TLS Settings</h3>
+
+<gf-form-switch class="gf-form"
+				ng-model='ctrl.current.jsonData.useCustomTLS'
+				label="Custom TLS settings" tooltip="Enable if you need custom TLS configuration (usually required using AstraDB, AWS Keyspaces etc.)"
+				checked="ctrl.current.jsonData.useCustomTLS" label-class="width-15" switch-class="max-width-5">
+</gf-form-switch>
+
+<div class="gf-form-group" ng-if="ctrl.current.jsonData.useCustomTLS">
+	<gf-form-switch class="gf-form max-width-30"
+					ng-model='ctrl.current.jsonData.allowInsecureTLS'
+					label="Allow self-signed certificates" tooltip="Enable if you use self-signed certificates"
+					checked="ctrl.current.jsonData.allowInsecureTLS" label-class="width-15" switch-class="max-width-5">
+	</gf-form-switch>
+	<div class="gf-form max-width-30">
+		<span class="gf-form-label width-10">Certificate path</span>
+		<input type="text" class="gf-form-input max-width-20" ng-model='ctrl.current.jsonData.certPath'></input>
 	</div>
 	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-8">Certificate Path</span>
-		<input type="text" class="gf-form-input" ng-model='ctrl.current.jsonData.certPath'></input>
+		<span class="gf-form-label width-10">Root certificate path</span>
+		<input type="text" class="gf-form-input max-width-20" ng-model='ctrl.current.jsonData.rootPath'></input>
 	</div>
 	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-8">Root Certificate Path</span>
-		<input type="text" class="gf-form-input" ng-model='ctrl.current.jsonData.rootPath'></input>
-	</div>
-	<div class="gf-form max-width-30">
-		<span class="gf-form-label width-9">RootCA Certificate Path</span>
-		<input type="text" class="gf-form-input" ng-model='ctrl.current.jsonData.caPath'></input>
+		<span class="gf-form-label width-10">RootCA certificate path</span>
+		<input type="text" class="gf-form-input max-width-20" ng-model='ctrl.current.jsonData.caPath'></input>
 	</div>
 </div>

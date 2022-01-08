@@ -9,8 +9,8 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 
 **Supports**:
 
-* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x not supported yet)
-* Cassandra 3.x (4.x experimental, 2.x not tested)
+* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x WiP not supported yet)
+* Cassandra 3.x, 4.x (2.x not tested)
 * DataStax Enterprise 6.x
 * DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/DataStax-Astra))
 * AWS Keyspaces (limited support)  ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/AWS-Keyspaces))
@@ -33,6 +33,8 @@ You can find more detailed instructions in [the datasource wiki](https://github.
 4. Push the "Save and Test" button, if there is an error message, check the credentials and connection. 
 
 <img src="https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png" width="500">
+
+![](https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png?v=4&w=450)
 
 ### Panel Setup
 
