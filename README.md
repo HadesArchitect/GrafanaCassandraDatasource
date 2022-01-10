@@ -9,8 +9,8 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 
 **Supports**:
 
-* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x not supported yet)
-* Cassandra 3.x (4.x experimental, 2.x not tested)
+* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x WiP not supported yet)
+* Cassandra 3.x, 4.x (2.x not tested)
 * DataStax Enterprise 6.x
 * DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/DataStax-Astra))
 * AWS Keyspaces (limited support)  ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/AWS-Keyspaces))
@@ -29,10 +29,10 @@ You can find more detailed instructions in [the datasource wiki](https://github.
 
 1. Download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
 2. Add the Cassandra DataSource as a datasource at the datasource configuration page.
-3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password, skip the keyspace. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
 4. Push the "Save and Test" button, if there is an error message, check the credentials and connection. 
 
-<img src="https://user-images.githubusercontent.com/1742301/103153542-8a3cc300-4791-11eb-9479-4a2e3ec94463.png" width="500">
+![Datasource Configuration](https://user-images.githubusercontent.com/1742301/148654400-3ac4a477-8ca3-4606-86e7-5d10cbdc4ea9.png)
 
 ### Panel Setup
 
@@ -40,7 +40,7 @@ There are **two ways** to query data from Cassandra/DSE, **Query Configurator** 
 
 #### Query Configurator
 
-<img src="https://user-images.githubusercontent.com/1742301/103153577-d12ab880-4791-11eb-9a6b-50c86423134d.png" width="500">
+![Query Configurator](https://user-images.githubusercontent.com/1742301/148654262-b9cb7253-4086-4367-8aae-35ea458fcbb6.png)
 
 Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically.
 
@@ -82,7 +82,7 @@ In case of a few origins (multiple sensors) you will need to add more rows. If y
 
 Query Editor is more powerful way to query data. To enable query editor, press "toggle text edit mode" button.
 
-<img src="https://user-images.githubusercontent.com/1742301/102781863-a8bd4b80-4398-11eb-8c28-4d06a1f29279.png" width="300">
+![102781863-a8bd4b80-4398-11eb-8c28-4d06a1f29279](https://user-images.githubusercontent.com/1742301/148654475-6718f3ff-1290-4d7a-a40b-dc107c52ac15.png)
 
 Query Editor unlocks all possibilities of CQL including Used-Defined Functions, aggregations etc. 
 
@@ -100,7 +100,7 @@ All other properties will be ignored
 
 2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel. **Notice** It's important to add the placeholders otherwise query will try to fetch data for the whole period of time. Don't try to specify the timeframe on your own, just put the placeholders. It's grafana's job to specify time limits.
 
-<img src="https://user-images.githubusercontent.com/1742301/103153625-1fd85280-4792-11eb-9c00-085297802117.png" width="500">
+![103153625-1fd85280-4792-11eb-9c00-085297802117](https://user-images.githubusercontent.com/1742301/148654522-8e50617d-0ba9-4c5a-a3f0-7badec92e31f.png)
 
 ## Development
 

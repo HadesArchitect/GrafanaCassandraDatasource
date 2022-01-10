@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-func PrepareTLSCfg(certPath string, rootPath string, caPath string) (*tls.Config, error) {
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+func PrepareTLSCfg(certPath string, rootPath string, caPath string, allowInsecureTLS bool) (*tls.Config, error) {
+	tlsConfig := &tls.Config{InsecureSkipVerify: allowInsecureTLS}
 	if certPath != "" && rootPath != "" {
 		cert, err := filepath.Abs(certPath)
 		if err != nil {

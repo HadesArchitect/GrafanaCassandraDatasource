@@ -1,17 +1,11 @@
 package main
 
 import (
-	// "crypto/tls"
 	"encoding/json"
 	"fmt"
-
-	// "io/ioutil"
-	// "net"
-	// "strings"
 	"errors"
-
+	"time"
 	"github.com/gocql/gocql"
-
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
@@ -31,6 +25,19 @@ type CassandraDatasource struct {
 type ColumnInfo struct {
 	Name string
 	Type string
+}
+
+type RequestOptions struct {
+	Keyspace string `json:"keyspace"`
+	User string `json:"user"`
+	Password string `json:"password"`
+	Consistency string `json:"consistency"`
+	CertPath string `json:"certPath"`
+	RootPath string `json:"rootPath"`
+	CaPath string `json:"caPath"`
+	Timeout *int `json:"timeout"`
+	UseCustomTLS bool `json:"UseCustomTLS"`
+	AllowInsecureTLS bool `json:"allowInsecureTLS"`
 }
 
 func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -64,14 +71,10 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 
 	_, err = ds.Connect(
 		tsdbReq.Datasource.Url,
-		options["keyspace"],
-		options["user"],
+		options,
 		tsdbReq.Datasource.DecryptedSecureJsonData["password"],
-		options["certPath"],
-		options["rootPath"],
-		options["caPath"],
 		datasourceID,
-		WithConsistency(options["consistency"]),
+		WithConsistency(options.Consistency),
 	)
 	if err != nil {
 		return &datasource.DatasourceResponse{
@@ -244,12 +247,12 @@ func (ds *CassandraDatasource) getDatasourceID(queries []*simplejson.Json) (int,
 	return datasourceID, nil
 }
 
-func (ds *CassandraDatasource) getRequestOptions(jsonData string) (map[string]string, error) {
-	var options map[string]string
+func (ds *CassandraDatasource) getRequestOptions(jsonData string) (RequestOptions, error) {
+	var options RequestOptions
 	err := json.Unmarshal([]byte(jsonData), &options)
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to get request JSON data: %s\n", err))
-		return nil, err
+		return options, err
 	}
 	return options, nil
 }
@@ -270,8 +273,7 @@ func WithConsistency(consistencyStr string) Option {
 	}
 }
 
-func (ds *CassandraDatasource) Connect(host, keyspace, username, password string, certPath string, rootPath string, caPath string, datasourceID int, opts ...Option) (bool, error) {
-
+func (ds *CassandraDatasource) Connect(host string, options RequestOptions, password string, datasourceID int, opts ...Option) (bool, error) {
 	if ds.sessions == nil {
 		ds.sessions = make(map[int]*gocql.Session)
 	}
@@ -282,23 +284,27 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 	}
 	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
 	cluster := gocql.NewCluster(host)
+	if options.Timeout != nil {
+		cluster.Timeout = time.Duration(*options.Timeout) * time.Second
+		ds.logger.Debug(fmt.Sprintf("Connection timeout set to %d seconds\n", *options.Timeout))
+	}
 	for _, opt := range opts {
 		if err := opt(cluster); err != nil {
 			ds.logger.Error(fmt.Sprintf("Failed to apply option: %s\n", err.Error()))
 			return false, err
 		}
 	}
-	cluster.Keyspace = keyspace
+	cluster.Keyspace = options.Keyspace
 	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: username,
+		Username: options.User,
 		Password: password,
 	}
 	cluster.DisableInitialHostLookup = true // AWS Specific Required
-	enableTLS := (certPath != "" && rootPath != "") || caPath != ""
-	if enableTLS {
-		tlsConfig, err := PrepareTLSCfg(certPath, rootPath, caPath)
+	if options.UseCustomTLS {
+		ds.logger.Debug("Setting TLS Configuration...")
+		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
 		if err != nil {
-			ds.logger.Error(fmt.Sprintf("Unable create tls config, %s\n", err.Error()))
+			ds.logger.Error(fmt.Sprintf("Unable to create TLS config, %s\n", err.Error()))
 			return false, err
 		}
 		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
