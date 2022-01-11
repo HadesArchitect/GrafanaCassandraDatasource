@@ -19,7 +19,7 @@ module.exports = {
   },
   externals: [
     'jquery', 'lodash', 'moment', 'react', 'angular',
-    function(context, request, callback) {
+    function({context, request}, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
         return callback(null, request.substr(prefix.length));
@@ -28,13 +28,14 @@ module.exports = {
     }
   ],
   plugins: [
-    new webpack.optimize.OccurrenceOrderPlugin(),
-    new CopyWebpackPlugin([
-      { from: 'plugin.json' },
-      { from: '../README.md' },
-      { from: 'img/', to: 'img/' },
-      { from: 'partials/', to: 'partials/' },
-    ]),
+    new CopyWebpackPlugin({ 
+      patterns: [
+        { from: 'plugin.json' },
+        { from: '../README.md' },
+        { from: 'img/', to: 'img/' },
+        { from: 'partials/', to: 'partials/' }
+      ]
+    }),
     new CleanWebpackPlugin({cleanOnceBeforeBuildPatterns: ['**/*', '!cassandra-plugin_*']})
   ],
   resolve: {
@@ -44,7 +45,7 @@ module.exports = {
     rules: [
       {
         test: /\.tsx?$/, 
-        loaders: ["ts-loader"], 
+        loader: "ts-loader",
         exclude: /node_modules/,
       },
       {
