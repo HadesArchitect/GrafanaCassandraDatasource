@@ -1,8 +1,7 @@
-import _ from "lodash";
-import { DataSourceWithBackend } from '@grafana/runtime';
-import { DataSourcePluginMeta } from '@grafana/data'
-import { DataSourceJsonData} from '@grafana/data';
-import {TSDBRequest, CassandraQuery, TSDBRequestOptions/*TableMetadata*/} from './models';
+import _ from 'lodash';
+import { DataSourceWithBackend, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { DataSourcePluginMeta, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
+import { TSDBRequest, CassandraQuery, TSDBRequestOptions /*TableMetadata*/ } from './models';
 //import { DataFrame } from '@grafana/data';
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
@@ -22,42 +21,47 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   meta: DataSourcePluginMeta;
 
   /** @ngInject */
-  constructor(instanceSettings, private backendSrv, private templateSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
     super(instanceSettings);
     this.keyspace = instanceSettings.jsonData.keyspace;
-    this.headers = {'Content-Type': 'application/json'};
+    this.headers = { 'Content-Type': 'application/json' };
     if (typeof instanceSettings.basicAuth === 'string' && instanceSettings.basicAuth.length > 0) {
       this.headers['Authorization'] = instanceSettings.basicAuth;
     }
+
+    this.name = instanceSettings.name;
+    this.id = instanceSettings.id;
+    this.meta = instanceSettings.meta;
   }
 
-  query(options: any) {
+  /*   query(options: any) {
     const query = this.buildQueryParameters(options);
-    query.targets = query.targets.filter(t => !t.hide);
+    query.targets = query.targets.filter((t) => !t.hide);
 
     if (query.targets.length <= 0) {
-      return Promise.resolve({data: []});
+      return Promise.resolve({ data: [] });
     }
 
     return this.doTsdbRequest(query).then(handleTsdbResponse);
-  }
+  } */
 
   async testDatasource(): Promise<any> {
-    return this.backendSrv
-      .datasourceRequest({
+    getBackendSrv()
+      .fetch({
         url: '/api/tsdb/query',
         method: 'POST',
         data: {
           from: '5m',
           to: 'now',
-          queries: [{ queryType: 'connection', keyspace: this.keyspace }]
+          queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }],
         },
       })
-      .then(() => {
-        return { status: 'success', message: 'Database Connection OK' };
-      })
-      .catch((error: any) => {
-        return { status: 'error', message: error.data.message };
+      .subscribe((res) => {
+        if (res.ok) {
+          return { status: 'success', message: 'Database Connection OK' };
+        } else {
+          return { status: 'error', message: res.statusText };
+        }
       });
   }
 
@@ -85,7 +89,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   doRequest(options) {
     options.headers = this.headers;
 
-    return this.backendSrv.datasourceRequest(options);
+    return getBackendSrv().fetch(options);
   }
 
   doTsdbRequest(options: TSDBRequestOptions) {
@@ -98,24 +102,24 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       tsdbRequestData.to = options.range.to.valueOf().toString();
     }
 
-    return this.backendSrv.datasourceRequest({
+    return getBackendSrv().fetch({
       url: '/api/tsdb/query',
       method: 'POST',
-      data: tsdbRequestData
+      data: tsdbRequestData,
     });
   }
 
   buildQueryParameters(options: any): TSDBRequestOptions {
     //remove placeholder targets
-    options.targets = _.filter(options.targets, target => {
+    options.targets = _.filter(options.targets, (target) => {
       return target.target !== 'select metric';
     });
 
     console.log(options.targets);
-    const targets = _.map(options.targets, target => {
+    const targets = _.map(options.targets, (target) => {
       return {
         queryType: 'query',
-        target: this.templateSrv.replace(target.target, options.scopedVars, 'regex'),
+        target: getTemplateSrv().replace(target.target, options.scopedVars, 'regex'),
         refId: target.refId,
         hide: target.hide,
         rawQuery: target.rawQuery,
@@ -126,7 +130,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
-        valueId: target.valueId
+        valueId: target.valueId,
       };
     });
 
@@ -137,31 +141,30 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
 }
 
 export function handleTsdbResponse(response) {
-
   console.log(response);
-  console.log("data");
+  console.log('data');
   console.log(response.data);
-  console.log("responses");
+  console.log('responses');
   console.log(response.data.responses);
-  console.log("results");
+  console.log('results');
   console.log(response.data.results);
 
-  const res : object[] = [];
+  const res: object[] = [];
   //_.forEach(response.data.results, r => {
 
-  for(var key in response.data.results) {
+  for (const key in response.data.results) {
     response.data.results[key].refId = key;
     //res.push(response.data.results[key]);
     console.log(response.data.results[key]);
 
-    response.data.results[key].dataframes.forEach(value  => {
+    response.data.results[key].dataframes.forEach((value) => {
       console.log(value);
       //value.refId = key;
       res.push(value);
     });
   }
 
-    /*var frames = new Map<string, DataFrame>(JSON.parse(response.data));
+  /*var frames = new Map<string, DataFrame>(JSON.parse(response.data));
     console.log(frames);
     frames.forEach((value: DataFrame, key: string, frames) => {
       console.log("value");
@@ -171,8 +174,8 @@ export function handleTsdbResponse(response) {
       value.refId = key;
       res.push(value);
     });*/
-    
-    /*_.forEach(r.series, s => {
+
+  /*_.forEach(r.series, s => {
       res.push({target: s.name, datapoints: s.points});
     });
     _.forEach(r.tables, t => {
@@ -193,7 +196,7 @@ export function mapToTextValue(result) {
     if (d && d.text && d.value) {
       return { text: d.text, value: d.value };
     } else if (_.isObject(d)) {
-      return { text: d, value: i};
+      return { text: d, value: i };
     }
     return { text: d, value: d };
   });

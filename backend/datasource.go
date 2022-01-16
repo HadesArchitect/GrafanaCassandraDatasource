@@ -78,7 +78,7 @@ func (ds *CassandraDatasource) QueryData(ctx context.Context, request *backend.Q
 		}
 
 		errResponse.Responses[request.Queries[0].RefID] = backend.DataResponse{
-			Error: errors.New("Unable to establish connection with the database"),
+			Error: fmt.Errorf("Unable to establish connection with the database, err=%v", err),
 		}
 
 		return &errResponse, nil
@@ -138,11 +138,13 @@ func (ds *CassandraDatasource) Query(ctx context.Context, tsdbReq *datasource.Da
 		datasourceID,
 		WithConsistency(options["consistency"]),
 	)
+
 	if err != nil {
+		ds.logger.Error(fmt.Sprintf("Options: %+v", options))
 		return &datasource.DatasourceResponse{
 			Results: []*datasource.QueryResult{
 				&datasource.QueryResult{
-					Error: "Unable to establish connection with the database",
+					Error: fmt.Sprintf("Unable to establish connection with the database: %v", err),
 				},
 			},
 		}, nil
@@ -451,7 +453,8 @@ func (ds *CassandraDatasource) Connect(host, keyspace, username, password string
 	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Error(fmt.Sprintf("Unable to establish connection with the database, %s\n", err.Error()))
-		return false, err
+
+		return false, fmt.Errorf("connect to database, err=%v", err)
 	}
 
 	ds.sessions[datasourceID] = session

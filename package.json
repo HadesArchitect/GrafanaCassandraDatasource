@@ -9,35 +9,22 @@
         "test": "grafana-toolkit plugin:test",
         "dev": "grafana-toolkit plugin:dev",
         "watch": "grafana-toolkit plugin:dev --watch",
-        "sign": "grafana-toolkit plugin:sign --signatureType community"
+        "sign": "grafana-toolkit plugin:sign",
+        "start": "yarn watch"
     },
-    "dependencies": {
-        "@testing-library/react": "^12.1.2",
-        "yarn": "^1.22.17"
-    },
+    "author": "Grafana Labs",
+    "license": "Apache-2.0",
     "devDependencies": {
-        "@grafana/data": "latest",
-        "@grafana/runtime": "latest",
-        "@grafana/toolkit": "latest",
-        "@grafana/ui": "latest",
-        "@types/grafana": "git+https://git@github.com/CorpGlory/types-grafana.git",
-        "@types/lodash": "^4.14.149",
-        "@typescript-eslint/eslint-plugin": "latest",
-        "@typescript-eslint/parser": "latest",
-        "clean-webpack-plugin": "^3.0.0",
-        "copy-webpack-plugin": "^5.1.2",
-        "install-peers": "^1.0.3",
-        "loader-utils": "^1.2.0",
-        "lodash": "^4.17.21",
-        "ts-loader": "^6.2.1",
-        "typescript": "^4.4.3",
-        "webpack": "^4.44.2",
-        "webpack-cli": "^3.3.10",
-        "postcss": "^8.2.15",
-        "react": "^16.0.0",
-        "react-dom": "^16.0.0",
-        "slate-react": "^0.22.0",
-        "eslint-old": "npm:eslint@^6.0.0",
-        "eslint": "npm:eslint@^7.0.0"
+    "@grafana/data": "latest",
+    "@grafana/toolkit": "latest",
+    "@grafana/runtime": "latest",
+    "@grafana/ui": "latest",
+    "@types/lodash": "latest"
+    },
+    "resolutions": {
+    "rxjs": "7.3.0"
+    },
+    "engines": {
+    "node": ">=14"
     }
 }

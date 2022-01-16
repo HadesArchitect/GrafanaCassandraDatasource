@@ -1,0 +1,60 @@
+/* <div className="gf-form-group">
+        <div className="gf-form">
+          <FormField
+            label="Host"
+            placeholder="cassandra:9042"
+            labelWidth={6}
+            inputWidth={20}
+            onChange={this.onHostChange}
+            value={options.url || ''}
+          />
+        </div>
+
+        <div className="gf-form-inline">
+          <div className="gf-form">
+            <FormField
+              //isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
+              label="Keyspace"
+              placeholder="Keyspace name"
+              labelWidth={6}
+              inputWidth={20}
+              onChange={this.onKeyspaceChange}
+              value={jsonData.keyspace || ''}
+            />
+          </div>
+        </div>
+        <div className="gf-form-inline">
+          <div className="gf-form">
+          <label>Consistency</label>
+            <Select
+              options={consistencyOptions}
+              value={jsonData.consistency}
+              onChange={(event) => {
+                jsonData.consistency = event.value!;
+                onOptionsChange({ ...options, jsonData });
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="gf-form-inline">
+            <span className="gf-form-label width-7">Credentials</span>
+            <input
+              type="text"
+              //onReset={this.onPasswordReset}
+              onChange={this.onUserChange}
+              placeholder="user"
+            ></input>
+
+          <div className="gf-form">
+            <SecretFormField
+              isConfigured={false}
+              value="ctrl.current.secureJsonData.password"
+              onReset={this.onPasswordReset}
+              onChange={this.onPasswordChange}
+              inputWidth={8}
+              placeholder="password"
+            />
+          </div>
+        </div>
+      </div> */
