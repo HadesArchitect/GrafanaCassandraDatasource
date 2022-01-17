@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { DataSourceWithBackend, getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { DataSourceWithBackend, getBackendSrv, getTemplateSrv, FetchResponse, FetchError, FetchErrorDataProps } from '@grafana/runtime';
 import { DataSourcePluginMeta, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
 import { TSDBRequest, CassandraQuery, TSDBRequestOptions /*TableMetadata*/ } from './models';
 //import { DataFrame } from '@grafana/data';
@@ -46,7 +46,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   } */
 
   async testDatasource(): Promise<any> {
-    getBackendSrv()
+      return getBackendSrv()
       .fetch({
         url: '/api/tsdb/query',
         method: 'POST',
@@ -56,13 +56,10 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
           queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }],
         },
       })
-      .subscribe((res) => {
-        if (res.ok) {
-          return { status: 'success', message: 'Database Connection OK' };
-        } else {
-          return { status: 'error', message: res.statusText };
-        }
-      });
+      .subscribe(
+        (res: FetchResponse<any>) => {console.log(res);return { status: 'success', message: 'Database connected', details: {}}},
+        (err: FetchError<FetchErrorDataProps>) => {console.log(err);return {status: 'error', message: err.statusText, details: {}}},
+      );
   }
 
   /*metricFindQuery(keyspace: string, table: string): TableMetadata {

@@ -107,6 +107,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField label="Host" tooltip="Specify host and port like `host:9042`" grow>
               <Input
                 name="host"
+                value={options.url}
                 placeholder="cassandra:9042"
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
@@ -117,6 +118,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField label="Keyspace" grow>
               <Input
                 name="keyspace"
+                value={options.jsonData.keyspace}
                 placeholder="keyspace name"
                 invalid={options.jsonData.keyspace === ''}
                 onChange={this.onKeyspaceChange}
@@ -149,25 +151,26 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
             <InlineField>
               <SecretFormField
-                isConfigured={!!(options.secureJsonFields && options.secureJsonFields.password)}
+                isConfigured={false}
                 value={(options.secureJsonData?.password as string) || ''}
                 onReset={this.onPasswordReset}
                 onChange={this.onPasswordChange}
               />
             </InlineField>
           </InlineFieldRow>
-          <InlineFieldRow>
+          {/* <InlineFieldRow>
             <InlineField label="Timeout" tooltip="Timeout in seconds. Keep empty for the default value">
               <Input
                 name="timeout"
                 placeholder=""
+                v
                 type="number"
                 step={1}
                 invalid={options.jsonData.keyspace === ''}
                 onChange={this.onKeyspaceChange}
               />
             </InlineField>
-          </InlineFieldRow>
+          </InlineFieldRow> */}
         </FieldSet>
         {/* <FieldSet 
           label="TLS Settings"
