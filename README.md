@@ -27,9 +27,9 @@ You can find more detailed instructions in [the datasource wiki](https://github.
 
 ### Installation 
 
-1. Download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
-2. Add the Cassandra DataSource as a datasource at the datasource configuration page.
-3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password. It's recommended to use a dedicated user with read-only permissions only to the table you have to access.
+1. Install the plugin using grafana console tool: `grafana-cli plugins install hadesarchitect-cassandra-datasource`. The plugin will be installed into your grafana plugins directory; the default is `/var/lib/grafana/plugins`. Alternatively, download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
+2. Add the Apache Cassandra Data Source as a data source at the datasource configuration page.
+3. Configure the datasource specifying contact point and port like "10.11.12.13:9042", username and password. It's strongly recommended to use a dedicated user with read-only permissions only to the table you have to access.
 4. Push the "Save and Test" button, if there is an error message, check the credentials and connection. 
 
 ![Datasource Configuration](https://user-images.githubusercontent.com/1742301/148654400-3ac4a477-8ca3-4606-86e7-5d10cbdc4ea9.png)
