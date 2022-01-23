@@ -1,7 +1,16 @@
 import _ from 'lodash';
-import { DataSourceWithBackend, getBackendSrv, getTemplateSrv, FetchResponse, FetchError, FetchErrorDataProps } from '@grafana/runtime';
-import { DataSourcePluginMeta, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
+import {
+  DataSourceWithBackend,
+  getBackendSrv,
+  getTemplateSrv,
+  FetchResponse,
+  FetchError,
+  FetchErrorDataProps,
+} from '@grafana/runtime';
+import { DataQueryRequest, DataQueryResponse, DataSourcePluginMeta, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
 import { TSDBRequest, CassandraQuery, TSDBRequestOptions /*TableMetadata*/ } from './models';
+
+import { Observable, of } from 'rxjs';
 //import { DataFrame } from '@grafana/data';
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
@@ -34,19 +43,20 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     this.meta = instanceSettings.meta;
   }
 
-  /*   query(options: any) {
-    const query = this.buildQueryParameters(options);
-    query.targets = query.targets.filter((t) => !t.hide);
+  query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
+   /*  const query = this.buildQueryParameters(options);
+    query.targets = query.targets.filter((t) => !t.hide); */
 
-    if (query.targets.length <= 0) {
-      return Promise.resolve({ data: [] });
+    console.log(options);
+    if (options.targets.length <= 0) {
+      return of({ data: [] });
     }
 
-    return this.doTsdbRequest(query).then(handleTsdbResponse);
-  } */
+    return this.doTsdbRequest(options)
+  }
 
   async testDatasource(): Promise<any> {
-      return getBackendSrv()
+    return getBackendSrv()
       .fetch({
         url: '/api/tsdb/query',
         method: 'POST',
@@ -57,8 +67,14 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         },
       })
       .subscribe(
-        (res: FetchResponse<any>) => {console.log(res);return { status: 'success', message: 'Database connected', details: {}}},
-        (err: FetchError<FetchErrorDataProps>) => {console.log(err);return {status: 'error', message: err.statusText, details: {}}},
+        (res: FetchResponse<any>) => {
+          console.log(res);
+          return { status: 'success', message: 'Database connected', details: {} };
+        },
+        (err: FetchError<FetchErrorDataProps>) => {
+          console.log(err);
+          return { status: 'error', message: err.statusText, details: {} };
+        }
       );
   }
 
@@ -89,7 +105,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return getBackendSrv().fetch(options);
   }
 
-  doTsdbRequest(options: TSDBRequestOptions) {
+  doTsdbRequest(options: TSDBRequestOptions): Observable<FetchResponse<any>> {
     const tsdbRequestData: TSDBRequest = {
       queries: options.targets,
     };
@@ -112,7 +128,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       return target.target !== 'select metric';
     });
 
-    console.log(options.targets);
+    //console.log(options.targets);
     const targets = _.map(options.targets, (target) => {
       return {
         queryType: 'query',

@@ -7,10 +7,11 @@ export interface TSDBRequest {
 }
 
 export interface CassandraQuery extends DataQuery {
-  target?: any;
+  target?: string;
   queryType: CassandraQueryType;
   filtering?: boolean;
   keyspace?: string;
+  datasourceId?: number;
   table?: string;
   columnTime?: string;
   columnValue?: string;
