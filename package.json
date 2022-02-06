@@ -2,7 +2,7 @@
     "name": "grafana-cassandra-datasource",
     "main": "dist/module",
     "version": "1.0.0",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "repository": "https://github.com/HadesArchitect/grafana-cassandra-source",
     "scripts": {
         "build": "grafana-toolkit plugin:build",
@@ -13,18 +13,14 @@
         "start": "yarn watch"
     },
     "author": "Grafana Labs",
-    "license": "Apache-2.0",
     "devDependencies": {
-    "@grafana/data": "latest",
-    "@grafana/toolkit": "latest",
-    "@grafana/runtime": "latest",
-    "@grafana/ui": "latest",
-    "@types/lodash": "latest"
-    },
-    "resolutions": {
-    "rxjs": "7.3.0"
+        "@grafana/data": "latest",
+        "@grafana/toolkit": "latest",
+        "@grafana/runtime": "latest",
+        "@grafana/ui": "latest",
+        "@types/lodash": "latest"
     },
     "engines": {
-    "node": ">=14"
+        "node": ">=14"
     }
 }

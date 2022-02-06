@@ -9,8 +9,8 @@ import { CassandraQuery } from './models';
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
 export class QueryEditor extends PureComponent<Props> {
-  constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>){
-    super(props)
+  constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>) {
+    super(props);
 
     const { onChange, query } = this.props;
     onChange({ ...query, datasourceId: props.datasource.id });
@@ -18,13 +18,12 @@ export class QueryEditor extends PureComponent<Props> {
 
   onChangeQueryType = () => {
     const { onChange, query } = this.props;
-    onChange({ ...query, rawQuery:  !query.rawQuery});
-  }
+    onChange({ ...query, rawQuery: !query.rawQuery });
+  };
 
-
-  onQueryTextChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onQueryTextChange = (request: string) => {
     const { onChange, query, onRunQuery } = this.props;
-    onChange({ ...query, target: event.target.value });
+    onChange({ ...query, target: request });
     onRunQuery();
   };
 
@@ -75,20 +74,13 @@ export class QueryEditor extends PureComponent<Props> {
 
     return (
       <div>
-        <Button
-              icon="pen"
-              variant="secondary"
-              aria-label="Toggle editor mode"
-              onClick={this.onChangeQueryType}
-        />
-        {
-          options.query.rawQuery &&
-          <QueryField
-            placeholder={'Enter a Graphite query (run with Shift+Enter)'}
-            portalOrigin="graphite"
-          />
-        }
-        {!options.query.rawQuery && 
+        <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
+        {options.query.rawQuery && (
+          <QueryField 
+          placeholder={'Enter a Graphite query (run with Shift+Enter)'} portalOrigin="graphite" 
+          onChange={this.onQueryTextChange} />
+        )}
+        {!options.query.rawQuery && (
           <>
             <InlineFieldRow>
               <InlineField label="Keyspace" tooltip="Specify keyspace to work with" grow>
@@ -112,7 +104,11 @@ export class QueryEditor extends PureComponent<Props> {
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="Time Column" tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)" grow>
+              <InlineField
+                label="Time Column"
+                tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)"
+                grow
+              >
                 <Input
                   name="time_column"
                   value={this.props.query.columnTime || ''}
@@ -121,7 +117,11 @@ export class QueryEditor extends PureComponent<Props> {
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="Value Column" tooltip="Specify name of a numeric column to retrieve value (temperature, price etc.)" grow>
+              <InlineField
+                label="Value Column"
+                tooltip="Specify name of a numeric column to retrieve value (temperature, price etc.)"
+                grow
+              >
                 <Input
                   name="value_column"
                   value={this.props.query.columnValue || ''}
@@ -130,45 +130,39 @@ export class QueryEditor extends PureComponent<Props> {
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="ID Column" tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)" grow>
-                <Input
-                  name="id_column"
-                  value={this.props.query.columnValue || ''}
-                  onChange={this.onIDColumnChange}
-                />
+              <InlineField
+                label="ID Column"
+                tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
+                grow
+              >
+                <Input name="id_column" value={this.props.query.columnId || ''} onChange={this.onIDColumnChange} />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="ID Value" tooltip="Specify UUID value of a column to identify the row (f.e. 123e4567-e89b-12d3-a456-426655440000)" grow>
+              <InlineField
+                label="ID Value"
+                tooltip="Specify UUID value of a column to identify the row (f.e. 123e4567-e89b-12d3-a456-426655440000)"
+                grow
+              >
                 <Input
                   name="value_column"
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
-                  value={this.props.query.columnValue || ''}
+                  value={this.props.query.valueId || '99051fe9-6a9c-46c2-b949-38ef78858dd1'}
                   onChange={this.onIDValueChange}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-                <InlineField 
-                  label="Allow filtering"
-                  tooltip="Allow Filtering can be dangerous practice and we strongly discourage using it"
-                >
-                  <Switch value={this.props.query.filtering} onChange={this.onFilteringChange} />
-                </InlineField>
-            </InlineFieldRow>
-            <InlineFieldRow>
-              <Input
-                type="hidden"
-                name="value_column"
-                placeholder="123e4567-e89b-12d3-a456-426655440000"
-                value={this.props.query.columnValue || ''}
-                onChange={this.onIDValueChange}
-              />
+              <InlineField
+                label="Allow filtering"
+                tooltip="Allow Filtering can be dangerous practice and we strongly discourage using it"
+              >
+                <Switch value={this.props.query.filtering} onChange={this.onFilteringChange} />
+              </InlineField>
             </InlineFieldRow>
           </>
-        }
+        )}
       </div>
-      
     );
   }
 }

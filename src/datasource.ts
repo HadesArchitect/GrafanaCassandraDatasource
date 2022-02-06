@@ -4,13 +4,16 @@ import {
   getBackendSrv,
   getTemplateSrv,
   FetchResponse,
-  FetchError,
-  FetchErrorDataProps,
 } from '@grafana/runtime';
-import { DataQueryRequest, DataQueryResponse, DataSourcePluginMeta, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
+import {
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourcePluginMeta,
+  DataSourceJsonData,
+  DataSourceInstanceSettings,
+} from '@grafana/data';
 import { TSDBRequest, CassandraQuery, TSDBRequestOptions /*TableMetadata*/ } from './models';
-
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 //import { DataFrame } from '@grafana/data';
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
@@ -44,39 +47,24 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
-   /*  const query = this.buildQueryParameters(options);
-    query.targets = query.targets.filter((t) => !t.hide); */
+    const query = this.buildQueryParameters(options);
+    query.targets = query.targets.filter((t) => !t.hide);
 
-    console.log(options);
-    if (options.targets.length <= 0) {
-      return of({ data: [] });
-    }
-
-    return this.doTsdbRequest(options)
+    return super.query(options)
   }
 
-  async testDatasource(): Promise<any> {
+/*   async testDatasource(): Promise<any> {
     return getBackendSrv()
       .fetch({
-        url: '/api/tsdb/query',
+        url: '/api/ds/query',
         method: 'POST',
         data: {
           from: '5m',
           to: 'now',
           queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }],
         },
-      })
-      .subscribe(
-        (res: FetchResponse<any>) => {
-          console.log(res);
-          return { status: 'success', message: 'Database connected', details: {} };
-        },
-        (err: FetchError<FetchErrorDataProps>) => {
-          console.log(err);
-          return { status: 'error', message: err.statusText, details: {} };
-        }
-      );
-  }
+      }).toPromise()
+  } */
 
   /*metricFindQuery(keyspace: string, table: string): TableMetadata {
     const interpolated: TSDBQuery = {
@@ -99,12 +87,6 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     });
   }*/
 
-  doRequest(options) {
-    options.headers = this.headers;
-
-    return getBackendSrv().fetch(options);
-  }
-
   doTsdbRequest(options: TSDBRequestOptions): Observable<FetchResponse<any>> {
     const tsdbRequestData: TSDBRequest = {
       queries: options.targets,
@@ -116,7 +98,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
 
     return getBackendSrv().fetch({
-      url: '/api/tsdb/query',
+      url: '/api/ds/query',
       method: 'POST',
       data: tsdbRequestData,
     });
@@ -131,6 +113,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     //console.log(options.targets);
     const targets = _.map(options.targets, (target) => {
       return {
+        datasourceId: target.datasourceId,
         queryType: 'query',
         target: getTemplateSrv().replace(target.target, options.scopedVars, 'regex'),
         refId: target.refId,
@@ -148,69 +131,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     });
 
     options.targets = targets;
-    console.log(options.targets);
+    //console.log(options.targets);
     return options;
   }
-}
-
-export function handleTsdbResponse(response) {
-  console.log(response);
-  console.log('data');
-  console.log(response.data);
-  console.log('responses');
-  console.log(response.data.responses);
-  console.log('results');
-  console.log(response.data.results);
-
-  const res: object[] = [];
-  //_.forEach(response.data.results, r => {
-
-  for (const key in response.data.results) {
-    response.data.results[key].refId = key;
-    //res.push(response.data.results[key]);
-    console.log(response.data.results[key]);
-
-    response.data.results[key].dataframes.forEach((value) => {
-      console.log(value);
-      //value.refId = key;
-      res.push(value);
-    });
-  }
-
-  /*var frames = new Map<string, DataFrame>(JSON.parse(response.data));
-    console.log(frames);
-    frames.forEach((value: DataFrame, key: string, frames) => {
-      console.log("value");
-      console.log(value);
-      console.log("key");
-      console.log(key);
-      value.refId = key;
-      res.push(value);
-    });*/
-
-  /*_.forEach(r.series, s => {
-      res.push({target: s.name, datapoints: s.points});
-    });
-    _.forEach(r.tables, t => {
-      t.type = 'table';
-      t.refId = r.refId;
-      res.push(t);
-    });*/
-  //});
-  response.data = res;
-
-  console.log(response);
-
-  return response;
-}
-
-export function mapToTextValue(result) {
-  return _.map(result, (d, i) => {
-    if (d && d.text && d.value) {
-      return { text: d.text, value: d.value };
-    } else if (_.isObject(d)) {
-      return { text: d, value: i };
-    }
-    return { text: d, value: d };
-  });
 }
