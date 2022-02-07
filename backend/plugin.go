@@ -46,6 +46,37 @@ func (handler *QueryHandler) getDataSource(req *backend.QueryDataRequest) (*Cass
 	return datasource, nil
 }
 
+func NewQueryHandler() *datasource.QueryTypeMux {
+	handler := &QueryHandler{
+		im: datasource.NewInstanceManager(newDataSource),
+	}
+
+	mux := datasource.NewQueryTypeMux()
+	mux.HandleFunc("query", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		datasource, err := handler.getDataSource(req)
+		if err != nil {
+			return nil, fmt.Errorf("get datasource for query, err=%v", err)
+		}
+
+		return datasource.HandleMetricQueries(ctx, req)
+	})
+
+	mux.HandleFunc("connection", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		datasource, err := handler.getDataSource(req)
+		if err != nil {
+			return nil, fmt.Errorf("get datasource for query, err=%v", err)
+		}
+
+		datasource.logger.Warn(fmt.Sprintf("%+v\n", req))
+
+		return datasource.HandleConnectionQueries(ctx, req)
+	})
+
+	handler.mux = mux
+
+	return mux
+}
+
 func (handler *QueryHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	instance, err := handler.im.Get(req.PluginContext)
 
@@ -61,36 +92,17 @@ func (handler *QueryHandler) QueryData(ctx context.Context, req *backend.QueryDa
 		return nil, errors.New("can not convert datasource instance to Cassandra Datasource")
 	}
 
-	responses, err := datasource.QueryData(ctx, req)
-	if err != nil {
-		return nil, err
-	}
+	datasource.logger.Warn(fmt.Sprintf("%+v\n", req))
 
 	return &backend.QueryDataResponse{
-		Responses: responses,
+		Responses: nil,
 	}, nil
 }
 
 func main() {
-	handler := &QueryHandler{
-		im: datasource.NewInstanceManager(newDataSource),
-	}
-
-	mux := datasource.NewQueryTypeMux()
-	mux.HandleFunc("query", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(req)
-		if err != nil {
-			return nil, fmt.Errorf("get datasource for query, err=%v", err)
-		}
-
-		return datasource.HandleMetricQueries(ctx, req)
-	})
-
-	handler.mux = mux
-
 	logger.Debug("Running Cassandra backend datasource...")
 
 	datasource.Serve(datasource.ServeOpts{
-		QueryDataHandler: handler,
+		QueryDataHandler: NewQueryHandler(),
 	})
 }

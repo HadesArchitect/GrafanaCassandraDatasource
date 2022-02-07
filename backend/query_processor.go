@@ -57,9 +57,10 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string,
 
 	for iter.Scan(&timestamp, &value) {
 		serie.Points = append(serie.Points, &datasource.Point{
-			Timestamp: timestamp.UnixNano() / int64(time.Millisecond),
+			Timestamp: timestamp.UnixNano(),
 			Value:     value,
 		})
+		ds.logger.Warn(fmt.Sprintf("%+v", serie.Points))
 	}
 
 	if err := iter.Close(); err != nil {
@@ -70,7 +71,8 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string,
 }
 
 func timeSerieToFrame(serie *datasource.TimeSeries) *data.Frame {
-	frame := data.NewFrame(serie.Name,
+	frame := data.NewFrame(
+		serie.Name,
 		data.NewField("time", nil, make([]time.Time, len(serie.Points))),
 		data.NewField(serie.Name, serie.Tags, make([]float64, len(serie.Points))),
 	)

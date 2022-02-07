@@ -4,6 +4,7 @@ import {
   getBackendSrv,
   getTemplateSrv,
   FetchResponse,
+  FetchError,
 } from '@grafana/runtime';
 import {
   DataQueryRequest,
@@ -53,7 +54,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(options)
   }
 
-/*   async testDatasource(): Promise<any> {
+  async testDatasource(): Promise<any> {
     return getBackendSrv()
       .fetch({
         url: '/api/ds/query',
@@ -63,9 +64,17 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
           to: 'now',
           queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }],
         },
-      }).toPromise()
-  } */
+      })
+      .toPromise()
+      .then(() => {
+        return { status: 'success', message: 'Database Connection OK' };
+      })
+      .catch((error: FetchError) => {
+        return { status: 'error', message: exctractErrors(error) };
+      });
+  }
 
+  
   /*metricFindQuery(keyspace: string, table: string): TableMetadata {
     const interpolated: TSDBQuery = {
       datasourceId: this.id,
@@ -110,16 +119,15 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       return target.target !== 'select metric';
     });
 
-    //console.log(options.targets);
     const targets = _.map(options.targets, (target) => {
       return {
         datasourceId: target.datasourceId,
         queryType: 'query',
+        
         target: getTemplateSrv().replace(target.target, options.scopedVars, 'regex'),
         refId: target.refId,
         hide: target.hide,
         rawQuery: target.rawQuery,
-        //type: target.type || 'timeserie',
         filtering: target.filtering,
         keyspace: target.keyspace,
         table: target.table,
@@ -134,4 +142,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     //console.log(options.targets);
     return options;
   }
+}
+
+function exctractErrors(response: FetchError): string {
+  var result: string = ""
+  for (let key of Object.keys(response.data.results)) {
+    result = "Query " + key + ": " + response.data.results[key].error + ", "
+  }
+  return result.substring(0, result.length - 2);
 }

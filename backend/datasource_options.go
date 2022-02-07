@@ -1,6 +1,6 @@
 package main
 
-type RequestOptions struct {
+type DataSourceOptions struct {
 	Keyspace         string `json:"keyspace"`
 	User             string `json:"user"`
 	Password         string `json:"password"`
