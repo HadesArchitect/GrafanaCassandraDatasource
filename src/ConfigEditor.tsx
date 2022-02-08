@@ -26,15 +26,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
-  optionChange = (option: string, event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
-    const jsonData = {
-      ...options.jsonData,
-      option: event.target.value,
-    };
-    onOptionsChange({ ...options, jsonData });
-  };
-
   // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
@@ -129,7 +120,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField label="Consistency" grow>
               <Select
                 options={consistencyOptions}
-                value={jsonData.consistency}
+                value={jsonData.consistency || consistencyOptions[0]}
                 onChange={(event) => {
                   jsonData.consistency = event.value!;
                   onOptionsChange({ ...options, jsonData });

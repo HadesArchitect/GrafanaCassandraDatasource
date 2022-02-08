@@ -1,6 +1,6 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, QueryField, Switch } from '@grafana/ui';
-import { QueryEditorProps } from '@grafana/data';
+import { Button, InlineField, InlineFieldRow, Input, QueryField, Switch, Select } from '@grafana/ui';
+import { MetricFindValue, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
 
@@ -16,6 +16,28 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
+  timeCols: SelectableValue<string>[] = []
+
+  getOptions(needType: string): SelectableValue<string>[] {
+    if (!this.props.query.keyspace || !this.props.query.table) {
+      return [];
+    }
+
+    this.props.datasource.metricFindQuery(this.props.query.keyspace, this.props.query.table)
+    .then((columns: MetricFindValue[]) => {
+      const columnOptions: SelectableValue<string>[] = []
+      columns.forEach((column: MetricFindValue) => {
+        if (column.value == needType) {
+          columnOptions.push({label: column.text, value: column.text})
+        }
+      })
+      
+      return columnOptions;
+    });
+
+    return []
+  }
+
   onChangeQueryType = () => {
     const { onChange, query } = this.props;
     onChange({ ...query, rawQuery: !query.rawQuery });
@@ -24,49 +46,42 @@ export class QueryEditor extends PureComponent<Props> {
   onQueryTextChange = (request: string) => {
     const { onChange, query, onRunQuery } = this.props;
     onChange({ ...query, target: request });
-    onRunQuery();
+    onRunQuery()
   };
 
   onKeyspaceChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, keyspace: event.target.value });
-    onRunQuery();
   };
 
   onTableChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, table: event.target.value });
-    onRunQuery();
   };
 
-  onTimeColumnChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
-    onChange({ ...query, columnTime: event.target.value });
-    onRunQuery();
+  onTimeColumnChange = (value: SelectableValue<string>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, columnTime: value.value });
   };
 
   onValueColumnChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, columnValue: event.target.value });
-    onRunQuery();
   };
 
   onIDColumnChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, columnId: event.target.value });
-    onRunQuery();
   };
 
   onIDValueChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, valueId: event.target.value });
-    onRunQuery();
   };
 
   onFilteringChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, filtering: event.target.checked });
-    onRunQuery();
   };
 
   render() {
@@ -77,8 +92,9 @@ export class QueryEditor extends PureComponent<Props> {
         <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
         {options.query.rawQuery && (
           <QueryField 
-          placeholder={'Enter a Graphite query (run with Shift+Enter)'} portalOrigin="graphite" 
-          onChange={this.onQueryTextChange} />
+            placeholder={'Enter a Graphite query (run with Shift+Enter)'} portalOrigin="graphite" 
+            onChange={this.onQueryTextChange}
+          />
         )}
         {!options.query.rawQuery && (
           <>
@@ -90,6 +106,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
                   spellCheck={false}
+                  onBlur={this.props.onRunQuery}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -100,6 +117,7 @@ export class QueryEditor extends PureComponent<Props> {
                   value={this.props.query.table || ''}
                   placeholder="table name"
                   onChange={this.onTableChange}
+                  onBlur={this.props.onRunQuery}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -109,11 +127,13 @@ export class QueryEditor extends PureComponent<Props> {
                 tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)"
                 grow
               >
-                <Input
-                  name="time_column"
-                  value={this.props.query.columnTime || ''}
-                  onChange={this.onTimeColumnChange}
-                />
+                <Select
+                options={this.timeCols}
+                value={this.props.query.columnTime || ''}
+                onChange={this.onTimeColumnChange}
+                allowCustomValue={true}
+                onBlur={this.props.onRunQuery}
+              />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
@@ -126,6 +146,7 @@ export class QueryEditor extends PureComponent<Props> {
                   name="value_column"
                   value={this.props.query.columnValue || ''}
                   onChange={this.onValueColumnChange}
+                  onBlur={this.props.onRunQuery}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -135,7 +156,12 @@ export class QueryEditor extends PureComponent<Props> {
                 tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
                 grow
               >
-                <Input name="id_column" value={this.props.query.columnId || ''} onChange={this.onIDColumnChange} />
+                <Input 
+                  name="id_column" 
+                  value={this.props.query.columnId || ''} 
+                  onChange={this.onIDColumnChange} 
+                  onBlur={this.props.onRunQuery}
+                />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
@@ -149,6 +175,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
                   value={this.props.query.valueId || '99051fe9-6a9c-46c2-b949-38ef78858dd1'}
                   onChange={this.onIDValueChange}
+                  onBlur={this.props.onRunQuery}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -157,7 +184,11 @@ export class QueryEditor extends PureComponent<Props> {
                 label="Allow filtering"
                 tooltip="Allow Filtering can be dangerous practice and we strongly discourage using it"
               >
-                <Switch value={this.props.query.filtering} onChange={this.onFilteringChange} />
+                <Switch 
+                  value={this.props.query.filtering} 
+                  onChange={this.onFilteringChange}
+                  onBlur={this.props.onRunQuery} 
+                />
               </InlineField>
             </InlineFieldRow>
           </>
