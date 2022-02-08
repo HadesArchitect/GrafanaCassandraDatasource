@@ -28,13 +28,11 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	}, nil
 }
 
-func (handler *QueryHandler) getDataSource(req *backend.QueryDataRequest) (*CassandraDatasource, error) {
-	instance, err := handler.im.Get(req.PluginContext)
-
-	logger.Debug(fmt.Sprintf("Handle request: %+v\n", req))
+func (handler *QueryHandler) getDataSource(ctx *backend.PluginContext) (*CassandraDatasource, error) {
+	instance, err := handler.im.Get(*ctx)
 
 	if err != nil {
-		return nil, fmt.Errorf("can not found datasource instance with ID: %d", req.PluginContext.DataSourceInstanceSettings.ID)
+		return nil, fmt.Errorf("can not found datasource instance with ID: %d", ctx.DataSourceInstanceSettings.ID)
 	}
 
 	datasource, ok := instance.(*CassandraDatasource)
@@ -46,14 +44,37 @@ func (handler *QueryHandler) getDataSource(req *backend.QueryDataRequest) (*Cass
 	return datasource, nil
 }
 
-func NewQueryHandler() *datasource.QueryTypeMux {
+func (handler *QueryHandler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	datasource, err := handler.getDataSource(&req.PluginContext)
+	if err != nil {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: fmt.Sprintf("Get datasource for query, err=%v", err),
+		}, nil
+	}
+
+	err = datasource.CheckHealth(ctx, req)
+	if err != nil {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: fmt.Sprintf("Connection test failed, error = %v", err),
+		}, nil
+	}
+
+	return &backend.CheckHealthResult{
+		Status:  backend.HealthStatusOk,
+		Message: "Database connected",
+	}, nil
+}
+
+func NewQueryHandler() *QueryHandler {
 	handler := &QueryHandler{
 		im: datasource.NewInstanceManager(newDataSource),
 	}
 
 	mux := datasource.NewQueryTypeMux()
 	mux.HandleFunc("query", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(req)
+		datasource, err := handler.getDataSource(&req.PluginContext)
 		if err != nil {
 			return nil, fmt.Errorf("get datasource for query, err=%v", err)
 		}
@@ -61,48 +82,27 @@ func NewQueryHandler() *datasource.QueryTypeMux {
 		return datasource.HandleMetricQueries(ctx, req)
 	})
 
-	mux.HandleFunc("connection", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(req)
+	mux.HandleFunc("search", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		datasource, err := handler.getDataSource(&req.PluginContext)
 		if err != nil {
 			return nil, fmt.Errorf("get datasource for query, err=%v", err)
 		}
 
-		datasource.logger.Warn(fmt.Sprintf("%+v\n", req))
-
-		return datasource.HandleConnectionQueries(ctx, req)
+		return datasource.HandleMetricFindQueries(ctx, req)
 	})
 
 	handler.mux = mux
 
-	return mux
-}
-
-func (handler *QueryHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	instance, err := handler.im.Get(req.PluginContext)
-
-	logger.Debug(fmt.Sprintf("Handle request: %+v\n", req))
-
-	if err != nil {
-		return nil, fmt.Errorf("can not found datasource instance with ID: %d", req.PluginContext.DataSourceInstanceSettings.ID)
-	}
-
-	datasource, ok := instance.(*CassandraDatasource)
-
-	if !ok {
-		return nil, errors.New("can not convert datasource instance to Cassandra Datasource")
-	}
-
-	datasource.logger.Warn(fmt.Sprintf("%+v\n", req))
-
-	return &backend.QueryDataResponse{
-		Responses: nil,
-	}, nil
+	return handler
 }
 
 func main() {
 	logger.Debug("Running Cassandra backend datasource...")
 
+	handler := NewQueryHandler()
+
 	datasource.Serve(datasource.ServeOpts{
-		QueryDataHandler: NewQueryHandler(),
+		CheckHealthHandler: handler,
+		QueryDataHandler:   handler.mux,
 	})
 }

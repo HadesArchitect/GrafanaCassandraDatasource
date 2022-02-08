@@ -4,17 +4,20 @@ import {
   getBackendSrv,
   getTemplateSrv,
   FetchResponse,
-  FetchError,
 } from '@grafana/runtime';
 import {
+  toDataFrame,
+  DataFrameView,
   DataQueryRequest,
   DataQueryResponse,
   DataSourcePluginMeta,
   DataSourceJsonData,
   DataSourceInstanceSettings,
+  MetricFindValue,
 } from '@grafana/data';
 import { TSDBRequest, CassandraQuery, TSDBRequestOptions /*TableMetadata*/ } from './models';
-import { Observable } from 'rxjs';
+import { Observable, lastValueFrom } from 'rxjs';
+
 //import { DataFrame } from '@grafana/data';
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
@@ -54,7 +57,9 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(options)
   }
 
-  async testDatasource(): Promise<any> {
+/*   async testDatasource(): Promise<any> {
+    this.metricFindQuery("test", "test")
+
     return getBackendSrv()
       .fetch({
         url: '/api/ds/query',
@@ -72,11 +77,11 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       .catch((error: FetchError) => {
         return { status: 'error', message: exctractErrors(error) };
       });
-  }
+  } */
 
   
-  /*metricFindQuery(keyspace: string, table: string): TableMetadata {
-    const interpolated: TSDBQuery = {
+  async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {  
+    const request: CassandraQuery = {
       datasourceId: this.id,
       queryType: "search",
       refId: "search",
@@ -84,17 +89,52 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       table: table
     };
     
-    return this.doTsdbRequest({
-      targets: [interpolated]
-    }).then(response => {
-      const tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
-      // return tmd.toSuggestion();
-      return tmd;
-    }).catch((error: any) => {
-      console.log(error);
-      return new TableMetadata();
+   
+    var response = await lastValueFrom(this.doTsdbRequest({
+      targets: [request]
+    }))
+
+    const nameIdx: number = 0
+    const typeIdx: number = 1
+
+    var results: MetricFindValue[] = []
+    response.data.results.search.frames.forEach((data: {data: any, schema: any}) => {
+      new DataFrameView(toDataFrame(data)).forEach((row) => {
+          results.push({text: row[nameIdx], value: row[typeIdx]})
+      })
     });
-  }*/
+
+    return new Promise<MetricFindValue[]>((resolve) => {
+      resolve(results)
+  });
+
+    /* this.doTsdbRequest({
+      targets: [request]
+    })
+      .toPromise()
+      .then(response => {
+        const nameIdx: number = 0
+        const typeIdx: number = 1
+
+        response.data.results.search.frames.forEach((data: {data: any, schema: any}) => {
+          new DataFrameView(toDataFrame(data)).forEach((row) => {
+              results.push({text: row[nameIdx], value: row[typeIdx]})
+          })
+        });
+      }).catch((error: any) => {
+        console.log(error);
+      });
+
+
+     
+      console.log(results)
+      return new Promise<MetricFindValue[]>((resolve) => {
+          console.log({results: results});
+          resolve(results)
+      }); */
+
+  }
+
 
   doTsdbRequest(options: TSDBRequestOptions): Observable<FetchResponse<any>> {
     const tsdbRequestData: TSDBRequest = {
@@ -144,10 +184,10 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 }
 
-function exctractErrors(response: FetchError): string {
+/* function exctractErrors(response: FetchError): string {
   var result: string = ""
   for (let key of Object.keys(response.data.results)) {
     result = "Query " + key + ": " + response.data.results[key].error + ", "
   }
   return result.substring(0, result.length - 2);
-}
+} */

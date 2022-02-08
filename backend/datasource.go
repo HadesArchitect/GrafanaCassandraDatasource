@@ -3,6 +3,7 @@ package main
 import (
 	// "crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"strconv"
@@ -25,66 +26,91 @@ type CassandraDatasource struct {
 	settings  backend.DataSourceInstanceSettings
 }
 
-func (ds *CassandraDatasource) handleMetricQuery(ctx context.Context, request *backend.QueryDataRequest, query backend.DataQuery) (data.Frames, error) {
-	_, err := ds.Connect(&request.PluginContext)
-	if err != nil {
-		return nil, fmt.Errorf("unable to establish connection with the database, err=%v", err)
-	}
-
-	return ds.MetricQuery(&query)
-}
-
-func (ds *CassandraDatasource) handleConnectionQuery(ctx context.Context, request *backend.QueryDataRequest, query backend.DataQuery) (data.Frames, error) {
-	_, err := ds.Connect(&request.PluginContext)
-	if err != nil {
-		return nil, fmt.Errorf("unable to establish connection with the database, err=%v", err)
-	}
-
-	return data.Frames{}, nil
-}
-
-func (ds *CassandraDatasource) finalMetricHandler(ctx context.Context, req *backend.QueryDataRequest, query backend.DataQuery) backend.DataResponse {
-	return frameResponseHandler(ds.handleMetricQuery(ctx, req, query))
-}
-
-func (ds *CassandraDatasource) finalConnectionHandler(ctx context.Context, req *backend.QueryDataRequest, query backend.DataQuery) backend.DataResponse {
-	return frameResponseHandler(ds.handleConnectionQuery(ctx, req, query))
-}
-
-func frameResponseHandler(frames data.Frames, err error) backend.DataResponse {
-	if err != nil {
-		return backend.DataResponse{
-			Error: err,
-		}
-	}
-
-	return backend.DataResponse{
-		Frames: frames,
-	}
-}
-
 func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	return &backend.QueryDataResponse{
-		Responses: processQueries(ctx, req, ds.finalMetricHandler),
+		Responses: processQueries(req, ds.handleMetricQuery),
 	}, nil
 }
 
-func (ds *CassandraDatasource) HandleConnectionQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return &backend.QueryDataResponse{
-		Responses: processQueries(ctx, req, ds.finalConnectionHandler),
-	}, nil
-}
-
-func processQueries(ctx context.Context, req *backend.QueryDataRequest, handler func(context.Context, *backend.QueryDataRequest, backend.DataQuery) backend.DataResponse) backend.Responses {
-	res := backend.Responses{}
-	for _, v := range req.Queries {
-		res[v.RefID] = handler(ctx, req, v)
+func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	_, err := ds.connect(ctx)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
 	}
 
-	return res
+	frames, err := ds.metricQuery(&query)
+
+	return dataResponse(frames, err)
 }
 
-func (ds *CassandraDatasource) MetricQuery(query *backend.DataQuery) (data.Frames, error) {
+func (ds *CassandraDatasource) HandleMetricFindQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	return &backend.QueryDataResponse{
+		Responses: processQueries(req, ds.handleMetricFindQuery),
+	}, nil
+}
+
+func (ds *CassandraDatasource) handleMetricFindQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	_, err := ds.connect(ctx)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+	}
+
+	var cassQuery CassandraQuery
+	err = json.Unmarshal(query.JSON, &cassQuery)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unmarshal queries, err=%v", err))
+	}
+
+	if cassQuery.Keyspace == "" || cassQuery.Table == "" {
+		return dataResponse(data.Frames{}, errors.New("keyspace or table is not set"))
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("retrieve keyspace metadata, err=%v, keyspace=%s", err, cassQuery.Keyspace))
+	}
+
+	tableMetadata, ok := keyspaceMetadata.Tables[cassQuery.Table]
+	if !ok {
+		return dataResponse(data.Frames{}, fmt.Errorf("table not found, table=%s", cassQuery.Table))
+	}
+
+	frame := data.NewFrame(
+		query.RefID,
+		data.NewField(query.RefID, nil, make([]string, len(tableMetadata.Columns))),
+		data.NewField("type", nil, make([]string, len(tableMetadata.Columns))),
+	)
+
+	index := 0
+	for name, column := range tableMetadata.Columns {
+		frame.Set(0, index, name)
+		frame.Set(1, index, column.Type.Type().String())
+
+		index++
+	}
+
+	return dataResponse([]*data.Frame{frame}, nil)
+}
+
+func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) error {
+	_, err := ds.connect(&req.PluginContext)
+	if err != nil {
+		return fmt.Errorf("unable to establish connection with the database, err=%v", err)
+	}
+
+	return nil
+}
+
+func processQueries(req *backend.QueryDataRequest, handler func(*backend.PluginContext, backend.DataQuery) backend.DataResponse) backend.Responses {
+	result := backend.Responses{}
+	for _, query := range req.Queries {
+		result[query.RefID] = handler(&req.PluginContext, query)
+	}
+
+	return result
+}
+
+func (ds *CassandraDatasource) metricQuery(query *backend.DataQuery) (data.Frames, error) {
 	var cassQuery CassandraQuery
 	err := json.Unmarshal(query.JSON, &cassQuery)
 	if err != nil {
@@ -108,13 +134,6 @@ func (ds *CassandraDatasource) MetricQuery(query *backend.DataQuery) (data.Frame
 	}
 }
 
-func timeRangeToStr(timeRange backend.TimeRange) (string, string) {
-	from := strconv.FormatInt(timeRange.From.UnixNano()/int64(time.Millisecond), 10)
-	to := strconv.FormatInt(timeRange.To.UnixNano()/int64(time.Millisecond), 10)
-
-	return from, to
-}
-
 func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOptions, error) {
 	var options DataSourceOptions
 	err := json.Unmarshal(jsonData, &options)
@@ -124,7 +143,7 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 	return options, nil
 }
 
-func (ds *CassandraDatasource) Connect(context *backend.PluginContext) (bool, error) {
+func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, error) {
 	options, err := ds.getRequestOptions(context.DataSourceInstanceSettings.JSONData)
 	if err != nil {
 		return false, fmt.Errorf("parse connection parameters, err=%v", err)
@@ -198,6 +217,26 @@ func parseConsistency(consistencyStr string) (consistency gocql.Consistency, err
 			}
 		}
 	}()
+
 	consistency = gocql.ParseConsistency(consistencyStr)
 	return
+}
+
+func timeRangeToStr(timeRange backend.TimeRange) (string, string) {
+	from := strconv.FormatInt(timeRange.From.UnixNano()/int64(time.Millisecond), 10)
+	to := strconv.FormatInt(timeRange.To.UnixNano()/int64(time.Millisecond), 10)
+
+	return from, to
+}
+
+func dataResponse(frames data.Frames, err error) backend.DataResponse {
+	if err != nil {
+		return backend.DataResponse{
+			Error: err,
+		}
+	}
+
+	return backend.DataResponse{
+		Frames: frames,
+	}
 }
