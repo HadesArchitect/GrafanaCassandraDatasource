@@ -11,7 +11,7 @@ services:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
   cassandra:
-    image: cassandra
+    image: cassandra:4.0
     ports:
       - "9042:9042"
     environment:

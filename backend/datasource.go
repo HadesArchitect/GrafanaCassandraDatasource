@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -187,7 +186,7 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 	if options.UseCustomTLS {
 		ds.logger.Debug("Setting TLS Configuration...")
 
-		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath)
+		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
 		if err != nil {
 			return false, fmt.Errorf("create TLS config, err=%v", err)
 		}
