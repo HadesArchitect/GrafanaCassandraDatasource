@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, QueryField, Switch, Select } from '@grafana/ui';
+import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch } from '@grafana/ui';
 import { MetricFindValue, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
@@ -16,7 +16,7 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
-  getOptions(needType: string): Array<SelectableValue<string>> {
+/*   getOptions(needType: string): Array<SelectableValue<string>> {
     if (!this.props.query.keyspace || !this.props.query.table) {
       return [];
     }
@@ -35,7 +35,7 @@ export class QueryEditor extends PureComponent<Props> {
       });
 
     return [];
-  }
+  } */
 
   onChangeQueryType = () => {
     const { onChange, query } = this.props;
@@ -88,18 +88,35 @@ export class QueryEditor extends PureComponent<Props> {
 
     return (
       <div>
-        <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
         {options.query.rawQuery && (
-          <QueryField
-            placeholder={'Enter a Cassandra query'}
-            portalOrigin="cassandra"
-            onChange={this.onQueryTextChange}
-          />
+          <InlineFieldRow>
+            <InlineField 
+              label="Cassandra CQL Query"
+              labelWidth={30}
+              grow
+            >
+              <QueryField
+                placeholder={'Enter a Cassandra query'}
+                portalOrigin="cassandra"
+                onChange={this.onQueryTextChange}
+              />
+            </InlineField>
+            <Button 
+              icon="pen"
+              variant="secondary"
+              aria-label="Toggle editor mode"
+              onClick={this.onChangeQueryType}
+            />
+          </InlineFieldRow>
         )}
         {!options.query.rawQuery && (
           <>
             <InlineFieldRow>
-              <InlineField label="Keyspace" tooltip="Specify keyspace to work with" grow>
+              <InlineField 
+                label="Keyspace" 
+                labelWidth={30}
+                tooltip="Specify keyspace to work with"
+              >
                 <Input
                   name="keyspace"
                   value={this.props.query.keyspace || ''}
@@ -107,84 +124,102 @@ export class QueryEditor extends PureComponent<Props> {
                   onChange={this.onKeyspaceChange}
                   spellCheck={false}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
+              <Button 
+              icon="pen"
+              variant="secondary"
+              aria-label="Toggle editor mode"
+              onClick={this.onChangeQueryType}
+            />
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="Table" tooltip="Specify table to work with" grow>
+              <InlineField 
+                label="Table"
+                labelWidth={30}
+                tooltip="Specify table to work with"
+              >
                 <Input
                   name="table"
                   value={this.props.query.table || ''}
                   placeholder="table name"
                   onChange={this.onTableChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField
                 label="Time Column"
+                labelWidth={30}
                 tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)"
-                grow
               >
-                <Select
-                  options={this.getOptions('timestamp')}
+                <Input
                   value={this.props.query.columnTime || ''}
+                  placeholder="time column"
                   onChange={this.onTimeColumnChange}
-                  allowCustomValue={true}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField
                 label="Value Column"
+                labelWidth={30}
                 tooltip="Specify name of a numeric column to retrieve value (temperature, price etc.)"
-                grow
               >
                 <Input
                   name="value_column"
+                  placeholder='value column'
                   value={this.props.query.columnValue || ''}
                   onChange={this.onValueColumnChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField
                 label="ID Column"
+                labelWidth={30}
                 tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
-                grow
               >
                 <Input
                   name="id_column"
+                  placeholder='ID column'
                   value={this.props.query.columnId || ''}
                   onChange={this.onIDColumnChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField
                 label="ID Value"
+                labelWidth={30}
                 tooltip="Specify UUID value of a column to identify the row (f.e. 123e4567-e89b-12d3-a456-426655440000)"
-                grow
               >
                 <Input
                   name="value_column"
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
-                  value={this.props.query.valueId || '99051fe9-6a9c-46c2-b949-38ef78858dd1'}
+                  value={this.props.query.valueId || ''}
                   onChange={this.onIDValueChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
                 />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField
                 label="Allow filtering"
+                labelWidth={30}
                 tooltip="Allow Filtering can be dangerous practice and we strongly discourage using it"
               >
-                <Switch
+                <InlineSwitch
                   value={this.props.query.filtering}
                   onChange={this.onFilteringChange}
                   onBlur={this.props.onRunQuery}
