@@ -93,6 +93,7 @@ export class QueryEditor extends PureComponent<Props> {
             <InlineField 
               label="Cassandra CQL Query"
               labelWidth={30}
+              tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
               grow
             >
               <QueryField
