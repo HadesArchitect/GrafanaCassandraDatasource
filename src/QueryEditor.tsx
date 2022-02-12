@@ -16,26 +16,25 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
-  timeCols: SelectableValue<string>[] = []
-
-  getOptions(needType: string): SelectableValue<string>[] {
+  getOptions(needType: string): Array<SelectableValue<string>> {
     if (!this.props.query.keyspace || !this.props.query.table) {
       return [];
     }
 
-    this.props.datasource.metricFindQuery(this.props.query.keyspace, this.props.query.table)
-    .then((columns: MetricFindValue[]) => {
-      const columnOptions: SelectableValue<string>[] = []
-      columns.forEach((column: MetricFindValue) => {
-        if (column.value == needType) {
-          columnOptions.push({label: column.text, value: column.text})
-        }
-      })
-      
-      return columnOptions;
-    });
+    this.props.datasource
+      .metricFindQuery(this.props.query.keyspace, this.props.query.table)
+      .then((columns: MetricFindValue[]) => {
+        const columnOptions: Array<SelectableValue<string>> = [];
+        columns.forEach((column: MetricFindValue) => {
+          if (column.value === needType) {
+            columnOptions.push({ label: column.text, value: column.text });
+          }
+        });
 
-    return []
+        return columnOptions;
+      });
+
+    return [];
   }
 
   onChangeQueryType = () => {
@@ -46,7 +45,7 @@ export class QueryEditor extends PureComponent<Props> {
   onQueryTextChange = (request: string) => {
     const { onChange, query, onRunQuery } = this.props;
     onChange({ ...query, target: request });
-    onRunQuery()
+    onRunQuery();
   };
 
   onKeyspaceChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -91,8 +90,9 @@ export class QueryEditor extends PureComponent<Props> {
       <div>
         <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
         {options.query.rawQuery && (
-          <QueryField 
-            placeholder={'Enter a Graphite query (run with Shift+Enter)'} portalOrigin="graphite" 
+          <QueryField
+            placeholder={'Enter a Cassandra query'}
+            portalOrigin="cassandra"
             onChange={this.onQueryTextChange}
           />
         )}
@@ -128,12 +128,12 @@ export class QueryEditor extends PureComponent<Props> {
                 grow
               >
                 <Select
-                options={this.timeCols}
-                value={this.props.query.columnTime || ''}
-                onChange={this.onTimeColumnChange}
-                allowCustomValue={true}
-                onBlur={this.props.onRunQuery}
-              />
+                  options={this.getOptions('timestamp')}
+                  value={this.props.query.columnTime || ''}
+                  onChange={this.onTimeColumnChange}
+                  allowCustomValue={true}
+                  onBlur={this.props.onRunQuery}
+                />
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
@@ -156,10 +156,10 @@ export class QueryEditor extends PureComponent<Props> {
                 tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
                 grow
               >
-                <Input 
-                  name="id_column" 
-                  value={this.props.query.columnId || ''} 
-                  onChange={this.onIDColumnChange} 
+                <Input
+                  name="id_column"
+                  value={this.props.query.columnId || ''}
+                  onChange={this.onIDColumnChange}
                   onBlur={this.props.onRunQuery}
                 />
               </InlineField>
@@ -184,10 +184,10 @@ export class QueryEditor extends PureComponent<Props> {
                 label="Allow filtering"
                 tooltip="Allow Filtering can be dangerous practice and we strongly discourage using it"
               >
-                <Switch 
-                  value={this.props.query.filtering} 
+                <Switch
+                  value={this.props.query.filtering}
                   onChange={this.onFilteringChange}
-                  onBlur={this.props.onRunQuery} 
+                  onBlur={this.props.onRunQuery}
                 />
               </InlineField>
             </InlineFieldRow>

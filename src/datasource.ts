@@ -1,9 +1,5 @@
 import _ from 'lodash';
-import {
-  DataSourceWithBackend,
-  getBackendSrv,
-  getTemplateSrv,
-} from '@grafana/runtime';
+import { DataSourceWithBackend, getBackendSrv, getTemplateSrv, FetchResponse } from '@grafana/runtime';
 import {
   toDataFrame,
   DataFrameView,
@@ -42,46 +38,48 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
-    return super.query(this.buildQueryParameters(options))
+    return super.query(this.buildQueryParameters(options));
   }
-  
-  async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {  
+
+  async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {
     const request: CassandraQuery = {
       datasourceId: this.id,
-      queryType: "search",
-      refId: "search",
+      queryType: 'search',
+      refId: 'search',
       keyspace: keyspace,
-      table: table
+      table: table,
     };
-   
-    var response = await lastValueFrom(getBackendSrv().fetch({
-      url: '/api/ds/query',
-      method: 'POST',
-      data: {
-        targets: [request]
-      },
-    }));
 
-    const nameIdx: number = 0
-    const typeIdx: number = 1
-
-    var results: MetricFindValue[] = []
-    response.data.results.search.frames.forEach((data: {data: any, schema: any}) => {
-      new DataFrameView(toDataFrame(data)).forEach((row) => {
-          results.push({text: row[nameIdx], value: row[typeIdx]})
+    var response: FetchResponse<any> = await lastValueFrom(
+      getBackendSrv().fetch({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: {
+          queries: [request],
+        },
       })
+    );
+
+    const nameIdx = 0;
+    const typeIdx = 1;
+
+    var results: MetricFindValue[] = [];
+    response.data.results.search.frames.forEach((data: { data: any; schema: any }) => {
+      new DataFrameView(toDataFrame(data)).forEach((row) => {
+        results.push({ text: row[nameIdx], value: row[typeIdx] });
+      });
     });
 
     return new Promise<MetricFindValue[]>((resolve) => {
-      resolve(results)
+      resolve(results);
     });
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
     var from = options.range.from.valueOf();
     var to = options.range.to.valueOf();
-    options.scopedVars.__timeFrom = {text: from, value: from};
-    options.scopedVars.__timeTo = {text: to, value: to};
+    options.scopedVars.__timeFrom = { text: from, value: from };
+    options.scopedVars.__timeTo = { text: to, value: to };
 
     //remove placeholder targets
     options.targets = _.filter(options.targets, (target) => {
@@ -92,7 +90,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       return {
         datasourceId: target.datasourceId,
         queryType: 'query',
-        
+
         target: getTemplateSrv().replace(target.target, options.scopedVars),
         refId: target.refId,
         hide: target.hide,
@@ -108,7 +106,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     });
 
     options.targets = targets;
-    
+
     return options;
   }
 }
