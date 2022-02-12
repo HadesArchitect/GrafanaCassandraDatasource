@@ -1,7 +1,6 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-//import { MySecureJsonData } from './types';
 import { CassandraDataSourceOptions } from './datasource';
 
 const { SecretFormField } = LegacyForms;
@@ -26,7 +25,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
-  // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({

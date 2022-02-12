@@ -11,18 +11,17 @@ import (
 	"github.com/gocql/gocql"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"golang.org/x/net/context"
 )
 
 type CassandraDatasource struct {
-	logger    gflog.Logger
+	logger    log.Logger
 	builder   *QueryBuilder
 	processor *QueryProcessor
 	sessions  map[int]*gocql.Session
 	session   *gocql.Session
-	settings  backend.DataSourceInstanceSettings
 }
 
 func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -116,19 +115,14 @@ func (ds *CassandraDatasource) metricQuery(query *backend.DataQuery) (data.Frame
 		return nil, fmt.Errorf("unmarshal queries, err=%v", err)
 	}
 
-	from, to := timeRangeToStr(query.TimeRange)
-	ds.logger.Debug(fmt.Sprintf("Timeframe from: %s to %s\n", from, to))
-
-	var preparedQuery string
 	if cassQuery.RawQuery {
-		preparedQuery = ds.builder.prepareRawMetricQuery(&cassQuery, from, to)
+		return ds.processor.processRawMetricQuery(cassQuery.Target, ds)
 	} else {
-		preparedQuery = ds.builder.prepareStrictMetricQuery(&cassQuery, from, to)
-	}
+		from, to := timeRangeToStr(query.TimeRange)
+		ds.logger.Debug(fmt.Sprintf("Timeframe from: %s to %s\n", from, to))
 
-	if cassQuery.RawQuery {
-		return ds.processor.processRawMetricQuery(preparedQuery, ds)
-	} else {
+		preparedQuery := ds.builder.prepareStrictMetricQuery(&cassQuery, from, to)
+
 		return ds.processor.processStrictMetricQuery(preparedQuery, cassQuery.ValueID, ds)
 	}
 }

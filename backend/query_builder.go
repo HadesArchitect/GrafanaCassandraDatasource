@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 )
 
 type QueryBuilder struct{}
@@ -29,14 +28,4 @@ func (qb *QueryBuilder) prepareStrictMetricQuery(query *CassandraQuery, timeRang
 	)
 
 	return preparedQuery
-}
-
-func (qb *QueryBuilder) prepareRawMetricQuery(query *CassandraQuery, timeRangeFrom string, timeRangeTo string) string {
-	if !query.RawQuery {
-		return qb.prepareStrictMetricQuery(query, timeRangeFrom, timeRangeTo)
-	}
-
-	timeRangeReplacer := strings.NewReplacer("$__timeFrom", timeRangeFrom, "$__timeTo", timeRangeTo)
-
-	return timeRangeReplacer.Replace(query.Target)
 }

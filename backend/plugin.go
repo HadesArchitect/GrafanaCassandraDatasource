@@ -7,12 +7,12 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	gflog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-var logger = gflog.New()
+var logger = log.New()
 
 type QueryHandler struct {
 	im  instancemgmt.InstanceManager
@@ -23,8 +23,7 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	logger.Debug(fmt.Sprintf("Created datasource, ID: %d\n", settings.ID))
 
 	return &CassandraDatasource{
-		logger:   logger,
-		settings: settings,
+		logger: logger,
 	}, nil
 }
 

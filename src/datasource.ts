@@ -16,8 +16,6 @@ import {
 import { CassandraQuery } from './models';
 import { Observable, lastValueFrom } from 'rxjs';
 
-//import { DataFrame } from '@grafana/data';
-
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
   keyspace: string;
   consistency: string;
@@ -80,6 +78,11 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
+    var from = options.range.from.valueOf();
+    var to = options.range.to.valueOf();
+    options.scopedVars.__timeFrom = {text: from, value: from};
+    options.scopedVars.__timeTo = {text: to, value: to};
+
     //remove placeholder targets
     options.targets = _.filter(options.targets, (target) => {
       return target.target !== 'select metric';
