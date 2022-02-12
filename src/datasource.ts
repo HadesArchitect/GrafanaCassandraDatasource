@@ -19,6 +19,10 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
   certPath: string;
   rootPath: string;
   caPath: string;
+  useCustomTLS: boolean;
+  timeout: number;
+
+  allowInsecureTLS: boolean;
 }
 
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {

@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select } from '@grafana/ui';
+import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select, InlineSwitch } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CassandraDataSourceOptions } from './datasource';
 
@@ -40,6 +40,24 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const jsonData = {
       ...options.jsonData,
       user: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+  onTimeoutChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      timeout: Number(event.target.value),
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+  onUseCustomTLSChange = (event: React.FormEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      useCustomTLS: event.currentTarget.checked,
     };
     onOptionsChange({ ...options, jsonData });
   };
@@ -91,38 +109,63 @@ export class ConfigEditor extends PureComponent<Props, State> {
 
     return (
       <>
-        <FieldSet label="Connection settings">
+        <FieldSet
+          label="Connection settings"
+        >
           <InlineFieldRow>
-            <InlineField label="Host" tooltip="Specify host and port like `host:9042`" grow>
+            <InlineField 
+              label="Host"
+              labelWidth={20}
+              tooltip="Specify host and port like `host:9042`"
+            >
               <Input
                 name="host"
                 value={options.url}
                 placeholder="cassandra:9042"
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
+                width={60}
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Keyspace" grow>
+            <InlineField
+              label="Keyspace"
+              labelWidth={20}
+            >
               <Input
                 name="keyspace"
                 value={options.jsonData.keyspace}
                 placeholder="keyspace name"
-                invalid={options.jsonData.keyspace === ''}
                 onChange={this.onKeyspaceChange}
+                width={60}
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Consistency" grow>
+            <InlineField
+              label="Consistency"
+              labelWidth={20}
+            >
               <Select
+                placeholder='choose consistensy'
                 options={consistencyOptions}
-                value={jsonData.consistency || consistencyOptions[0]}
-                onChange={(event) => {
-                  jsonData.consistency = event.value!;
+                value={() => {
+                    var result: any = consistencyOptions[0]
+                    consistencyOptions.forEach((option) => {
+                      if (options.jsonData.consistency === option.value) {
+                        result = option
+                      }
+                    });
+
+                    return result
+                  }
+                }
+                onChange={(value) => {
+                  jsonData.consistency = value.value!;
                   onOptionsChange({ ...options, jsonData });
                 }}
+                width={60}
               />
             </InlineField>
           </InlineFieldRow>
@@ -130,12 +173,14 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField
               label="Credentials"
               tooltip="We strongly recommend to create a custom Cassandra user with strictly read-only permissions!"
+              labelWidth={20}
             >
               <Input
                 name="user"
                 placeholder="user"
                 invalid={options.jsonData.user === ''}
                 onChange={this.onUserChange}
+                width={25}
               />
             </InlineField>
             <InlineField>
@@ -144,35 +189,121 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 value={(options.secureJsonData?.password as string) || ''}
                 onReset={this.onPasswordReset}
                 onChange={this.onPasswordChange}
+                labelWidth={5}
               />
             </InlineField>
           </InlineFieldRow>
-          {/* <InlineFieldRow>
-            <InlineField label="Timeout" tooltip="Timeout in seconds. Keep empty for the default value">
+          <InlineFieldRow>
+            <InlineField 
+              label="Timeout"
+              labelWidth={20} 
+              tooltip="Timeout in seconds. Keep empty for the default value"
+            >
               <Input
                 name="timeout"
                 placeholder=""
-                v
                 type="number"
                 step={1}
-                invalid={options.jsonData.keyspace === ''}
-                onChange={this.onKeyspaceChange}
+                value={options.jsonData.timeout}
+                onChange={this.onTimeoutChange}
+                width={60}
               />
             </InlineField>
-          </InlineFieldRow> */}
+          </InlineFieldRow>
         </FieldSet>
-        {/* <FieldSet 
+        <FieldSet 
           label="TLS Settings"
         >
           <InlineFieldRow>
             <InlineField 
               label="Custom TLS settings"
               tooltip="Enable if you need custom TLS configuration (usually required using AstraDB, AWS Keyspaces etc.)"
+              labelWidth={30}
             >
-              <InlineSwitch value={options.jsonData} disabled={disabled} onChange={onChange} />
+              <InlineSwitch
+                value={options.jsonData.useCustomTLS}
+                disabled={false}
+                onChange={this.onUseCustomTLSChange || false}
+              />
             </InlineField>
           </InlineFieldRow>
-        </FieldSet> */}
+          <InlineFieldRow>
+            <InlineField 
+              label="Allow self-signed certificates" 
+              labelWidth={30} 
+              tooltip="Enable if you use self-signed certificates"
+            >
+              <InlineSwitch
+                value={options.jsonData.allowInsecureTLS}
+                disabled={false}
+                onChange={(event: React.FormEvent<HTMLInputElement>) => {
+                  const jsonData = {
+                    ...options.jsonData,
+                    allowInsecureTLS: event.currentTarget.checked,
+                  };
+                  onOptionsChange({ ...options, jsonData });
+                }}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField 
+              label="Certificate Path" 
+              labelWidth={30}
+            >
+              <Input
+                value={options.jsonData.certPath}
+                placeholder="certificate path"
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  const jsonData = {
+                    ...options.jsonData,
+                    certPath: event.currentTarget.value,
+                  };
+                  onOptionsChange({ ...options, jsonData})
+                }}
+                width={60}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField 
+              label="Root Certificate Path" 
+              labelWidth={30}
+            >
+              <Input
+                value={options.jsonData.rootPath}
+                placeholder="root certificate path"
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  const jsonData = {
+                    ...options.jsonData,
+                    rootPath: event.currentTarget.value,
+                  };
+                  onOptionsChange({ ...options, jsonData})
+                }}
+                width={60}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField
+              label="RootCA Certificate Path"
+              labelWidth={30}
+            >
+              <Input
+                value={options.jsonData.caPath}
+                placeholder="CA certificate path"
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  const jsonData = {
+                    ...options.jsonData,
+                    caPath: event.currentTarget.value,
+                  };
+                  onOptionsChange({ ...options, jsonData})
+                }}
+                width={60}
+              />
+            </InlineField>
+          </InlineFieldRow>
+        </FieldSet>
       </>
     );
   }
