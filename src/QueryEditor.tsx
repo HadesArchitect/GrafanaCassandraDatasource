@@ -166,6 +166,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                   width={90}
                 /> */}
                 <Select
+                  allowCustomValue={true}
                   value={this.props.query.columnTime || ''}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
@@ -190,6 +191,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                   width={90}
                 /> */}
                 <Select
+                  allowCustomValue={true}
                   placeholder='value column'
                   value={this.props.query.columnValue || ''}
                   options={this.getOptions('int')}
@@ -214,6 +216,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                   width={90}
                 /> */}
                 <Select
+                  allowCustomValue={true}
                   placeholder='ID column'
                   value={this.props.query.columnId || ''}
                   onChange={this.onIDColumnChange}
