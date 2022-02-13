@@ -16,7 +16,7 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
-getOptions(needType: string): Array<SelectableValue<string>> {
+  getOptions(needType: string): Array<SelectableValue<string>> {
     if (!this.props.query.keyspace || !this.props.query.table) {
       return [];
     }
@@ -91,7 +91,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
       <div>
         {options.query.rawQuery && (
           <InlineFieldRow>
-            <InlineField 
+            <InlineField
               label="Cassandra CQL Query"
               labelWidth={30}
               tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
@@ -103,22 +103,13 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                 onChange={this.onQueryTextChange}
               />
             </InlineField>
-            <Button 
-              icon="pen"
-              variant="secondary"
-              aria-label="Toggle editor mode"
-              onClick={this.onChangeQueryType}
-            />
+            <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
           </InlineFieldRow>
         )}
         {!options.query.rawQuery && (
           <>
             <InlineFieldRow>
-              <InlineField 
-                label="Keyspace" 
-                labelWidth={30}
-                tooltip="Specify keyspace to work with"
-              >
+              <InlineField label="Keyspace" labelWidth={30} tooltip="Specify keyspace to work with">
                 <Input
                   name="keyspace"
                   value={this.props.query.keyspace || ''}
@@ -129,19 +120,10 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                   width={90}
                 />
               </InlineField>
-              <Button 
-              icon="pen"
-              variant="secondary"
-              aria-label="Toggle editor mode"
-              onClick={this.onChangeQueryType}
-            />
+              <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField 
-                label="Table"
-                labelWidth={30}
-                tooltip="Specify table to work with"
-              >
+              <InlineField label="Table" labelWidth={30} tooltip="Specify table to work with">
                 <Input
                   name="table"
                   value={this.props.query.table || ''}
@@ -192,7 +174,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  placeholder='value column'
+                  placeholder="value column"
                   value={this.props.query.columnValue || ''}
                   options={this.getOptions('int')}
                   onChange={this.onValueColumnChange}
@@ -217,7 +199,7 @@ getOptions(needType: string): Array<SelectableValue<string>> {
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  placeholder='ID column'
+                  placeholder="ID column"
                   value={this.props.query.columnId || ''}
                   onChange={this.onIDColumnChange}
                   onBlur={this.props.onRunQuery}

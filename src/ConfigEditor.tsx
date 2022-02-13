@@ -109,15 +109,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
 
     return (
       <>
-        <FieldSet
-          label="Connection settings"
-        >
+        <FieldSet label="Connection settings">
           <InlineFieldRow>
-            <InlineField 
-              label="Host"
-              labelWidth={20}
-              tooltip="Specify host and port like `host:9042`"
-            >
+            <InlineField label="Host" labelWidth={20} tooltip="Specify host and port like `host:9042`">
               <Input
                 name="host"
                 value={options.url}
@@ -129,10 +123,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField
-              label="Keyspace"
-              labelWidth={20}
-            >
+            <InlineField label="Keyspace" labelWidth={20}>
               <Input
                 name="keyspace"
                 value={options.jsonData.keyspace}
@@ -143,12 +134,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField
-              label="Consistency"
-              labelWidth={20}
-            >
+            <InlineField label="Consistency" labelWidth={20}>
               <Select
-                placeholder='choose consistensy'
+                placeholder="choose consistensy"
                 options={consistencyOptions}
                 isClearable={false}
                 isSearchable={true}
@@ -186,11 +174,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField 
-              label="Timeout"
-              labelWidth={20} 
-              tooltip="Timeout in seconds. Keep empty for the default value"
-            >
+            <InlineField label="Timeout" labelWidth={20} tooltip="Timeout in seconds. Keep empty for the default value">
               <Input
                 name="timeout"
                 placeholder=""
@@ -203,11 +187,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
         </FieldSet>
-        <FieldSet 
-          label="TLS Settings"
-        >
+        <FieldSet label="TLS Settings">
           <InlineFieldRow>
-            <InlineField 
+            <InlineField
               label="Custom TLS settings"
               tooltip="Enable if you need custom TLS configuration (usually required using AstraDB, AWS Keyspaces etc.)"
               labelWidth={30}
@@ -220,9 +202,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField 
-              label="Allow self-signed certificates" 
-              labelWidth={30} 
+            <InlineField
+              label="Allow self-signed certificates"
+              labelWidth={30}
               tooltip="Enable if you use self-signed certificates"
             >
               <InlineSwitch
@@ -239,10 +221,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField 
-              label="Certificate Path" 
-              labelWidth={30}
-            >
+            <InlineField label="Certificate Path" labelWidth={30}>
               <Input
                 value={options.jsonData.certPath}
                 placeholder="certificate path"
@@ -251,17 +230,14 @@ export class ConfigEditor extends PureComponent<Props, State> {
                     ...options.jsonData,
                     certPath: event.currentTarget.value,
                   };
-                  onOptionsChange({ ...options, jsonData})
+                  onOptionsChange({ ...options, jsonData });
                 }}
                 width={60}
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField 
-              label="Root Certificate Path" 
-              labelWidth={30}
-            >
+            <InlineField label="Root Certificate Path" labelWidth={30}>
               <Input
                 value={options.jsonData.rootPath}
                 placeholder="root certificate path"
@@ -270,17 +246,14 @@ export class ConfigEditor extends PureComponent<Props, State> {
                     ...options.jsonData,
                     rootPath: event.currentTarget.value,
                   };
-                  onOptionsChange({ ...options, jsonData})
+                  onOptionsChange({ ...options, jsonData });
                 }}
                 width={60}
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField
-              label="RootCA Certificate Path"
-              labelWidth={30}
-            >
+            <InlineField label="RootCA Certificate Path" labelWidth={30}>
               <Input
                 value={options.jsonData.caPath}
                 placeholder="CA certificate path"
@@ -289,7 +262,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                     ...options.jsonData,
                     caPath: event.currentTarget.value,
                   };
-                  onOptionsChange({ ...options, jsonData})
+                  onOptionsChange({ ...options, jsonData });
                 }}
                 width={60}
               />
