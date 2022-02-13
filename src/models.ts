@@ -14,4 +14,4 @@ export interface CassandraQuery extends DataQuery {
   rawQuery?: boolean;
 }
 
-type CassandraQueryType = 'query' | 'search' | 'connection';
+type CassandraQueryType = 'query' | 'search';

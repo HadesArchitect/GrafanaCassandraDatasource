@@ -150,17 +150,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
               <Select
                 placeholder='choose consistensy'
                 options={consistencyOptions}
-                value={() => {
-                    var result: any = consistencyOptions[0]
-                    consistencyOptions.forEach((option) => {
-                      if (options.jsonData.consistency === option.value) {
-                        result = option
-                      }
-                    });
-
-                    return result
-                  }
-                }
+                isClearable={false}
+                isSearchable={true}
+                value={options.jsonData.consistency}
                 onChange={(value) => {
                   jsonData.consistency = value.value!;
                   onOptionsChange({ ...options, jsonData });

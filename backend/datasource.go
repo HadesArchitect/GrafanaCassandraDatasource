@@ -190,7 +190,7 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 
 	session, err := cluster.CreateSession()
 	if err != nil {
-		return false, fmt.Errorf("create Cassandra BD session, err=%v", err)
+		return false, fmt.Errorf("create Cassandra DB session, err=%v", err)
 	}
 
 	ds.sessions[datasourceID] = session

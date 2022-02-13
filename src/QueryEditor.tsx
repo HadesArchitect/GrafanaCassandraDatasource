@@ -1,6 +1,6 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch } from '@grafana/ui';
-import { MetricFindValue, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
 
