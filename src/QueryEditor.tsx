@@ -1,6 +1,6 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch, Select } from '@grafana/ui';
+import { MetricFindValue, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
 
@@ -16,15 +16,16 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
-/*   getOptions(needType: string): Array<SelectableValue<string>> {
+getOptions(needType: string): Array<SelectableValue<string>> {
     if (!this.props.query.keyspace || !this.props.query.table) {
       return [];
     }
 
+    const columnOptions: Array<SelectableValue<string>> = [];
+
     this.props.datasource
       .metricFindQuery(this.props.query.keyspace, this.props.query.table)
       .then((columns: MetricFindValue[]) => {
-        const columnOptions: Array<SelectableValue<string>> = [];
         columns.forEach((column: MetricFindValue) => {
           if (column.value === needType) {
             columnOptions.push({ label: column.text, value: column.text });
@@ -34,8 +35,8 @@ export class QueryEditor extends PureComponent<Props> {
         return columnOptions;
       });
 
-    return [];
-  } */
+    return columnOptions;
+  }
 
   onChangeQueryType = () => {
     const { onChange, query } = this.props;
@@ -63,14 +64,14 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, columnTime: value.value });
   };
 
-  onValueColumnChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onValueColumnChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, columnValue: event.target.value });
+    onChange({ ...query, columnValue: event.value });
   };
 
-  onIDColumnChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onIDColumnChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, columnId: event.target.value });
+    onChange({ ...query, columnId: event.value });
   };
 
   onIDValueChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -157,11 +158,19 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)"
               >
-                <Input
+                {/* <Input
                   value={this.props.query.columnTime || ''}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
+                /> */}
+                <Select
+                  value={this.props.query.columnTime || ''}
+                  placeholder="time column"
+                  onChange={this.onTimeColumnChange}
+                  onBlur={this.props.onRunQuery}
+                  options={this.getOptions('timestamp')}
                   width={90}
                 />
               </InlineField>
@@ -172,10 +181,18 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a numeric column to retrieve value (temperature, price etc.)"
               >
-                <Input
+                {/* <Input
                   name="value_column"
                   placeholder='value column'
                   value={this.props.query.columnValue || ''}
+                  onChange={this.onValueColumnChange}
+                  onBlur={this.props.onRunQuery}
+                  width={90}
+                /> */}
+                <Select
+                  placeholder='value column'
+                  value={this.props.query.columnValue || ''}
+                  options={this.getOptions('int')}
                   onChange={this.onValueColumnChange}
                   onBlur={this.props.onRunQuery}
                   width={90}
@@ -188,12 +205,20 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
               >
-                <Input
+                {/* <Input
                   name="id_column"
                   placeholder='ID column'
                   value={this.props.query.columnId || ''}
                   onChange={this.onIDColumnChange}
                   onBlur={this.props.onRunQuery}
+                  width={90}
+                /> */}
+                <Select
+                  placeholder='ID column'
+                  value={this.props.query.columnId || ''}
+                  onChange={this.onIDColumnChange}
+                  onBlur={this.props.onRunQuery}
+                  options={this.getOptions('uuid')}
                   width={90}
                 />
               </InlineField>
