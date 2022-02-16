@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@master
-      - name: npm install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 npm ci
-      - name: webpack
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 node node_modules/webpack/bin/webpack.js
+        uses: actions/checkout@master      
+      - name: yarn install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn install
+      - name: yarn build
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn build
       - name: go mod vendor
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go mod vendor
       - name: go build linux
