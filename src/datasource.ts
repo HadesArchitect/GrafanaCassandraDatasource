@@ -1,129 +1,111 @@
-import _ from "lodash";
-import {TSDBRequest, TSDBQuery, TSDBRequestOptions, TableMetadata} from './models';
+import _ from 'lodash';
+import { DataSourceWithBackend, getBackendSrv, getTemplateSrv, FetchResponse } from '@grafana/runtime';
+import {
+  toDataFrame,
+  DataFrameView,
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceJsonData,
+  DataSourceInstanceSettings,
+  MetricFindValue,
+} from '@grafana/data';
+import { CassandraQuery } from './models';
+import { Observable, lastValueFrom } from 'rxjs';
 
-export class CassandraDatasource {
-  name: string;
-  type: string;
-  id: string;
-  url: string;
+export interface CassandraDataSourceOptions extends DataSourceJsonData {
   keyspace: string;
+  consistency: string;
   user: string;
-  withCredentials: boolean;
-  instanceSettings: any;
-  headers: any;
+  certPath: string;
+  rootPath: string;
+  caPath: string;
+  useCustomTLS: boolean;
+  timeout: number;
 
-  /** @ngInject */
-  constructor(instanceSettings, private backendSrv, private templateSrv) {
-    this.type = instanceSettings.type;
-    this.url = instanceSettings.url;
-    this.keyspace = instanceSettings.jsonData.keyspace;
-    this.user = instanceSettings.jsonData.user;
-    this.name = instanceSettings.name;
-    this.id = instanceSettings.id;
-    this.withCredentials = instanceSettings.withCredentials;
-    this.headers = {'Content-Type': 'application/json'};
+  allowInsecureTLS: boolean;
+}
+
+export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
+  headers: any;
+  id: number;
+
+  constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
+    super(instanceSettings);
+
+    this.headers = { 'Content-Type': 'application/json' };
+
     if (typeof instanceSettings.basicAuth === 'string' && instanceSettings.basicAuth.length > 0) {
       this.headers['Authorization'] = instanceSettings.basicAuth;
     }
+
+    this.id = instanceSettings.id;
   }
 
-  query(options: any) {
-    const query = this.buildQueryParameters(options);
-    query.targets = query.targets.filter(t => !t.hide);
-
-    if (query.targets.length <= 0) {
-      return Promise.resolve({data: []});
-    }
-
-    return this.doTsdbRequest(query).then(handleTsdbResponse);
+  query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
+    return super.query(this.buildQueryParameters(options));
   }
 
-  testDatasource(): {} {
-    return this.backendSrv
-      .datasourceRequest({
-        url: '/api/tsdb/query',
+  async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {
+    const request: CassandraQuery = {
+      datasourceId: this.id,
+      queryType: 'search',
+      refId: 'search',
+      keyspace: keyspace,
+      table: table,
+    };
+
+    var response: FetchResponse<any> = await lastValueFrom(
+      getBackendSrv().fetch({
+        url: '/api/ds/query',
         method: 'POST',
         data: {
-          from: '5m',
-          to: 'now',
-          queries: [{ datasourceId: this.id, queryType: 'connection', keyspace: this.keyspace }]
+          queries: [request],
         },
       })
-      .then(() => {
-        return { status: 'success', message: 'Database Connection OK' };
-      })
-      .catch((error: any) => {
-        return { status: 'error', message: error.data.message };
+    );
+
+    const nameIdx = 0;
+    const typeIdx = 1;
+
+    var results: MetricFindValue[] = [];
+    response.data.results.search.frames.forEach((data: { data: any; schema: any }) => {
+      new DataFrameView(toDataFrame(data)).forEach((row) => {
+        results.push({ text: row[nameIdx], value: row[typeIdx] });
       });
-  }
+    });
 
-  metricFindQuery(keyspace: string, table: string): TableMetadata {
-    const interpolated: TSDBQuery = {
-      datasourceId: this.id,
-      queryType: "search",
-      refId: "search",
-      keyspace: keyspace,
-      table: table
-    };
-    
-    return this.doTsdbRequest({
-      targets: [interpolated]
-    }).then(response => {
-      const tmd = new TableMetadata(response.data.results.search.tables["0"].rows["0"]["0"]);
-      // return tmd.toSuggestion();
-      return tmd;
-    }).catch((error: any) => {
-      console.log(error);
-      return new TableMetadata();
+    return new Promise<MetricFindValue[]>((resolve) => {
+      resolve(results);
     });
   }
 
-  doRequest(options) {
-    options.withCredentials = this.withCredentials;
-    options.headers = this.headers;
+  buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
+    var from = options.range.from.valueOf();
+    var to = options.range.to.valueOf();
+    options.scopedVars.__timeFrom = { text: from, value: from };
+    options.scopedVars.__timeTo = { text: to, value: to };
 
-    return this.backendSrv.datasourceRequest(options);
-  }
-
-  doTsdbRequest(options: TSDBRequestOptions) {
-    const tsdbRequestData: TSDBRequest = {
-      queries: options.targets,
-    };
-
-    if (options.range) {
-      tsdbRequestData.from = options.range.from.valueOf().toString();
-      tsdbRequestData.to = options.range.to.valueOf().toString();
-    }
-
-    return this.backendSrv.datasourceRequest({
-      url: '/api/tsdb/query',
-      method: 'POST',
-      data: tsdbRequestData
-    });
-  }
-
-  buildQueryParameters(options: any): TSDBRequestOptions {
     //remove placeholder targets
-    options.targets = _.filter(options.targets, target => {
+    options.targets = _.filter(options.targets, (target) => {
       return target.target !== 'select metric';
     });
 
-    const targets = _.map(options.targets, target => {
+    const targets: CassandraQuery[] = _.map(options.targets, (target) => {
       return {
+        datasourceId: target.datasourceId,
         queryType: 'query',
-        target: this.templateSrv.replace(target.target, options.scopedVars, 'regex'),
+
+        target: getTemplateSrv().replace(target.target, options.scopedVars),
         refId: target.refId,
         hide: target.hide,
         rawQuery: target.rawQuery,
-        type: target.type || 'timeserie',
-        datasourceId: this.id,
         filtering: target.filtering,
         keyspace: target.keyspace,
         table: target.table,
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
-        valueId: target.valueId
+        valueId: target.valueId,
       };
     });
 
@@ -131,32 +113,4 @@ export class CassandraDatasource {
 
     return options;
   }
-}
-
-export function handleTsdbResponse(response) {
-  const res : object[] = [];
-  _.forEach(response.data.results, r => {
-    _.forEach(r.series, s => {
-      res.push({target: s.name, datapoints: s.points});
-    });
-    _.forEach(r.tables, t => {
-      t.type = 'table';
-      t.refId = r.refId;
-      res.push(t);
-    });
-  });
-  response.data = res;
-
-  return response;
-}
-
-export function mapToTextValue(result) {
-  return _.map(result, (d, i) => {
-    if (d && d.text && d.value) {
-      return { text: d.text, value: d.value };
-    } else if (_.isObject(d)) {
-      return { text: d, value: i};
-    }
-    return { text: d, value: d };
-  });
 }

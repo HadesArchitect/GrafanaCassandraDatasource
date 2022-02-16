@@ -29,7 +29,7 @@
       "updated": "2022-01-11"
     },
     "dependencies": {
-      "grafanaDependency": ">=5.0.0 <8.0.0",
+      "grafanaDependency": ">=8.0.0",
       "plugins": [ ]
     }
 }
