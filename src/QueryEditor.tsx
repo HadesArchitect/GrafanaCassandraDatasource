@@ -134,6 +134,11 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, valueId: event.target.value });
   };
 
+  onAliasChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, alias: event.target.value });
+  };
+
   onFilteringChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, filtering: event.target.checked });
@@ -303,6 +308,24 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
                   value={this.props.query.valueId || ''}
                   onChange={this.onIDValueChange}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
+                  width={90}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField
+                label="Alias"
+                labelWidth={30}
+                tooltip="Alias for graph legend"
+              >
+                <Input
+                  name="alias"
+                  placeholder="my alias"
+                  value={this.props.query.alias || ''}
+                  onChange={this.onAliasChange}
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}

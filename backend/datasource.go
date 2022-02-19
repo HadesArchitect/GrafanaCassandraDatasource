@@ -178,7 +178,7 @@ func (ds *CassandraDatasource) metricQuery(query *backend.DataQuery) (data.Frame
 
 		preparedQuery := ds.builder.prepareStrictMetricQuery(&cassQuery, from, to)
 
-		return ds.processor.processStrictMetricQuery(preparedQuery, cassQuery.ValueID, ds)
+		return ds.processor.processStrictMetricQuery(preparedQuery, cassQuery.ValueID, cassQuery.Alias, ds)
 	}
 }
 

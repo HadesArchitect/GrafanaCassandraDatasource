@@ -13,5 +13,6 @@ type CassandraQuery struct {
 	Table          string `json:"table"`
 	ColumnID       string `json:"columnId"`
 	ValueID        string `json:"valueId"`
-	AllowFiltering bool   `json:"filterint,omitempty"`
+	Alias          string `json:"alias,omitempty"`
+	AllowFiltering bool   `json:"filtering,omitempty"`
 }

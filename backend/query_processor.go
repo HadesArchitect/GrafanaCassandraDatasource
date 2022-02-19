@@ -47,13 +47,17 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 	return frames, nil
 }
 
-func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string, ds *CassandraDatasource) (data.Frames, error) {
+func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias string, ds *CassandraDatasource) (data.Frames, error) {
 	iter := ds.session.Query(query).Iter()
+
+	if alias == "" {
+		alias = valueId
+	}
 
 	var timestamp time.Time
 	var value float64
 
-	serie := &datasource.TimeSeries{Name: valueId}
+	serie := &datasource.TimeSeries{Name: alias}
 
 	for iter.Scan(&timestamp, &value) {
 		serie.Points = append(serie.Points, &datasource.Point{
@@ -67,7 +71,17 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string,
 		return nil, fmt.Errorf("process query, err=%v", err)
 	}
 
-	return []*data.Frame{timeSerieToFrame(serie)}, nil
+	frame := data.NewFrame(
+		serie.Name,
+		data.NewField("time", nil, make([]time.Time, 0)),
+		data.NewField(valueId, serie.Tags, make([]float64, 0)),
+	)
+
+	for _, point := range serie.Points {
+		frame.AppendRow(time.Unix(0, point.Timestamp), point.Value)
+	}
+
+	return []*data.Frame{frame}, nil
 }
 
 func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) (data.Frames, error) {

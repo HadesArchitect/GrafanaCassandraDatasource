@@ -169,6 +169,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnValue: target.columnValue,
         columnId: target.columnId,
         valueId: target.valueId,
+        alias: target.alias,
       };
     });
 
