@@ -176,6 +176,7 @@ export class QueryEditor extends PureComponent<Props> {
                   width={90}
                 /> */}
                 <Select
+                  allowCustomValue={true}
                   value={this.props.query.keyspace}
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
@@ -199,6 +200,7 @@ export class QueryEditor extends PureComponent<Props> {
                   width={90}
                 /> */}
                 <Select
+                  allowCustomValue={true}
                   value={this.props.query.table || ''}
                   placeholder="table name"
                   onChange={this.onTableChange}
