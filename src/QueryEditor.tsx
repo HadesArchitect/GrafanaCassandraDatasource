@@ -316,11 +316,7 @@ export class QueryEditor extends PureComponent<Props> {
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField
-                label="Alias"
-                labelWidth={30}
-                tooltip="Alias for graph legend"
-              >
+              <InlineField label="Alias" labelWidth={30} tooltip="Alias for graph legend">
                 <Input
                   name="alias"
                   placeholder="my alias"
