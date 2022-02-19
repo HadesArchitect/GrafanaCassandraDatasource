@@ -44,9 +44,8 @@ export class QueryEditor extends PureComponent<Props> {
   };
 
   onQueryTextChange = (request: string) => {
-    const { onChange, query, onRunQuery } = this.props;
+    const { onChange, query } = this.props;
     onChange({ ...query, target: request });
-    onRunQuery();
   };
 
   onKeyspaceChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +100,7 @@ export class QueryEditor extends PureComponent<Props> {
                 placeholder={'Enter a Cassandra query'}
                 portalOrigin="cassandra"
                 onChange={this.onQueryTextChange}
+                onBlur={this.props.onRunQuery}
               />
             </InlineField>
             <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />

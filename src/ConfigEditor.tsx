@@ -140,7 +140,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 options={consistencyOptions}
                 isClearable={false}
                 isSearchable={true}
-                value={options.jsonData.consistency}
+                value={options.jsonData.consistency || consistencyOptions[0]}
                 onChange={(value) => {
                   jsonData.consistency = value.value!;
                   onOptionsChange({ ...options, jsonData });
@@ -158,6 +158,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
               <Input
                 name="user"
                 placeholder="user"
+                value={options.jsonData.user}
                 invalid={options.jsonData.user === ''}
                 onChange={this.onUserChange}
                 width={25}
@@ -197,7 +198,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
               <InlineSwitch
                 value={options.jsonData.useCustomTLS}
                 disabled={false}
-                onChange={this.onUseCustomTLSChange || false}
+                onChange={this.onUseCustomTLSChange}
               />
             </InlineField>
           </InlineFieldRow>
