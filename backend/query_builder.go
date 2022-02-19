@@ -2,45 +2,30 @@ package main
 
 import (
 	"fmt"
-	"strings"
-
-	simplejson "github.com/bitly/go-simplejson"
 )
 
 type QueryBuilder struct{}
 
-func (qb *QueryBuilder) prepareStrictMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
+func (qb *QueryBuilder) prepareStrictMetricQuery(query *CassandraQuery, timeRangeFrom string, timeRangeTo string) string {
 	allowFiltering := ""
-	if queryData.Get("filtering").MustBool() {
+	if query.AllowFiltering {
 		allowFiltering = " ALLOW FILTERING"
 	}
 
 	preparedQuery := fmt.Sprintf(
 		"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = %s AND %s >= '%s' AND %s <= '%s'%s",
-		queryData.Get("columnTime").MustString(),
-		queryData.Get("columnValue").MustString(),
-		queryData.Get("keyspace").MustString(),
-		queryData.Get("table").MustString(),
-		queryData.Get("columnId").MustString(),
-		queryData.Get("valueId").MustString(),
-		queryData.Get("columnTime").MustString(),
+		query.ColumnTime,
+		query.ColumnValue,
+		query.Keyspace,
+		query.Table,
+		query.ColumnID,
+		query.ValueID,
+		query.ColumnTime,
 		timeRangeFrom,
-		queryData.Get("columnTime").MustString(),
+		query.ColumnTime,
 		timeRangeTo,
 		allowFiltering,
 	)
 
 	return preparedQuery
-}
-
-func (qb *QueryBuilder) prepareRawMetricQuery(queryData *simplejson.Json, timeRangeFrom string, timeRangeTo string) string {
-	if !queryData.Get("rawQuery").MustBool() {
-		return qb.prepareStrictMetricQuery(queryData, timeRangeFrom, timeRangeTo)
-	}
-
-	timeRangeReplacer := strings.NewReplacer("$__timeFrom", timeRangeFrom, "$__timeTo", timeRangeTo)
-
-	preparedQuery := queryData.Get("target").MustString()
-
-	return timeRangeReplacer.Replace(preparedQuery)
 }

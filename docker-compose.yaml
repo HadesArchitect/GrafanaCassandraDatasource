@@ -1,7 +1,7 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana:7.3.6
+    image: grafana/grafana:8.2.6
     ports:
       - "3000:3000"
     environment:
@@ -11,11 +11,11 @@ services:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
   cassandra:
-    image: cassandra:3.11
+    image: cassandra:4.0
     ports:
       - "9042:9042"
     environment:
-     CASSANDRA_ENABLE_USER_DEFINED_FUNCTIONS: "true"
+      CASSANDRA_ENABLE_USER_DEFINED_FUNCTIONS: "true"
     volumes:
       - /var/lib/cassandra
       - ./cassandra-entrypoint.sh:/docker-entrypoint.sh

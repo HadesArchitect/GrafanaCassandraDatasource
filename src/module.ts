@@ -1,14 +1,11 @@
-import {CassandraDatasource} from './datasource';
-import {CassandraQueryCtrl} from './query_ctrl';
-import {CassandraConfigCtrl} from './config_ctrl';
+import { DataSourcePlugin } from '@grafana/data';
+import { CassandraDataSourceOptions, CassandraDatasource } from './datasource';
+import { CassandraQuery } from './models';
+import { QueryEditor } from './QueryEditor';
+import { ConfigEditor } from './ConfigEditor';
 
-class CassandraQueryOptionsCtrl {
-  static templateUrl = 'partials/query.options.html';
-}
-
-export {
-  CassandraDatasource as Datasource,
-  CassandraConfigCtrl as ConfigCtrl,
-  CassandraQueryCtrl as QueryCtrl,
-  CassandraQueryOptionsCtrl as QueryOptionsCtrl
-};
+export const plugin = new DataSourcePlugin<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>(
+  CassandraDatasource
+)
+  .setConfigEditor(ConfigEditor)
+  .setQueryEditor(QueryEditor);
