@@ -45,6 +45,69 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
+  async getKeyspaces(): Promise<MetricFindValue[]> {
+    const request: CassandraQuery = {
+      datasourceId: this.id,
+      queryType: 'keyspaces',
+      refId: 'keyspaces',
+    };
+
+    var response: FetchResponse<any> = await lastValueFrom(
+      getBackendSrv().fetch({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: {
+          queries: [request],
+        },
+      })
+    );
+
+    const nameIdx = 0;
+
+    var results: MetricFindValue[] = [];
+    response.data.results.keyspaces.frames.forEach((data: { data: any; schema: any }) => {
+      new DataFrameView(toDataFrame(data)).forEach((row) => {
+        results.push({ text: row[nameIdx], value: row[nameIdx] });
+      });
+    });
+
+    return new Promise<MetricFindValue[]>((resolve) => {
+      resolve(results);
+    });
+  }
+
+  async getTables(keyspace: string): Promise<MetricFindValue[]> {
+    const request: CassandraQuery = {
+      datasourceId: this.id,
+      queryType: 'tables',
+      refId: 'tables',
+      keyspace: keyspace,
+    };
+
+    var response: FetchResponse<any> = await lastValueFrom(
+      getBackendSrv().fetch({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: {
+          queries: [request],
+        },
+      })
+    );
+
+    const nameIdx = 0;
+
+    var results: MetricFindValue[] = [];
+    response.data.results.tables.frames.forEach((data: { data: any; schema: any }) => {
+      new DataFrameView(toDataFrame(data)).forEach((row) => {
+        results.push({ text: row[nameIdx], value: row[nameIdx] });
+      });
+    });
+
+    return new Promise<MetricFindValue[]>((resolve) => {
+      resolve(results);
+    });
+  }
+
   async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {
     const request: CassandraQuery = {
       datasourceId: this.id,

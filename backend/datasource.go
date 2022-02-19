@@ -75,16 +75,71 @@ func (ds *CassandraDatasource) handleMetricFindQuery(ctx *backend.PluginContext,
 
 	frame := data.NewFrame(
 		query.RefID,
-		data.NewField(query.RefID, nil, make([]string, len(tableMetadata.Columns))),
-		data.NewField("type", nil, make([]string, len(tableMetadata.Columns))),
+		data.NewField(query.RefID, nil, make([]string, 0)),
+		data.NewField("type", nil, make([]string, 0)),
 	)
 
-	index := 0
 	for name, column := range tableMetadata.Columns {
-		frame.Set(0, index, name)
-		frame.Set(1, index, column.Type.Type().String())
+		frame.AppendRow(name, column.Type.Type().String())
+	}
 
-		index++
+	return dataResponse([]*data.Frame{frame}, nil)
+}
+
+func (ds *CassandraDatasource) HandleKeyspacesQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	return &backend.QueryDataResponse{
+		Responses: processQueries(req, ds.handleKeyspacesQuery),
+	}, nil
+}
+
+func (ds *CassandraDatasource) handleKeyspacesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	_, err := ds.connect(ctx)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+	}
+
+	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("get keyspaces list, err=%v", err))
+	}
+
+	return dataResponse(keyspaces, nil)
+}
+
+func (ds *CassandraDatasource) HandleTablesQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	return &backend.QueryDataResponse{
+		Responses: processQueries(req, ds.handleTablesQuery),
+	}, nil
+}
+
+func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	_, err := ds.connect(ctx)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+	}
+
+	var cassQuery CassandraQuery
+	err = json.Unmarshal(query.JSON, &cassQuery)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("unmarshal queries, err=%v", err))
+	}
+
+	if cassQuery.Keyspace == "" {
+		return dataResponse(data.Frames{}, errors.New("keyspace is not set"))
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
+	if err != nil {
+		return dataResponse(data.Frames{}, fmt.Errorf("retrieve keyspace metadata, err=%v, keyspace=%s", err, cassQuery.Keyspace))
+	}
+
+	frame := data.NewFrame(
+		query.RefID,
+		data.NewField(query.RefID, nil, make([]string, 0)),
+	)
+
+	for name, _ := range keyspaceMetadata.Tables {
+		frame.AppendRow(name)
 	}
 
 	return dataResponse([]*data.Frame{frame}, nil)
