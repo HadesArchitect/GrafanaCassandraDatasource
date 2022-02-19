@@ -107,6 +107,10 @@ export class ConfigEditor extends PureComponent<Props, State> {
       { label: 'LOCAL_ONE', value: 'LOCAL_ONE' },
     ];
 
+    if (!this.props.options.jsonData.consistency || this.props.options.jsonData.consistency === '') {
+      this.props.options.jsonData.consistency = consistencyOptions[1].value;
+    }
+
     return (
       <>
         <FieldSet label="Connection settings">
@@ -140,7 +144,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 options={consistencyOptions}
                 isClearable={false}
                 isSearchable={true}
-                value={options.jsonData.consistency || consistencyOptions[0]}
+                value={options.jsonData.consistency || consistencyOptions[1]}
                 onChange={(value) => {
                   jsonData.consistency = value.value!;
                   onOptionsChange({ ...options, jsonData });
