@@ -10,23 +10,23 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master      
       - name: yarn install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn install
       - name: yarn build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn build
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn build
       - name: go mod vendor
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go mod vendor
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go mod vendor
       - name: go build linux
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go build -o ../dist/cassandra-plugin_linux_amd64 .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go build -o ../dist/cassandra-plugin_linux_amd64 .
       - name: backend tests
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go test .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go test -v -vet=off .
       - name: go build windows
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=windows -e GOARCH=amd64 golang:1 go build -o ../dist/cassandra-plugin_windows_amd64.exe .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=windows -e GOARCH=amd64 golang:1-alpine go build -o ../dist/cassandra-plugin_windows_amd64.exe .
       - name: go build darwin
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=darwin -e GOARCH=amd64 golang:1 go build -o ../dist/cassandra-plugin_darwin_amd64 .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=darwin -e GOARCH=amd64 golang:1-alpine go build -o ../dist/cassandra-plugin_darwin_amd64 .
       - name: go build arm64 (m1)
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=linux -e GOARCH=arm64 golang:1 go build -o ../dist/cassandra-plugin_linux_arm64 .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=linux -e GOARCH=arm64 golang:1-alpine go build -o ../dist/cassandra-plugin_linux_arm64 .
       - name: sign the build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} node:14 npm run-script sign
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }} node:16-alpine npm run-script sign
       - name: Package plugin
         id: package-plugin
         run: |
