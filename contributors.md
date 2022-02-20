@@ -1,4 +1,4 @@
-# Contributors
+# Maintainers
 
 * Aleks Volochnev
     * [a.volochnev@gmail.com](mailto:a.volochnev@gmail.com)
