@@ -1,7 +1,7 @@
 name: Run tests
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,9 +9,9 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master
       - name: yarn install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn install
       - name: yarn build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:14 yarn build
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn build
       - name: go mod vendor
         run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1 go mod vendor
       - name: go build linux
