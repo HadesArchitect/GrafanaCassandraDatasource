@@ -13,7 +13,7 @@ function selectable(value?: string): SelectableValue<string> {
     return {};
   }
 
-  return {label: value, value: value};
+  return { label: value, value: value };
 }
 
 export class QueryEditor extends PureComponent<Props> {
