@@ -12,6 +12,7 @@ export interface CassandraQuery extends DataQuery {
   columnId?: string;
   valueId?: string;
   rawQuery?: boolean;
+  alias?: string;
 }
 
-type CassandraQueryType = 'query' | 'search';
+type CassandraQueryType = 'query' | 'search' | 'keyspaces' | 'tables';

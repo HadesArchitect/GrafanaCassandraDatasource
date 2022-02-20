@@ -90,6 +90,24 @@ func NewQueryHandler() *QueryHandler {
 		return datasource.HandleMetricFindQueries(ctx, req)
 	})
 
+	mux.HandleFunc("keyspaces", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		datasource, err := handler.getDataSource(&req.PluginContext)
+		if err != nil {
+			return nil, fmt.Errorf("get datasource for query, err=%v", err)
+		}
+
+		return datasource.HandleKeyspacesQueries(ctx, req)
+	})
+
+	mux.HandleFunc("tables", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		datasource, err := handler.getDataSource(&req.PluginContext)
+		if err != nil {
+			return nil, fmt.Errorf("get datasource for query, err=%v", err)
+		}
+
+		return datasource.HandleTablesQueries(ctx, req)
+	})
+
 	handler.mux = mux
 
 	return handler

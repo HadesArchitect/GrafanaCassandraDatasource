@@ -8,12 +8,76 @@ import { CassandraQuery } from './models';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
+function selectable(value?: string): SelectableValue<string> {
+  if (!value) {
+    return {};
+  }
+
+  return { label: value, value: value };
+}
+
 export class QueryEditor extends PureComponent<Props> {
   constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>) {
     super(props);
 
     const { onChange, query } = this.props;
     onChange({ ...query, datasourceId: props.datasource.id });
+  }
+
+  onRunQuery(
+    props: Readonly<Props> &
+      Readonly<{
+        children?: React.ReactNode;
+      }>
+  ) {
+    if (
+      props.query.keyspace &&
+      props.query.keyspace !== '' &&
+      props.query.table &&
+      props.query.table !== '' &&
+      props.query.columnTime &&
+      props.query.columnTime !== '' &&
+      props.query.columnValue &&
+      props.query.columnValue !== '' &&
+      props.query.columnId &&
+      props.query.columnId !== '' &&
+      props.query.valueId &&
+      props.query.valueId !== ''
+    ) {
+      this.props.onRunQuery();
+    }
+  }
+
+  getKeyspaces(): Array<SelectableValue<string>> {
+    const result: Array<SelectableValue<string>> = [];
+
+    this.props.datasource.getKeyspaces().then((keyspaces: MetricFindValue[]) => {
+      keyspaces.forEach((keyspace: MetricFindValue) => {
+        result.push({ label: keyspace.text, value: keyspace.text });
+      });
+
+      return result;
+    });
+
+    return result;
+  }
+
+  getTables(): Array<SelectableValue<string>> {
+    if (!this.props.query.keyspace) {
+      return [];
+    }
+
+    const result: Array<SelectableValue<string>> = [];
+
+    this.props.datasource.getTables(this.props.query.keyspace).then((tables: MetricFindValue[]) => {
+      tables.forEach((table: MetricFindValue) => {
+        result.push({ label: table.text, value: table.text });
+      });
+
+      return result;
+    });
+
+    return result;
   }
 
   getOptions(needType: string): Array<SelectableValue<string>> {
@@ -48,14 +112,14 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, target: request });
   };
 
-  onKeyspaceChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onKeyspaceChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, keyspace: event.target.value });
+    onChange({ ...query, keyspace: event.value });
   };
 
-  onTableChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onTableChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, table: event.target.value });
+    onChange({ ...query, table: event.value });
   };
 
   onTimeColumnChange = (value: SelectableValue<string>) => {
@@ -76,6 +140,11 @@ export class QueryEditor extends PureComponent<Props> {
   onIDValueChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, valueId: event.target.value });
+  };
+
+  onAliasChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, alias: event.target.value });
   };
 
   onFilteringChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -110,13 +179,24 @@ export class QueryEditor extends PureComponent<Props> {
           <>
             <InlineFieldRow>
               <InlineField label="Keyspace" labelWidth={30} tooltip="Specify keyspace to work with">
-                <Input
+                {/* <Input
                   name="keyspace"
                   value={this.props.query.keyspace || ''}
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
                   spellCheck={false}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={this.onRunQuery}
+                  width={90}
+                /> */}
+                <Select
+                  allowCustomValue={true}
+                  value={selectable(this.props.query.keyspace)}
+                  placeholder="keyspace name"
+                  onChange={this.onKeyspaceChange}
+                  options={this.getKeyspaces()}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   width={90}
                 />
               </InlineField>
@@ -124,12 +204,23 @@ export class QueryEditor extends PureComponent<Props> {
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField label="Table" labelWidth={30} tooltip="Specify table to work with">
-                <Input
+                {/* <Input
                   name="table"
                   value={this.props.query.table || ''}
                   placeholder="table name"
                   onChange={this.onTableChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={this.onRunQuery}
+                  width={90}
+                /> */}
+                <Select
+                  allowCustomValue={true}
+                  value={selectable(this.props.query.table)}
+                  placeholder="table name"
+                  onChange={this.onTableChange}
+                  options={this.getTables()}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   width={90}
                 />
               </InlineField>
@@ -144,15 +235,17 @@ export class QueryEditor extends PureComponent<Props> {
                   value={this.props.query.columnTime || ''}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={this.onRunQuery}
                   width={90}
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  value={this.props.query.columnTime || ''}
+                  value={selectable(this.props.query.columnTime)}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   options={this.getOptions('timestamp')}
                   width={90}
                 />
@@ -169,16 +262,18 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder='value column'
                   value={this.props.query.columnValue || ''}
                   onChange={this.onValueColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={this.onRunQuery}
                   width={90}
                 /> */}
                 <Select
                   allowCustomValue={true}
                   placeholder="value column"
-                  value={this.props.query.columnValue || ''}
+                  value={selectable(this.props.query.columnValue)}
                   options={this.getOptions('int')}
                   onChange={this.onValueColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   width={90}
                 />
               </InlineField>
@@ -194,15 +289,17 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder='ID column'
                   value={this.props.query.columnId || ''}
                   onChange={this.onIDColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={this.onRunQuery}
                   width={90}
                 /> */}
                 <Select
                   allowCustomValue={true}
                   placeholder="ID column"
-                  value={this.props.query.columnId || ''}
+                  value={selectable(this.props.query.columnId)}
                   onChange={this.onIDColumnChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   options={this.getOptions('uuid')}
                   width={90}
                 />
@@ -219,7 +316,23 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
                   value={this.props.query.valueId || ''}
                   onChange={this.onIDValueChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
+                  width={90}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField label="Alias" labelWidth={30} tooltip="Alias for graph legend">
+                <Input
+                  name="alias"
+                  placeholder="my alias"
+                  value={this.props.query.alias || ''}
+                  onChange={this.onAliasChange}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   width={90}
                 />
               </InlineField>
@@ -233,7 +346,9 @@ export class QueryEditor extends PureComponent<Props> {
                 <InlineSwitch
                   value={this.props.query.filtering}
                   onChange={this.onFilteringChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                 />
               </InlineField>
             </InlineFieldRow>

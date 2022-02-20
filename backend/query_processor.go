@@ -47,13 +47,17 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 	return frames, nil
 }
 
-func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string, ds *CassandraDatasource) (data.Frames, error) {
+func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias string, ds *CassandraDatasource) (data.Frames, error) {
 	iter := ds.session.Query(query).Iter()
+
+	if alias == "" {
+		alias = valueId
+	}
 
 	var timestamp time.Time
 	var value float64
 
-	serie := &datasource.TimeSeries{Name: valueId}
+	serie := &datasource.TimeSeries{Name: alias}
 
 	for iter.Scan(&timestamp, &value) {
 		serie.Points = append(serie.Points, &datasource.Point{
@@ -67,19 +71,58 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId string,
 		return nil, fmt.Errorf("process query, err=%v", err)
 	}
 
-	return []*data.Frame{timeSerieToFrame(serie)}, nil
+	frame := data.NewFrame(
+		serie.Name,
+		data.NewField("time", nil, make([]time.Time, 0)),
+		data.NewField(valueId, nil, make([]float64, 0)),
+	)
+
+	frame.Fields[1].Config = &data.FieldConfig{
+		DisplayNameFromDS: alias,
+	}
+
+	for _, point := range serie.Points {
+		frame.AppendRow(time.Unix(0, point.Timestamp), point.Value)
+	}
+
+	return []*data.Frame{frame}, nil
+}
+
+func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) (data.Frames, error) {
+	iter := ds.session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Iter()
+
+	var keyspace string
+	var keyspaces []string = make([]string, 0)
+
+	for iter.Scan(&keyspace) {
+		keyspaces = append(keyspaces, keyspace)
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, fmt.Errorf("process query, err=%v", err)
+	}
+
+	frame := data.NewFrame(
+		"Keyspaces",
+		data.NewField("keyspaces", nil, make([]string, 0)),
+	)
+
+	for _, keyspace := range keyspaces {
+		frame.AppendRow(keyspace)
+	}
+
+	return []*data.Frame{frame}, nil
 }
 
 func timeSerieToFrame(serie *datasource.TimeSeries) *data.Frame {
 	frame := data.NewFrame(
 		serie.Name,
-		data.NewField("time", nil, make([]time.Time, len(serie.Points))),
-		data.NewField(serie.Name, serie.Tags, make([]float64, len(serie.Points))),
+		data.NewField("time", nil, make([]time.Time, 0)),
+		data.NewField(serie.Name, serie.Tags, make([]float64, 0)),
 	)
 
-	for pIdx, point := range serie.Points {
-		frame.Set(0, pIdx, time.Unix(0, point.Timestamp))
-		frame.Set(1, pIdx, point.Value)
+	for _, point := range serie.Points {
+		frame.AppendRow(time.Unix(0, point.Timestamp), point.Value)
 	}
 
 	return frame
