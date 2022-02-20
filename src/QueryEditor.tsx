@@ -8,6 +8,14 @@ import { CassandraQuery } from './models';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
+function selectable(value?: string): SelectableValue<string> {
+  if (!value) {
+    return {};
+  }
+
+  return {label: value, value: value};
+}
+
 export class QueryEditor extends PureComponent<Props> {
   constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>) {
     super(props);
@@ -182,7 +190,7 @@ export class QueryEditor extends PureComponent<Props> {
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  value={this.props.query.keyspace}
+                  value={selectable(this.props.query.keyspace)}
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
                   options={this.getKeyspaces()}
@@ -206,7 +214,7 @@ export class QueryEditor extends PureComponent<Props> {
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  value={this.props.query.table || ''}
+                  value={selectable(this.props.query.table)}
                   placeholder="table name"
                   onChange={this.onTableChange}
                   options={this.getTables()}
@@ -232,7 +240,7 @@ export class QueryEditor extends PureComponent<Props> {
                 /> */}
                 <Select
                   allowCustomValue={true}
-                  value={this.props.query.columnTime || ''}
+                  value={selectable(this.props.query.columnTime)}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
                   onBlur={() => {
@@ -260,7 +268,7 @@ export class QueryEditor extends PureComponent<Props> {
                 <Select
                   allowCustomValue={true}
                   placeholder="value column"
-                  value={this.props.query.columnValue || ''}
+                  value={selectable(this.props.query.columnValue)}
                   options={this.getOptions('int')}
                   onChange={this.onValueColumnChange}
                   onBlur={() => {
@@ -287,7 +295,7 @@ export class QueryEditor extends PureComponent<Props> {
                 <Select
                   allowCustomValue={true}
                   placeholder="ID column"
-                  value={this.props.query.columnId || ''}
+                  value={selectable(this.props.query.columnId)}
                   onChange={this.onIDColumnChange}
                   onBlur={() => {
                     this.onRunQuery(this.props);

@@ -74,8 +74,12 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias 
 	frame := data.NewFrame(
 		serie.Name,
 		data.NewField("time", nil, make([]time.Time, 0)),
-		data.NewField(valueId, serie.Tags, make([]float64, 0)),
+		data.NewField(valueId, nil, make([]float64, 0)),
 	)
+
+	frame.Fields[1].Config = &data.FieldConfig{
+		DisplayNameFromDS: alias,
+	}
 
 	for _, point := range serie.Points {
 		frame.AppendRow(time.Unix(0, point.Timestamp), point.Value)
