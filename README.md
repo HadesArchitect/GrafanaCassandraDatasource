@@ -9,8 +9,10 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 
 **Supports**:
 
-* Grafana 5.x, 6.x, 7.x (4.x not tested, 8.x WiP not supported yet)
-* Cassandra 3.x, 4.x (2.x not tested)
+* Grafana 
+    * 7.x, 8.x are fully supported (plugin version 2.x)
+    * 5.x, 6.x are deprecated (works with plugin versions 1.x, but we recommend upgrading)
+* Cassandra 3.x, 4.x
 * DataStax Enterprise 6.x
 * DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/DataStax-Astra))
 * AWS Keyspaces (limited support)  ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/AWS-Keyspaces))
