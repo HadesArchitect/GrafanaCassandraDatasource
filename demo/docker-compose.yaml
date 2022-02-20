@@ -9,12 +9,16 @@ services:
     volumes:
       - /var/lib/grafana
   cassandra:
-    image: cassandra
+    image: cassandra:4
     ports:
       - "9042:9042"
-    environment:
-      CASSANDRA_ENABLE_USER_DEFINED_FUNCTIONS: "true"
     volumes:
       - /var/lib/cassandra
-      - ../cassandra-entrypoint.sh:/docker-entrypoint.sh
-      - ../test_data.cql:/test_data.cql
+  sample-data:
+    image: cassandra:4
+    depends_on:
+      - cassandra
+    restart: "no"
+    entrypoint: ["/sample_data.sh"]
+    volumes:
+      - ./sample_data.sh:/sample_data.sh

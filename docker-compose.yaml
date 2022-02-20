@@ -1,7 +1,7 @@
 version: '3'
 services:
   grafana:
-    image: grafana/grafana:8.2.6
+    image: grafana/grafana:8.4.1
     ports:
       - "3000:3000"
     environment:
@@ -11,12 +11,16 @@ services:
       - /var/lib/grafana
       - .:/var/lib/grafana/plugins/cassandra
   cassandra:
-    image: cassandra:4.0
+    image: cassandra:4
     ports:
       - "9042:9042"
-    environment:
-      CASSANDRA_ENABLE_USER_DEFINED_FUNCTIONS: "true"
     volumes:
       - /var/lib/cassandra
-      - ./cassandra-entrypoint.sh:/docker-entrypoint.sh
-      - ./test_data.cql:/test_data.cql
+  sample-data:
+    image: cassandra:4
+    depends_on:
+      - cassandra
+    restart: "no"
+    entrypoint: ["/sample_data.sh"]
+    volumes:
+      - ./demo/sample_data.sh:/sample_data.sh
