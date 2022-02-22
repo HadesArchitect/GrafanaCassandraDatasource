@@ -170,6 +170,7 @@ export class QueryEditor extends PureComponent<Props> {
                 portalOrigin="cassandra"
                 onChange={this.onQueryTextChange}
                 onBlur={this.props.onRunQuery}
+                query={this.props.query.target}
               />
             </InlineField>
             <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />

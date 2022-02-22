@@ -37,8 +37,12 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 
 	frames := make([]*data.Frame, len(series))
 	i := 0
-	for _, serie := range series {
+	for id, serie := range series {
 		frame := timeSerieToFrame(serie)
+
+		frame.Fields[1].Config = &data.FieldConfig{
+			DisplayNameFromDS: id,
+		}
 
 		frames[i] = frame
 		i = i + 1
