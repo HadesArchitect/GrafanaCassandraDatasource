@@ -32,7 +32,7 @@ func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *bac
 }
 
 func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
+	err := ds.connectIfNeeded(ctx)
 	if err != nil {
 		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
 	}
@@ -49,7 +49,7 @@ func (ds *CassandraDatasource) HandleMetricFindQueries(ctx context.Context, req 
 }
 
 func (ds *CassandraDatasource) handleMetricFindQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
+	err := ds.connectIfNeeded(ctx)
 	if err != nil {
 		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
 	}
@@ -94,7 +94,7 @@ func (ds *CassandraDatasource) HandleKeyspacesQueries(ctx context.Context, req *
 }
 
 func (ds *CassandraDatasource) handleKeyspacesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
+	err := ds.connectIfNeeded(ctx)
 	if err != nil {
 		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
 	}
@@ -114,7 +114,7 @@ func (ds *CassandraDatasource) HandleTablesQueries(ctx context.Context, req *bac
 }
 
 func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
+	err := ds.connectIfNeeded(ctx)
 	if err != nil {
 		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
 	}
@@ -147,7 +147,7 @@ func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, que
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	_, err := ds.connect(&req.PluginContext)
+	err := ds.connect(&req.PluginContext)
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
@@ -198,11 +198,15 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 	return options, nil
 }
 
-func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, error) {
+func (ds *CassandraDatasource) connectIfNeeded(context *backend.PluginContext) error {
 	if ds.session != nil {
-		return true, nil
+		return nil
 	}
 
+	return ds.connect(context)
+}
+
+func (ds *CassandraDatasource) connect(context *backend.PluginContext) error {
 	hosts := strings.Split(context.DataSourceInstanceSettings.URL, ";")
 
 	for _, host := range hosts {
@@ -210,13 +214,13 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 		if err == nil {
 			ds.logger.Debug(fmt.Sprintf("Connected to host %s", host))
 
-			return true, nil
+			return nil
 		} else if err != nil {
 			ds.logger.Warn(fmt.Sprintf("Failed to connect to host, host: %s, error: %+v", host, err))
 		}
 	}
 
-	return false, fmt.Errorf("connect to hosts, hosts=%+v", hosts)
+	return fmt.Errorf("connect to hosts, hosts=%+v", hosts)
 }
 
 func (ds *CassandraDatasource) tryToConnect(host string, context *backend.PluginContext) error {
