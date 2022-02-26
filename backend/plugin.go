@@ -52,18 +52,7 @@ func (handler *QueryHandler) CheckHealth(ctx context.Context, req *backend.Check
 		}, nil
 	}
 
-	err = datasource.CheckHealth(ctx, req)
-	if err != nil {
-		return &backend.CheckHealthResult{
-			Status:  backend.HealthStatusError,
-			Message: fmt.Sprintf("Connection test failed, error = %v", err),
-		}, nil
-	}
-
-	return &backend.CheckHealthResult{
-		Status:  backend.HealthStatusOk,
-		Message: "Database connected",
-	}, nil
+	return datasource.CheckHealth(ctx, req)
 }
 
 func NewQueryHandler() *QueryHandler {

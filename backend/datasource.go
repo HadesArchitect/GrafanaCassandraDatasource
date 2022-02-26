@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"strconv"
 	"time"
@@ -20,7 +21,7 @@ type CassandraDatasource struct {
 	logger    log.Logger
 	builder   *QueryBuilder
 	processor *QueryProcessor
-	sessions  map[int]*gocql.Session
+	host      string
 	session   *gocql.Session
 }
 
@@ -138,20 +139,26 @@ func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, que
 		data.NewField(query.RefID, nil, make([]string, 0)),
 	)
 
-	for name, _ := range keyspaceMetadata.Tables {
+	for name := range keyspaceMetadata.Tables {
 		frame.AppendRow(name)
 	}
 
 	return dataResponse([]*data.Frame{frame}, nil)
 }
 
-func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) error {
+func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	_, err := ds.connect(&req.PluginContext)
 	if err != nil {
-		return fmt.Errorf("unable to establish connection with the database, err=%v", err)
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: fmt.Sprintf("Connection test failed, error = unable to establish connection with the database, err=%v", err),
+		}, nil
 	}
 
-	return nil
+	return &backend.CheckHealthResult{
+		Status:  backend.HealthStatusOk,
+		Message: fmt.Sprintf("Database connected, host: %s", ds.host),
+	}, nil
 }
 
 func processQueries(req *backend.QueryDataRequest, handler func(*backend.PluginContext, backend.DataQuery) backend.DataResponse) backend.Responses {
@@ -192,24 +199,31 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 }
 
 func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, error) {
-	options, err := ds.getRequestOptions(context.DataSourceInstanceSettings.JSONData)
-	if err != nil {
-		return false, fmt.Errorf("parse connection parameters, err=%v", err)
-	}
-
-	datasourceID := int(context.DataSourceInstanceSettings.ID)
-
-	if ds.sessions == nil {
-		ds.sessions = make(map[int]*gocql.Session)
-	}
-
-	if ds.sessions[datasourceID] != nil {
-		ds.session = ds.sessions[datasourceID]
-
+	if ds.session != nil {
 		return true, nil
 	}
 
-	host := context.DataSourceInstanceSettings.URL
+	hosts := strings.Split(context.DataSourceInstanceSettings.URL, ";")
+
+	for _, host := range hosts {
+		err := ds.tryToConnect(host, context)
+		if err == nil {
+			ds.logger.Debug(fmt.Sprintf("Connected to host %s", host))
+
+			return true, nil
+		} else if err != nil {
+			ds.logger.Warn(fmt.Sprintf("Failed to connect to host, host: %s, error: %+v", host, err))
+		}
+	}
+
+	return false, fmt.Errorf("connect to hosts, hosts=%+v", hosts)
+}
+
+func (ds *CassandraDatasource) tryToConnect(host string, context *backend.PluginContext) error {
+	options, err := ds.getRequestOptions(context.DataSourceInstanceSettings.JSONData)
+	if err != nil {
+		return fmt.Errorf("parse connection parameters, err=%v", err)
+	}
 
 	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
 
@@ -221,7 +235,7 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 
 	consistency, err := parseConsistency(options.Consistency)
 	if err != nil {
-		return false, fmt.Errorf("parse Consistency, err=%v, consistency string=%s", err, options.Consistency)
+		return fmt.Errorf("parse Consistency, err=%v, consistency string=%s", err, options.Consistency)
 	}
 
 	cluster.Consistency = consistency
@@ -237,7 +251,7 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 
 		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
 		if err != nil {
-			return false, fmt.Errorf("create TLS config, err=%v", err)
+			return fmt.Errorf("create TLS config, err=%v", err)
 		}
 
 		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
@@ -245,14 +259,13 @@ func (ds *CassandraDatasource) connect(context *backend.PluginContext) (bool, er
 
 	session, err := cluster.CreateSession()
 	if err != nil {
-		return false, fmt.Errorf("create Cassandra DB session, err=%v", err)
+		return fmt.Errorf("create Cassandra DB session, err=%v", err)
 	}
 
-	ds.sessions[datasourceID] = session
+	ds.host = host
 	ds.session = session
 
-	ds.logger.Debug("Connection successful")
-	return true, nil
+	return nil
 }
 
 func parseConsistency(consistencyStr string) (consistency gocql.Consistency, err error) {
