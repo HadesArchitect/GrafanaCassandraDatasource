@@ -4,7 +4,7 @@
     "type": "datasource",
   
     "backend": true,
-    "alerting": false,
+    "alerting": true,
     "executable": "cassandra-plugin",
     "metrics": true,
     "annotations": false,

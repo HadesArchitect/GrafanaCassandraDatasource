@@ -50,7 +50,6 @@ export class QueryEditor extends PureComponent<Props> {
 
   getKeyspaces(): Array<SelectableValue<string>> {
     const result: Array<SelectableValue<string>> = [];
-
     this.props.datasource.getKeyspaces().then((keyspaces: MetricFindValue[]) => {
       keyspaces.forEach((keyspace: MetricFindValue) => {
         result.push({ label: keyspace.text, value: keyspace.text });
@@ -154,6 +153,8 @@ export class QueryEditor extends PureComponent<Props> {
 
   render() {
     const options = this.props;
+
+    this.props.query.queryType = 'query';
 
     return (
       <div>
