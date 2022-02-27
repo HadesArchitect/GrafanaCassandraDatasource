@@ -25,7 +25,7 @@
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"}
       ],
       "version": "2.0.0",
-      "updated": "2022-02-19"
+      "updated": "2022-02-27"
     },
     "dependencies": {
       "grafanaDependency": ">=7.0.0",
