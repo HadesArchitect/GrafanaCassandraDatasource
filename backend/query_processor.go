@@ -30,7 +30,6 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 		})
 	}
 
-	ds.logger.Info(fmt.Sprintf("%+v'n", series))
 	if err := iter.Close(); err != nil {
 		return nil, fmt.Errorf("process query, err=%v", err)
 	}
@@ -68,7 +67,6 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias 
 			Timestamp: timestamp.UnixNano(),
 			Value:     value,
 		})
-		ds.logger.Warn(fmt.Sprintf("%+v", serie.Points))
 	}
 
 	if err := iter.Close(); err != nil {
