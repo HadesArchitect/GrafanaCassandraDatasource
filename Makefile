@@ -16,7 +16,7 @@ start: ## Launches dev environment
 	docker-compose up -d
 
 stop: ## Stops dev environment
-	docker-compose up -d
+	docker-compose stop
 
 fe-deps: ## Install frontend dependencies
 	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn install
