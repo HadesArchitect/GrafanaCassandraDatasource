@@ -7,7 +7,7 @@ services:
     environment:
       GF_LOG_LEVEL: debug
     volumes:
-      - /var/lib/grafana
+      - ./grafana.db:/var/lib/grafana/grafana.db
   cassandra:
     image: cassandra:4
     ports:
