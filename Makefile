@@ -3,6 +3,9 @@ help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 .DEFAULT_GOAL := help
 
+OS=linux
+ARCH=amd64
+
 build: clean frontend backend ## Build the whole datasource
 
 frontend: fe-deps fe-build ## Install frontend dependencies and build frontend
@@ -27,5 +30,5 @@ fe-build: ## Build frontend
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go mod vendor
 
-be-build: ## Build backend (builds linux-amd64 version)
-	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_amd64 .
+be-build: ## Build backend (Builds linux-amd64 version by deafult. Run with args to adjust target (make be-build os=windows arch=arm64))
+	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=$(OS) -e GOARCH=$(ARCH) golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_$(OS)_$(ARCH) .
