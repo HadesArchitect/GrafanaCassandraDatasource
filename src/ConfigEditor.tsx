@@ -91,12 +91,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
       },
     });
   };
+
   render() {
     const { onOptionsChange, options } = this.props;
     const { jsonData } = options;
 
     const consistencyOptions = [
-      { label: 'ANY', value: 'ANY' },
       { label: 'ONE', value: 'ONE' },
       { label: 'TWO', value: 'TWO' },
       { label: 'THREE', value: 'THREE' },
@@ -108,7 +108,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
     ];
 
     if (!this.props.options.jsonData.consistency || this.props.options.jsonData.consistency === '') {
-      this.props.options.jsonData.consistency = consistencyOptions[1].value;
+      this.props.options.jsonData.consistency = consistencyOptions[0].value;
     }
 
     return (
@@ -118,7 +118,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField label="Host" labelWidth={20} tooltip="Specify host and port like `host:9042`">
               <Input
                 name="host"
-                value={options.url}
+                value={options.url || 'cassandra:9042'}
                 placeholder="cassandra:9042"
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
@@ -144,7 +144,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 options={consistencyOptions}
                 isClearable={false}
                 isSearchable={true}
-                value={options.jsonData.consistency || consistencyOptions[1]}
+                value={options.jsonData.consistency || consistencyOptions[0]}
                 onChange={(value) => {
                   jsonData.consistency = value.value!;
                   onOptionsChange({ ...options, jsonData });
