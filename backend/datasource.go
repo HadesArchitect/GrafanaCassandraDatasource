@@ -159,7 +159,7 @@ func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, que
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	err := ds.connectIfNeeded(&req.PluginContext)
+	err := ds.connect(&req.PluginContext)
 	if err != nil {
 		ds.logger.Warn("Failed to connect", "Message", err)
 
@@ -217,6 +217,14 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 }
 
 func (ds *CassandraDatasource) connectIfNeeded(context *backend.PluginContext) error {
+	if ds.session != nil {
+		return nil
+	}
+
+	return ds.connect(context)
+}
+
+func (ds *CassandraDatasource) connect(context *backend.PluginContext) error {
 	hosts := strings.Split(context.DataSourceInstanceSettings.URL, ";")
 
 	err := ds.tryToConnect(hosts, context)
