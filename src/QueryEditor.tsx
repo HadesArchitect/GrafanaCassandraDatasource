@@ -85,7 +85,7 @@ export class QueryEditor extends PureComponent<Props> {
       .getColumns(this.props.query.keyspace, this.props.query.table, needType)
       .then((columns: string[]) => {
         columns.forEach((column: string) => {
-            columnOptions.push({ label: column, value: column });
+          columnOptions.push({ label: column, value: column });
         });
       });
 

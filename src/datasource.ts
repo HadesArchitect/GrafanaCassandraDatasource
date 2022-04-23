@@ -1,11 +1,6 @@
 import _ from 'lodash';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import {
-  DataQueryRequest,
-  DataQueryResponse,
-  DataSourceJsonData,
-  DataSourceInstanceSettings,
-} from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
 import { CassandraQuery } from './models';
 import { Observable } from 'rxjs';
 
@@ -43,7 +38,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   async getTables(keyspace: string): Promise<string[]> {
-    return this.getResource('tables', { keyspace: keyspace});
+    return this.getResource('tables', { keyspace: keyspace });
   }
 
   async getColumns(keyspace: string, table: string, needType: string): Promise<string[]> {
