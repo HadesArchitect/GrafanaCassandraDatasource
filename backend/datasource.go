@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"strconv"
 	"time"
@@ -12,16 +13,113 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"golang.org/x/net/context"
 )
 
 type CassandraDatasource struct {
-	logger    log.Logger
-	builder   *QueryBuilder
-	processor *QueryProcessor
-	sessions  map[int]*gocql.Session
-	session   *gocql.Session
+	logger          log.Logger
+	resourceHandler backend.CallResourceHandler
+	builder         *QueryBuilder
+	processor       *QueryProcessor
+	sessions        map[int]*gocql.Session
+	session         *gocql.Session
+}
+
+func NewDataSource() *CassandraDatasource {
+	ds := &CassandraDatasource{
+		logger: logger,
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/keyspaces", ds.handleKeyspaces)
+	mux.HandleFunc("/tables", ds.handleTables)
+	mux.HandleFunc("/columns", ds.handleColumns)
+
+	ds.resourceHandler = httpadapter.New(mux)
+
+	return ds
+}
+
+func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http.Request) {
+	ctx := httpadapter.PluginConfigFromContext(req.Context())
+
+	_, err := ds.connect(&ctx)
+	if err != nil {
+		ds.logger.Warn("Failed to connect", "Message", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+	if err != nil {
+		ds.logger.Error("Failed to get keyspaces list", "Message", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	ds.writeHTTPResult(rw, keyspaces)
+}
+
+func (ds *CassandraDatasource) handleTables(rw http.ResponseWriter, req *http.Request) {
+	ctx := httpadapter.PluginConfigFromContext(req.Context())
+
+	tables, err := ds.getTables(&ctx, req.URL.Query().Get("keyspace"))
+	if err != nil {
+		ds.logger.Error("Failed to get tables list", "Message", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	ds.writeHTTPResult(rw, tables)
+}
+
+func (ds *CassandraDatasource) handleColumns(rw http.ResponseWriter, req *http.Request) {
+	ctx := httpadapter.PluginConfigFromContext(req.Context())
+
+	keyspace := req.URL.Query().Get("keyspace")
+	table := req.URL.Query().Get("table")
+	needType := req.URL.Query().Get("needType")
+
+	columns, err := ds.getColumns(&ctx, keyspace, table, needType)
+	if err != nil {
+		ds.logger.Error("Failed to get columns list", "Message", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	ds.writeHTTPResult(rw, columns)
+}
+
+func (ds *CassandraDatasource) writeHTTPResult(rw http.ResponseWriter, object interface{}) {
+	data, err := json.MarshalIndent(object, "", "    ")
+	if err != nil {
+		ds.logger.Error("Failed to unmarshal object", "Message", err, "Object", object)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	_, err = rw.Write(data)
+	if err != nil {
+		ds.logger.Error("Failed to get keyspaces list", "Message", err)
+
+		rw.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
 }
 
 func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -42,120 +140,62 @@ func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, que
 	return dataResponse(frames, err)
 }
 
-func (ds *CassandraDatasource) HandleMetricFindQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return &backend.QueryDataResponse{
-		Responses: processQueries(req, ds.handleMetricFindQuery),
-	}, nil
-}
+func (ds *CassandraDatasource) getColumns(ctx *backend.PluginContext, keyspace, table, needType string) ([]string, error) {
+	if keyspace == "" {
+		return nil, errors.New("Keyspace is not set")
+	}
 
-func (ds *CassandraDatasource) handleMetricFindQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
+	if table == "" {
+		return nil, errors.New("Table is not set")
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
 	if err != nil {
-		ds.logger.Warn("Failed to connect", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to connect to server, please inspect Grafana server log for details"))
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+		return nil, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details")
 	}
 
-	var cassQuery CassandraQuery
-	err = json.Unmarshal(query.JSON, &cassQuery)
-	if err != nil {
-		ds.logger.Error("Failed to parse queries", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to parse queries, please inspect Grafana server log for details"))
-	}
-
-	if cassQuery.Keyspace == "" {
-		return dataResponse(data.Frames{}, errors.New("Keyspace is not set"))
-	}
-
-	if cassQuery.Table == "" {
-		return dataResponse(data.Frames{}, errors.New("Table is not set"))
-	}
-
-	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
-	if err != nil {
-		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", cassQuery.Keyspace)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details"))
-	}
-
-	tableMetadata, ok := keyspaceMetadata.Tables[cassQuery.Table]
+	tableMetadata, ok := keyspaceMetadata.Tables[table]
 	if !ok {
-		return dataResponse(data.Frames{}, fmt.Errorf("Table '%s' not found", cassQuery.Table))
+		return nil, fmt.Errorf("Table '%s' not found", table)
 	}
 
-	frame := data.NewFrame(
-		query.RefID,
-		data.NewField(query.RefID, nil, make([]string, 0)),
-		data.NewField("type", nil, make([]string, 0)),
-	)
-
+	var columns []string = make([]string, 0)
 	for name, column := range tableMetadata.Columns {
-		frame.AppendRow(name, column.Type.Type().String())
+		if column.Type.Type().String() == needType {
+			columns = append(columns, name)
+		}
 	}
 
-	return dataResponse([]*data.Frame{frame}, nil)
+	return columns, nil
 }
 
-func (ds *CassandraDatasource) HandleKeyspacesQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return &backend.QueryDataResponse{
-		Responses: processQueries(req, ds.handleKeyspacesQuery),
-	}, nil
-}
-
-func (ds *CassandraDatasource) handleKeyspacesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace string) ([]string, error) {
 	_, err := ds.connect(ctx)
 	if err != nil {
 		ds.logger.Warn("Failed to connect", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to connect to server, please inspect Grafana server log for details"))
+
+		return nil, errors.New("Failed to connect to server, please inspect Grafana server log for details")
 	}
 
-	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+	if keyspace == "" {
+		return nil, errors.New("Keyspace is not set")
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
 	if err != nil {
-		ds.logger.Error("Failed to get keyspaces list", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to get keyspaces list, please inspect Grafana server log for details"))
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+		return nil, errors.New("Failed to retrieve keyspace metadata")
 	}
 
-	return dataResponse(keyspaces, nil)
-}
-
-func (ds *CassandraDatasource) HandleTablesQueries(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return &backend.QueryDataResponse{
-		Responses: processQueries(req, ds.handleTablesQuery),
-	}, nil
-}
-
-func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	_, err := ds.connect(ctx)
-	if err != nil {
-		ds.logger.Warn("Failed to connect", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to connect to server, please inspect Grafana server log for details"))
-	}
-
-	var cassQuery CassandraQuery
-	err = json.Unmarshal(query.JSON, &cassQuery)
-	if err != nil {
-		ds.logger.Error("Failed to parse queries", "Message", err)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to parse queries, please inspect Grafana server log for details"))	
-	}
-
-	if cassQuery.Keyspace == "" {
-		return dataResponse(data.Frames{}, errors.New("Keyspace is not set"))
-	}
-
-	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
-	if err != nil {
-		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", cassQuery.Keyspace)
-		return dataResponse(data.Frames{}, fmt.Errorf("Failed to retrieve keyspace metadata"))
-	}
-
-	frame := data.NewFrame(
-		query.RefID,
-		data.NewField(query.RefID, nil, make([]string, 0)),
-	)
-
+	var tables []string = make([]string, 0)
 	for name, _ := range keyspaceMetadata.Tables {
-		frame.AppendRow(name)
+		tables = append(tables, name)
 	}
 
-	return dataResponse([]*data.Frame{frame}, nil)
+	return tables, nil
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) error {

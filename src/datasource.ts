@@ -1,16 +1,13 @@
 import _ from 'lodash';
-import { DataSourceWithBackend, getBackendSrv, getTemplateSrv, FetchResponse } from '@grafana/runtime';
+import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 import {
-  toDataFrame,
-  DataFrameView,
   DataQueryRequest,
   DataQueryResponse,
   DataSourceJsonData,
   DataSourceInstanceSettings,
-  MetricFindValue,
 } from '@grafana/data';
 import { CassandraQuery } from './models';
-import { Observable, lastValueFrom } from 'rxjs';
+import { Observable } from 'rxjs';
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
   keyspace: string;
@@ -41,100 +38,19 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
-  async getKeyspaces(): Promise<MetricFindValue[]> {
-    const request: CassandraQuery = {
-      datasourceId: this.id,
-      queryType: 'keyspaces',
-      refId: 'keyspaces',
-    };
-
-    var response: FetchResponse<any> = await lastValueFrom(
-      getBackendSrv().fetch({
-        url: '/api/ds/query',
-        method: 'POST',
-        data: {
-          queries: [request],
-        },
-      })
-    );
-
-    const nameIdx = 0;
-
-    var results: MetricFindValue[] = [];
-    response.data.results.keyspaces.frames.forEach((data: { data: any; schema: any }) => {
-      new DataFrameView(toDataFrame(data)).forEach((row) => {
-        results.push({ text: row[nameIdx], value: row[nameIdx] });
-      });
-    });
-
-    return new Promise<MetricFindValue[]>((resolve) => {
-      resolve(results);
-    });
+  async getKeyspaces(): Promise<string[]> {
+    return this.getResource('keyspaces');
   }
 
-  async getTables(keyspace: string): Promise<MetricFindValue[]> {
-    const request: CassandraQuery = {
-      datasourceId: this.id,
-      queryType: 'tables',
-      refId: 'tables',
-      keyspace: keyspace,
-    };
-
-    var response: FetchResponse<any> = await lastValueFrom(
-      getBackendSrv().fetch({
-        url: '/api/ds/query',
-        method: 'POST',
-        data: {
-          queries: [request],
-        },
-      })
-    );
-
-    const nameIdx = 0;
-
-    var results: MetricFindValue[] = [];
-    response.data.results.tables.frames.forEach((data: { data: any; schema: any }) => {
-      new DataFrameView(toDataFrame(data)).forEach((row) => {
-        results.push({ text: row[nameIdx], value: row[nameIdx] });
-      });
-    });
-
-    return new Promise<MetricFindValue[]>((resolve) => {
-      resolve(results);
-    });
+  async getTables(keyspace: string): Promise<string[]> {
+    return this.getResource('tables', { keyspace: keyspace});
   }
 
-  async metricFindQuery(keyspace: string, table: string): Promise<MetricFindValue[]> {
-    const request: CassandraQuery = {
-      datasourceId: this.id,
-      queryType: 'search',
-      refId: 'search',
+  async getColumns(keyspace: string, table: string, needType: string): Promise<string[]> {
+    return this.getResource('columns', {
       keyspace: keyspace,
       table: table,
-    };
-
-    var response: FetchResponse<any> = await lastValueFrom(
-      getBackendSrv().fetch({
-        url: '/api/ds/query',
-        method: 'POST',
-        data: {
-          queries: [request],
-        },
-      })
-    );
-
-    const nameIdx = 0;
-    const typeIdx = 1;
-
-    var results: MetricFindValue[] = [];
-    response.data.results.search.frames.forEach((data: { data: any; schema: any }) => {
-      new DataFrameView(toDataFrame(data)).forEach((row) => {
-        results.push({ text: row[nameIdx], value: row[typeIdx] });
-      });
-    });
-
-    return new Promise<MetricFindValue[]>((resolve) => {
-      resolve(results);
+      needType: needType,
     });
   }
 

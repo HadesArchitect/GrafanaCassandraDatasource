@@ -1,6 +1,6 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch, Select } from '@grafana/ui';
-import { MetricFindValue, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
 
@@ -50,12 +50,10 @@ export class QueryEditor extends PureComponent<Props> {
 
   getKeyspaces(): Array<SelectableValue<string>> {
     const result: Array<SelectableValue<string>> = [];
-    this.props.datasource.getKeyspaces().then((keyspaces: MetricFindValue[]) => {
-      keyspaces.forEach((keyspace: MetricFindValue) => {
-        result.push({ label: keyspace.text, value: keyspace.text });
+    this.props.datasource.getKeyspaces().then((keyspaces: string[]) => {
+      keyspaces.forEach((keyspace: string) => {
+        result.push({ label: keyspace, value: keyspace });
       });
-
-      return result;
     });
 
     return result;
@@ -67,13 +65,10 @@ export class QueryEditor extends PureComponent<Props> {
     }
 
     const result: Array<SelectableValue<string>> = [];
-
-    this.props.datasource.getTables(this.props.query.keyspace).then((tables: MetricFindValue[]) => {
-      tables.forEach((table: MetricFindValue) => {
-        result.push({ label: table.text, value: table.text });
+    this.props.datasource.getTables(this.props.query.keyspace).then((tables: string[]) => {
+      tables.forEach((table: string) => {
+        result.push({ label: table, value: table });
       });
-
-      return result;
     });
 
     return result;
@@ -87,15 +82,11 @@ export class QueryEditor extends PureComponent<Props> {
     const columnOptions: Array<SelectableValue<string>> = [];
 
     this.props.datasource
-      .metricFindQuery(this.props.query.keyspace, this.props.query.table)
-      .then((columns: MetricFindValue[]) => {
-        columns.forEach((column: MetricFindValue) => {
-          if (column.value === needType) {
-            columnOptions.push({ label: column.text, value: column.text });
-          }
+      .getColumns(this.props.query.keyspace, this.props.query.table, needType)
+      .then((columns: string[]) => {
+        columns.forEach((column: string) => {
+            columnOptions.push({ label: column, value: column });
         });
-
-        return columnOptions;
       });
 
     return columnOptions;
