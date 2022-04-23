@@ -45,16 +45,7 @@ func NewDataSource() *CassandraDatasource {
 func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http.Request) {
 	ctx := httpadapter.PluginConfigFromContext(req.Context())
 
-	_, err := ds.connect(&ctx)
-	if err != nil {
-		ds.logger.Warn("Failed to connect", "Message", err)
-
-		rw.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+	keyspaces, err := ds.getKeyspaces(&ctx)
 	if err != nil {
 		ds.logger.Error("Failed to get keyspaces list", "Message", err)
 
@@ -62,7 +53,6 @@ func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http
 
 		return
 	}
-
 	ds.writeHTTPResult(rw, keyspaces)
 }
 
@@ -140,38 +130,7 @@ func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, que
 	return dataResponse(frames, err)
 }
 
-func (ds *CassandraDatasource) getColumns(ctx *backend.PluginContext, keyspace, table, needType string) ([]string, error) {
-	if keyspace == "" {
-		return nil, errors.New("Keyspace is not set")
-	}
-
-	if table == "" {
-		return nil, errors.New("Table is not set")
-	}
-
-	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
-	if err != nil {
-		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
-
-		return nil, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details")
-	}
-
-	tableMetadata, ok := keyspaceMetadata.Tables[table]
-	if !ok {
-		return nil, fmt.Errorf("Table '%s' not found", table)
-	}
-
-	var columns []string = make([]string, 0)
-	for name, column := range tableMetadata.Columns {
-		if column.Type.Type().String() == needType {
-			columns = append(columns, name)
-		}
-	}
-
-	return columns, nil
-}
-
-func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace string) ([]string, error) {
+func (ds *CassandraDatasource) getConnected(ctx *backend.PluginContext, getData func() ([]string, error)) ([]string, error) {
 	_, err := ds.connect(ctx)
 	if err != nil {
 		ds.logger.Warn("Failed to connect", "Message", err)
@@ -179,23 +138,81 @@ func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace st
 		return nil, errors.New("Failed to connect to server, please inspect Grafana server log for details")
 	}
 
-	if keyspace == "" {
-		return nil, errors.New("Keyspace is not set")
+	return getData()
+}
+
+func (ds *CassandraDatasource) getColumns(ctx *backend.PluginContext, keyspace, table, needType string) ([]string, error) {
+	getColumns := func() ([]string, error) {
+		if keyspace == "" {
+			return nil, errors.New("Keyspace is not set")
+		}
+
+		if table == "" {
+			return nil, errors.New("Table is not set")
+		}
+
+		keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
+		if err != nil {
+			ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+			return nil, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details")
+		}
+
+		tableMetadata, ok := keyspaceMetadata.Tables[table]
+		if !ok {
+			return nil, fmt.Errorf("Table '%s' not found", table)
+		}
+
+		var columns []string = make([]string, 0)
+		for name, column := range tableMetadata.Columns {
+			if column.Type.Type().String() == needType {
+				columns = append(columns, name)
+			}
+		}
+
+		return columns, nil
 	}
 
-	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
-	if err != nil {
-		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+	return ds.getConnected(ctx, getColumns)
+}
 
-		return nil, errors.New("Failed to retrieve keyspace metadata")
+func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace string) ([]string, error) {
+	getTables := func() ([]string, error) {
+		if keyspace == "" {
+			return nil, errors.New("Keyspace is not set")
+		}
+
+		keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
+		if err != nil {
+			ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+			return nil, errors.New("Failed to retrieve keyspace metadata")
+		}
+
+		var tables []string = make([]string, 0)
+		for name, _ := range keyspaceMetadata.Tables {
+			tables = append(tables, name)
+		}
+
+		return tables, nil
 	}
 
-	var tables []string = make([]string, 0)
-	for name, _ := range keyspaceMetadata.Tables {
-		tables = append(tables, name)
+	return ds.getConnected(ctx, getTables)
+}
+
+func (ds *CassandraDatasource) getKeyspaces(ctx *backend.PluginContext) ([]string, error) {
+	getKeyspaces := func() ([]string, error) {
+		keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+		if err != nil {
+			ds.logger.Error("Failed to get keyspaces list", "Message", err)
+
+			return nil, errors.New("Failed to get keyspaces list")
+		}
+
+		return keyspaces, nil
 	}
 
-	return tables, nil
+	return ds.getConnected(ctx, getKeyspaces)
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) error {
