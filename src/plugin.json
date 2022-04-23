@@ -4,7 +4,7 @@
     "type": "datasource",
   
     "backend": true,
-    "alerting": false,
+    "alerting": true,
     "executable": "cassandra-plugin",
     "metrics": true,
     "annotations": false,
@@ -25,7 +25,13 @@
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"}
       ],
       "version": "2.0.0",
-      "updated": "2022-02-19"
+      "updated": "2022-02-27",
+      "screenshots": [
+        {"name": "Query Configurator", "path": "img/configurator.png"},
+        {"name": "Query Editor", "path": "img/editor.png"},
+        {"name": "Configuration", "path": "img/config.png"},
+        {"name": "Suggestions", "path": "img/suggestions.png"}
+      ]
     },
     "dependencies": {
       "grafanaDependency": ">=7.0.0",

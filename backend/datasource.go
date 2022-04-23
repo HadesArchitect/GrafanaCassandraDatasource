@@ -21,7 +21,6 @@ type CassandraDatasource struct {
 	logger    log.Logger
 	builder   *QueryBuilder
 	processor *QueryProcessor
-	host      string
 	session   *gocql.Session
 }
 
@@ -34,7 +33,8 @@ func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *bac
 func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	err := ds.connectIfNeeded(ctx)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+		ds.logger.Warn("Failed to connect", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to connect to server, please inspect Grafana server log for details"))
 	}
 
 	frames, err := ds.metricQuery(&query)
@@ -51,27 +51,34 @@ func (ds *CassandraDatasource) HandleMetricFindQueries(ctx context.Context, req 
 func (ds *CassandraDatasource) handleMetricFindQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	err := ds.connectIfNeeded(ctx)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+		ds.logger.Warn("Failed to connect", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to connect to server, please inspect Grafana server log for details"))
 	}
 
 	var cassQuery CassandraQuery
 	err = json.Unmarshal(query.JSON, &cassQuery)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unmarshal queries, err=%v", err))
+		ds.logger.Error("Failed to parse queries", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to parse queries, please inspect Grafana server log for details"))
 	}
 
-	if cassQuery.Keyspace == "" || cassQuery.Table == "" {
-		return dataResponse(data.Frames{}, errors.New("keyspace or table is not set"))
+	if cassQuery.Keyspace == "" {
+		return dataResponse(data.Frames{}, errors.New("Keyspace is not set"))
+	}
+
+	if cassQuery.Table == "" {
+		return dataResponse(data.Frames{}, errors.New("Table is not set"))
 	}
 
 	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("retrieve keyspace metadata, err=%v, keyspace=%s", err, cassQuery.Keyspace))
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", cassQuery.Keyspace)
+		return dataResponse(data.Frames{}, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details"))
 	}
 
 	tableMetadata, ok := keyspaceMetadata.Tables[cassQuery.Table]
 	if !ok {
-		return dataResponse(data.Frames{}, fmt.Errorf("table not found, table=%s", cassQuery.Table))
+		return dataResponse(data.Frames{}, fmt.Errorf("Table '%s' not found", cassQuery.Table))
 	}
 
 	frame := data.NewFrame(
@@ -96,12 +103,14 @@ func (ds *CassandraDatasource) HandleKeyspacesQueries(ctx context.Context, req *
 func (ds *CassandraDatasource) handleKeyspacesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	err := ds.connectIfNeeded(ctx)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+		ds.logger.Warn("Failed to connect", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to connect to server, please inspect Grafana server log for details"))
 	}
 
 	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("get keyspaces list, err=%v", err))
+		ds.logger.Error("Failed to get keyspaces list", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to get keyspaces list, please inspect Grafana server log for details"))
 	}
 
 	return dataResponse(keyspaces, nil)
@@ -116,22 +125,25 @@ func (ds *CassandraDatasource) HandleTablesQueries(ctx context.Context, req *bac
 func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	err := ds.connectIfNeeded(ctx)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unable to establish connection with the database, err=%v", err))
+		ds.logger.Warn("Failed to connect", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to connect to server, please inspect Grafana server log for details"))
 	}
 
 	var cassQuery CassandraQuery
 	err = json.Unmarshal(query.JSON, &cassQuery)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("unmarshal queries, err=%v", err))
+		ds.logger.Error("Failed to parse queries", "Message", err)
+		return dataResponse(data.Frames{}, errors.New("Failed to parse queries, please inspect Grafana server log for details"))
 	}
 
 	if cassQuery.Keyspace == "" {
-		return dataResponse(data.Frames{}, errors.New("keyspace is not set"))
+		return dataResponse(data.Frames{}, errors.New("Keyspace is not set"))
 	}
 
 	keyspaceMetadata, err := ds.session.KeyspaceMetadata(cassQuery.Keyspace)
 	if err != nil {
-		return dataResponse(data.Frames{}, fmt.Errorf("retrieve keyspace metadata, err=%v, keyspace=%s", err, cassQuery.Keyspace))
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", cassQuery.Keyspace)
+		return dataResponse(data.Frames{}, errors.New("Failed to retrieve keyspace metadata"))
 	}
 
 	frame := data.NewFrame(
@@ -147,17 +159,19 @@ func (ds *CassandraDatasource) handleTablesQuery(ctx *backend.PluginContext, que
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	err := ds.connect(&req.PluginContext)
+	err := ds.connectIfNeeded(&req.PluginContext)
 	if err != nil {
+		ds.logger.Warn("Failed to connect", "Message", err)
+
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
-			Message: fmt.Sprintf("Connection test failed, error = unable to establish connection with the database, err=%v", err),
+			Message: "Failed to connect to server, please inspect Grafana server log for details",
 		}, nil
 	}
 
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
-		Message: fmt.Sprintf("Database connected, host: %s", ds.host),
+		Message: "Database connected",
 	}, nil
 }
 
@@ -174,7 +188,9 @@ func (ds *CassandraDatasource) metricQuery(query *backend.DataQuery) (data.Frame
 	var cassQuery CassandraQuery
 	err := json.Unmarshal(query.JSON, &cassQuery)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal queries, err=%v", err)
+		ds.logger.Error("Failed to parse queries", "Message", err)
+
+		return nil, errors.New("Failed to parse queries, please inspect Grafana server log for details")
 	}
 
 	if cassQuery.RawQuery {
@@ -193,45 +209,37 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 	var options DataSourceOptions
 	err := json.Unmarshal(jsonData, &options)
 	if err != nil {
-		return options, fmt.Errorf("get request JSON data, err=%v", err)
+		ds.logger.Error("Failed to parse request", "Message", err)
+
+		return options, errors.New("Failed to parse request, please inspect Grafana server log for details")
 	}
 	return options, nil
 }
 
 func (ds *CassandraDatasource) connectIfNeeded(context *backend.PluginContext) error {
-	if ds.session != nil {
-		return nil
-	}
-
-	return ds.connect(context)
-}
-
-func (ds *CassandraDatasource) connect(context *backend.PluginContext) error {
 	hosts := strings.Split(context.DataSourceInstanceSettings.URL, ";")
 
-	for _, host := range hosts {
-		err := ds.tryToConnect(host, context)
-		if err == nil {
-			ds.logger.Debug(fmt.Sprintf("Connected to host %s", host))
+	err := ds.tryToConnect(hosts, context)
+	if err != nil {
+		ds.logger.Error("Failed to connect", "Message", err)
 
-			return nil
-		} else if err != nil {
-			ds.logger.Warn(fmt.Sprintf("Failed to connect to host, host: %s, error: %+v", host, err))
-		}
+		return errors.New("Failed to connect, please inspect Grafana server log for details")
 	}
 
-	return fmt.Errorf("connect to hosts, hosts=%+v", hosts)
+	return nil
 }
 
-func (ds *CassandraDatasource) tryToConnect(host string, context *backend.PluginContext) error {
+func (ds *CassandraDatasource) tryToConnect(hosts []string, context *backend.PluginContext) error {
 	options, err := ds.getRequestOptions(context.DataSourceInstanceSettings.JSONData)
 	if err != nil {
-		return fmt.Errorf("parse connection parameters, err=%v", err)
+		ds.logger.Error("Failed to parse connection parameters", "Message", err)
+
+		return errors.New("Failed to parse connection parameters, please inspect Grafana server log for details")
 	}
 
-	ds.logger.Debug(fmt.Sprintf("Connecting to %s...\n", host))
+	ds.logger.Debug("Connecting", "Hosts", hosts)
 
-	cluster := gocql.NewCluster(host)
+	cluster := gocql.NewCluster(hosts...)
 
 	if options.Timeout != nil {
 		cluster.Timeout = time.Duration(*options.Timeout) * time.Second
@@ -239,7 +247,9 @@ func (ds *CassandraDatasource) tryToConnect(host string, context *backend.Plugin
 
 	consistency, err := parseConsistency(options.Consistency)
 	if err != nil {
-		return fmt.Errorf("parse Consistency, err=%v, consistency string=%s", err, options.Consistency)
+		ds.logger.Error("Failed to parse consistency", "Message", err, "Consistency", options.Consistency)
+
+		return errors.New("Failed to parse consistency, please inspect Grafana server log for details")
 	}
 
 	cluster.Consistency = consistency
@@ -255,7 +265,9 @@ func (ds *CassandraDatasource) tryToConnect(host string, context *backend.Plugin
 
 		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
 		if err != nil {
-			return fmt.Errorf("create TLS config, err=%v", err)
+			ds.logger.Error("Failed to create TLS config", "Message", err)
+
+			return errors.New("Failed to create TLS config, please inspect Grafana server log for details")
 		}
 
 		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
@@ -263,10 +275,11 @@ func (ds *CassandraDatasource) tryToConnect(host string, context *backend.Plugin
 
 	session, err := cluster.CreateSession()
 	if err != nil {
-		return fmt.Errorf("create Cassandra DB session, err=%v", err)
+		ds.logger.Warn("Failed to create session", "Message", err)
+
+		return errors.New("Failed to create Cassandra session, please inspect Grafana server log for details")
 	}
 
-	ds.host = host
 	ds.session = session
 
 	return nil

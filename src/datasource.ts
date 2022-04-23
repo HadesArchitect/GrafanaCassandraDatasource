@@ -34,10 +34,6 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
 
     this.headers = { 'Content-Type': 'application/json' };
 
-    if (typeof instanceSettings.basicAuth === 'string' && instanceSettings.basicAuth.length > 0) {
-      this.headers['Authorization'] = instanceSettings.basicAuth;
-    }
-
     this.id = instanceSettings.id;
   }
 
