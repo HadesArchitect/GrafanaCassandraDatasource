@@ -43,6 +43,8 @@ func NewDataSource() *CassandraDatasource {
 }
 
 func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http.Request) {
+	ds.logger.Info("Process 'keyspaces' request")
+
 	ctx := httpadapter.PluginConfigFromContext(req.Context())
 
 	keyspaces, err := ds.getKeyspaces(&ctx)
@@ -57,6 +59,8 @@ func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http
 }
 
 func (ds *CassandraDatasource) handleTables(rw http.ResponseWriter, req *http.Request) {
+	ds.logger.Info("Process 'tables' request")
+
 	ctx := httpadapter.PluginConfigFromContext(req.Context())
 
 	tables, err := ds.getTables(&ctx, req.URL.Query().Get("keyspace"))
@@ -72,11 +76,15 @@ func (ds *CassandraDatasource) handleTables(rw http.ResponseWriter, req *http.Re
 }
 
 func (ds *CassandraDatasource) handleColumns(rw http.ResponseWriter, req *http.Request) {
+	ds.logger.Info("Process 'columns' request")
+
 	ctx := httpadapter.PluginConfigFromContext(req.Context())
 
 	keyspace := req.URL.Query().Get("keyspace")
 	table := req.URL.Query().Get("table")
 	needType := req.URL.Query().Get("needType")
+
+	ds.logger.Debug("Params", keyspace, table, needType)
 
 	columns, err := ds.getColumns(&ctx, keyspace, table, needType)
 	if err != nil {
