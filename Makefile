@@ -29,6 +29,9 @@ fe-deps: ## Install frontend dependencies
 fe-build: ## Build frontend
 	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn build
 
+fe-watch: ## Watch frontend
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:16-alpine yarn watch
+
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go mod vendor
 
