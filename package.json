@@ -6,9 +6,9 @@
     "repository": "https://github.com/HadesArchitect/GrafanaCassandraDatasource",
     "contributors": [
         {
-          "name": "Aleksandr Volochnev",
-          "email": "a.volochnev@gmail.com",
-          "url": "https://www.linkedin.com/in/aleks-volochnev/"
+            "name": "Aleksandr Volochnev",
+            "email": "a.volochnev@gmail.com",
+            "url": "https://www.linkedin.com/in/aleks-volochnev/"
         },
         {
             "name": "Armen Khachkinaev",
@@ -25,11 +25,11 @@
         "start": "yarn watch"
     },
     "devDependencies": {
-        "@grafana/data": "latest",
-        "@grafana/toolkit": "latest",
-        "@grafana/runtime": "latest",
-        "@grafana/ui": "latest",
-        "@types/lodash": "latest"
+        "@grafana/data": "^8.5.1",
+        "@grafana/runtime": "^8.5.1",
+        "@grafana/toolkit": "^8.5.1",
+        "@grafana/ui": "^8.5.1",
+        "@types/lodash": "^4.14.182"
     },
     "engines": {
         "node": ">=14"
