@@ -90,7 +90,7 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias 
 	return []*data.Frame{frame}, nil
 }
 
-func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) (data.Frames, error) {
+func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) ([]string, error) {
 	iter := ds.session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Iter()
 
 	var keyspace string
@@ -104,16 +104,7 @@ func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) (data.F
 		return nil, fmt.Errorf("process query, err=%v", err)
 	}
 
-	frame := data.NewFrame(
-		"Keyspaces",
-		data.NewField("keyspaces", nil, make([]string, 0)),
-	)
-
-	for _, keyspace := range keyspaces {
-		frame.AppendRow(keyspace)
-	}
-
-	return []*data.Frame{frame}, nil
+	return keyspaces, nil
 }
 
 func timeSerieToFrame(serie *datasource.TimeSeries) *data.Frame {
