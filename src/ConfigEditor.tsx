@@ -11,6 +11,16 @@ interface State {}
 
 export class ConfigEditor extends PureComponent<Props, State> {
   onHostChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.value === '') {
+      event.target.setCustomValidity('Cannot be empty');
+      event.target.placeholder = 'This field cannot be empty!';
+      event.target.style.setProperty('border-color', 'red');
+      console.log(event.target.form);
+    } else {
+      event.target.setCustomValidity('');
+      event.target.placeholder = 'cassandra:9042';
+      event.target.style.setProperty('border-color', '');
+    }
     const { onOptionsChange, options } = this.props;
     const url = event.target.value;
     onOptionsChange({ ...options, url });
@@ -115,10 +125,14 @@ export class ConfigEditor extends PureComponent<Props, State> {
       <>
         <FieldSet label="Connection settings">
           <InlineFieldRow>
-            <InlineField label="Host" labelWidth={20} tooltip="Specify host and port like `host:9042`">
+            <InlineField
+              label="Host"
+              labelWidth={20}
+              tooltip="Specify host and port like `192.168.12.134:9042`. You can specify multiple contact points using semicolon, f.e. `host1:9042;host2:9042;host3:9042`"
+            >
               <Input
                 name="host"
-                value={options.url || 'cassandra:9042'}
+                value={options.url || ''}
                 placeholder="cassandra:9042"
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
@@ -156,7 +170,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
           <InlineFieldRow>
             <InlineField
               label="Credentials"
-              tooltip="We strongly recommend to create a custom Cassandra user with strictly read-only permissions!"
+              tooltip="We strongly recommend to create a custom Cassandra user for Grafana with strictly read-only permissions!"
               labelWidth={20}
             >
               <Input

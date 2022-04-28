@@ -224,6 +224,13 @@ func (ds *CassandraDatasource) getKeyspaces(ctx *backend.PluginContext) ([]strin
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	if req.PluginContext.DataSourceInstanceSettings.URL == "" {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "Host field cannot be empty, please fill it with a proper value",
+		}, nil
+	}
+
 	err := ds.connect(&req.PluginContext)
 	if err != nil {
 		ds.logger.Warn("Failed to connect", "Message", err)
