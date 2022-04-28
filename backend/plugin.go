@@ -14,7 +14,7 @@ import (
 
 var logger = log.New()
 
-type QueryHandler struct {
+type Handler struct {
 	im  instancemgmt.InstanceManager
 	mux *datasource.QueryTypeMux
 }
@@ -22,12 +22,10 @@ type QueryHandler struct {
 func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	logger.Debug(fmt.Sprintf("Created datasource, ID: %d\n", settings.ID))
 
-	return &CassandraDatasource{
-		logger: logger,
-	}, nil
+	return NewDataSource(), nil
 }
 
-func (handler *QueryHandler) getDataSource(ctx *backend.PluginContext) (*CassandraDatasource, error) {
+func (handler *Handler) getDataSource(ctx *backend.PluginContext) (*CassandraDatasource, error) {
 	instance, err := handler.im.Get(*ctx)
 
 	if err != nil {
@@ -43,7 +41,16 @@ func (handler *QueryHandler) getDataSource(ctx *backend.PluginContext) (*Cassand
 	return datasource, nil
 }
 
-func (handler *QueryHandler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (handler *Handler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	datasource, err := handler.getDataSource(&req.PluginContext)
+	if err != nil {
+		return fmt.Errorf("get datasource for resource call, err=%v", err)
+	}
+
+	return datasource.resourceHandler.CallResource(ctx, req, sender)
+}
+
+func (handler *Handler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	datasource, err := handler.getDataSource(&req.PluginContext)
 	if err != nil {
 		return &backend.CheckHealthResult{
@@ -55,8 +62,8 @@ func (handler *QueryHandler) CheckHealth(ctx context.Context, req *backend.Check
 	return datasource.CheckHealth(ctx, req)
 }
 
-func NewQueryHandler() *QueryHandler {
-	handler := &QueryHandler{
+func NewHandler() *Handler {
+	handler := &Handler{
 		im: datasource.NewInstanceManager(newDataSource),
 	}
 
@@ -70,33 +77,6 @@ func NewQueryHandler() *QueryHandler {
 		return datasource.HandleMetricQueries(ctx, req)
 	})
 
-	mux.HandleFunc("search", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(&req.PluginContext)
-		if err != nil {
-			return nil, fmt.Errorf("get datasource for query, err=%v", err)
-		}
-
-		return datasource.HandleMetricFindQueries(ctx, req)
-	})
-
-	mux.HandleFunc("keyspaces", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(&req.PluginContext)
-		if err != nil {
-			return nil, fmt.Errorf("get datasource for query, err=%v", err)
-		}
-
-		return datasource.HandleKeyspacesQueries(ctx, req)
-	})
-
-	mux.HandleFunc("tables", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		datasource, err := handler.getDataSource(&req.PluginContext)
-		if err != nil {
-			return nil, fmt.Errorf("get datasource for query, err=%v", err)
-		}
-
-		return datasource.HandleTablesQueries(ctx, req)
-	})
-
 	handler.mux = mux
 
 	return handler
@@ -105,10 +85,11 @@ func NewQueryHandler() *QueryHandler {
 func main() {
 	logger.Debug("Running Cassandra backend datasource...")
 
-	handler := NewQueryHandler()
+	handler := NewHandler()
 
 	datasource.Serve(datasource.ServeOpts{
-		CheckHealthHandler: handler,
-		QueryDataHandler:   handler.mux,
+		CallResourceHandler: handler,
+		CheckHealthHandler:  handler,
+		QueryDataHandler:    handler.mux,
 	})
 }
