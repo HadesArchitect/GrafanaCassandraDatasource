@@ -158,7 +158,7 @@ export class QueryEditor extends PureComponent<Props> {
               grow
             >
               <QueryField
-                placeholder={'Enter a Cassandra query'}
+                placeholder={'Enter a CQL query'}
                 portalOrigin="cassandra"
                 onChange={this.onQueryTextChange}
                 onBlur={this.props.onRunQuery}
@@ -179,6 +179,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onChange={this.onKeyspaceChange}
                   spellCheck={false}
                   onBlur={this.onRunQuery}
+                  required
                   width={90}
                 /> */}
                 <Select
@@ -203,6 +204,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="table name"
                   onChange={this.onTableChange}
                   onBlur={this.onRunQuery}
+                  required
                   width={90}
                 /> */}
                 <Select
@@ -230,6 +232,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onChange={this.onTimeColumnChange}
                   onBlur={this.onRunQuery}
                   width={90}
+                  required
                 /> */}
                 <Select
                   allowCustomValue={true}
@@ -257,6 +260,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onChange={this.onValueColumnChange}
                   onBlur={this.onRunQuery}
                   width={90}
+                  required
                 /> */}
                 <Select
                   allowCustomValue={true}
@@ -284,6 +288,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onChange={this.onIDColumnChange}
                   onBlur={this.onRunQuery}
                   width={90}
+                  required
                 /> */}
                 <Select
                   allowCustomValue={true}
@@ -313,6 +318,7 @@ export class QueryEditor extends PureComponent<Props> {
                     this.onRunQuery(this.props);
                   }}
                   width={90}
+                  required
                 />
               </InlineField>
             </InlineFieldRow>
