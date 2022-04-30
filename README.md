@@ -91,7 +91,7 @@ Query Editor unlocks all possibilities of CQL including Used-Defined Functions, 
 Example (using the sample table from the Query Configurator case):
 
 ```
-SELECT sensor_id, CAST(temperature as double), registered_at FROM test.test WHERE id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and created_at < $__timeTo
+SELECT sensor_id, CAST(temperature as double), registered_at FROM test.test WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and registered_at < $__timeTo
 ```
 
 1. Follow the order of the SELECT expressions, it's important! 
