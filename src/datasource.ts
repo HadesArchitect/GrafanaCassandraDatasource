@@ -30,31 +30,35 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
     if (this.isEditorMode(options)) {
-      if (!this.isEditorCompleted(options))
-        throw new Error("Skipping query execution while not all editor fields are filled");
+      if (!this.isEditorCompleted(options)) {
+        throw new Error('Skipping query execution while not all editor fields are filled');
+      }
     } else {
-      if (!this.isConfiguratorCompleted(options))
-        throw new Error("Skipping query execution while not all configurator fields are filled");
+      if (!this.isConfiguratorCompleted(options)) {
+        throw new Error('Skipping query execution while not all configurator fields are filled');
+      }
     }
-    
+
     return super.query(this.buildQueryParameters(options));
   }
 
-  isEditorMode (options): boolean {
+  isEditorMode(options): boolean {
     return !options.targets[0].rawQuery;
   }
 
   isEditorCompleted(options): boolean {
-    return options.targets[0].keyspace && 
-           options.targets[0].table &&
-           options.targets[0].columnTime &&
-           options.targets[0].columnValue &&
-           options.targets[0].columnId &&
-           options.targets[0].valueId;
+    return (
+      options.targets[0].keyspace &&
+      options.targets[0].table &&
+      options.targets[0].columnTime &&
+      options.targets[0].columnValue &&
+      options.targets[0].columnId &&
+      options.targets[0].valueId
+    );
   }
-  
+
   isConfiguratorCompleted(options): boolean {
-    return  Boolean(options.targets[0].target);
+    return Boolean(options.targets[0].target);
   }
 
   async getKeyspaces(): Promise<string[]> {
