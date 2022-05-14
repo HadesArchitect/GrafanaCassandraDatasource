@@ -15,6 +15,7 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 	if err != nil {
 		return nil, fmt.Errorf("create session, err=%v", err)
 	}
+	defer session.Close()
 
 	iter := session.Query(query).Iter()
 
@@ -60,6 +61,7 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias 
 	if err != nil {
 		return nil, fmt.Errorf("create session, err=%v", err)
 	}
+	defer session.Close()
 
 	iter := session.Query(query).Iter()
 
@@ -105,6 +107,7 @@ func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) ([]stri
 	if err != nil {
 		return nil, fmt.Errorf("create session, err=%v", err)
 	}
+	defer session.Close()
 
 	iter := session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Iter()
 

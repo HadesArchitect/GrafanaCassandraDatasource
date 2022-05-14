@@ -151,6 +151,7 @@ func (ds *CassandraDatasource) getColumns(ctx *backend.PluginContext, keyspace, 
 
 		return nil, errMessage
 	}
+	defer session.Close()
 
 	keyspaceMetadata, err := session.KeyspaceMetadata(keyspace)
 	if err != nil {
@@ -191,6 +192,7 @@ func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace st
 
 		return nil, errMessage
 	}
+	defer session.Close()
 
 	keyspaceMetadata, err := session.KeyspaceMetadata(keyspace)
 	if err != nil {
@@ -340,12 +342,13 @@ func (ds *CassandraDatasource) tryToConnect(hosts []string, context *backend.Plu
 		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
 	}
 
-	_, err = cluster.CreateSession()
+	session, err := cluster.CreateSession()
 	if err != nil {
 		ds.logger.Warn("Failed to create session", "Message", err)
 
 		return errors.New("failed to create Cassandra session, please inspect Grafana server log for details")
 	}
+	defer session.Close()
 
 	ds.cluster = cluster
 
