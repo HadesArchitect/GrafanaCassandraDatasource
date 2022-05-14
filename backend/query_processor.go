@@ -11,7 +11,12 @@ import (
 type QueryProcessor struct{}
 
 func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatasource) (data.Frames, error) {
-	iter := ds.session.Query(query).Iter()
+	session, err := ds.Session()
+	if err != nil {
+		return nil, fmt.Errorf("create session, err=%v", err)
+	}
+
+	iter := session.Query(query).Iter()
 
 	var id string
 	var timestamp time.Time
@@ -51,7 +56,12 @@ func (qp *QueryProcessor) processRawMetricQuery(query string, ds *CassandraDatas
 }
 
 func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias string, ds *CassandraDatasource) (data.Frames, error) {
-	iter := ds.session.Query(query).Iter()
+	session, err := ds.Session()
+	if err != nil {
+		return nil, fmt.Errorf("create session, err=%v", err)
+	}
+
+	iter := session.Query(query).Iter()
 
 	if alias == "" {
 		alias = valueId
@@ -91,7 +101,12 @@ func (qp *QueryProcessor) processStrictMetricQuery(query string, valueId, alias 
 }
 
 func (qp *QueryProcessor) processKeyspacesQuery(ds *CassandraDatasource) ([]string, error) {
-	iter := ds.session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Iter()
+	session, err := ds.Session()
+	if err != nil {
+		return nil, fmt.Errorf("create session, err=%v", err)
+	}
+
+	iter := session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Iter()
 
 	var keyspace string
 	var keyspaces []string = make([]string, 0)
