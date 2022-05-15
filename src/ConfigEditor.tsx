@@ -213,22 +213,18 @@ export class ConfigEditor extends PureComponent<Props, State> {
               tooltip="Enable if you need custom TLS configuration (usually required using AstraDB, AWS Keyspaces etc.)"
               labelWidth={30}
             >
-              <InlineSwitch
-                value={options.jsonData.useCustomTLS}
-                disabled={false}
-                onChange={this.onUseCustomTLSChange}
-              />
+              <InlineSwitch value={options.jsonData.useCustomTLS} onChange={this.onUseCustomTLSChange} />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
             <InlineField
               label="Allow self-signed certificates"
               labelWidth={30}
-              tooltip="Enable if you use self-signed certificates"
+              tooltip="Enable `custom TLS settings` to allow self-signed certificates"
+              disabled={!options.jsonData.useCustomTLS}
             >
               <InlineSwitch
                 value={options.jsonData.allowInsecureTLS}
-                disabled={false}
                 onChange={(event: React.FormEvent<HTMLInputElement>) => {
                   const jsonData = {
                     ...options.jsonData,
@@ -240,7 +236,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Certificate Path" labelWidth={30}>
+            <InlineField
+              label="Certificate Path"
+              labelWidth={30}
+              disabled={!options.jsonData.useCustomTLS}
+              tooltip="Enable `custom TLS settings` to configure certificates"
+            >
               <Input
                 value={options.jsonData.certPath}
                 placeholder="certificate path"
@@ -256,7 +257,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Root Certificate Path" labelWidth={30}>
+            <InlineField
+              label="Root Certificate Path"
+              labelWidth={30}
+              disabled={!options.jsonData.useCustomTLS}
+              tooltip="Enable `custom TLS settings` to configure certificates"
+            >
               <Input
                 value={options.jsonData.rootPath}
                 placeholder="root certificate path"
@@ -272,7 +278,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="RootCA Certificate Path" labelWidth={30}>
+            <InlineField
+              label="RootCA Certificate Path"
+              labelWidth={30}
+              disabled={!options.jsonData.useCustomTLS}
+              tooltip="Enable `custom TLS settings` to configure certificates"
+            >
               <Input
                 value={options.jsonData.caPath}
                 placeholder="CA certificate path"
