@@ -27,7 +27,7 @@ type CassandraDatasource struct {
 	session         *gocql.Session
 }
 
-func NewDataSource() *CassandraDatasource {
+func NewDataSource(settings backend.DataSourceInstanceSettings) (*CassandraDatasource, error) {
 	ds := &CassandraDatasource{
 		logger: logger,
 	}
@@ -39,7 +39,61 @@ func NewDataSource() *CassandraDatasource {
 
 	ds.resourceHandler = httpadapter.New(mux)
 
-	return ds
+	if settings.URL == "" {
+		return nil, errors.New("Host field cannot be empty, please fill it with a proper value")
+	}
+
+	options, err := ds.getRequestOptions(settings.JSONData)
+	if err != nil {
+		ds.logger.Error("Failed to parse connection parameters", "Message", err)
+		return nil, errors.New("Failed to parse connection parameters, please inspect Grafana server log for details")
+	}
+
+
+	hosts := strings.Split(settings.URL, ";")
+	ds.logger.Debug("Connecting...", "hosts", settings.URL)
+	cluster := gocql.NewCluster(hosts...)
+
+	if options.Timeout != nil {
+		cluster.Timeout = time.Duration(*options.Timeout) * time.Second
+	}
+
+	consistency, err := parseConsistency(options.Consistency)
+	if err != nil {
+		ds.logger.Error("Failed to parse consistency", "Message", err, "Consistency", options.Consistency)
+		return nil, errors.New("Failed to parse consistency, please inspect Grafana server log for details")
+	}
+
+	cluster.Consistency = consistency
+	cluster.Keyspace = options.Keyspace
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: options.User,
+		Password: settings.DecryptedSecureJSONData["password"],
+	}
+	cluster.DisableInitialHostLookup = true // AWS Specific Required
+
+	if options.UseCustomTLS {
+		ds.logger.Debug("Setting TLS Configuration...")
+
+		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
+		if err != nil {
+			ds.logger.Error("Failed to create TLS config", "Message", err)
+			return nil, errors.New("Failed to create TLS config, please inspect Grafana server log for details")
+		}
+
+		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
+	}
+
+	session, err := cluster.CreateSession()
+	if err != nil {
+		ds.logger.Warn("Failed to create session", "Message", err)
+
+		return nil, errors.New("Failed to create Cassandra session, please inspect Grafana server log for details")
+	}
+
+	ds.session = session
+
+	return ds, nil
 }
 
 func (ds *CassandraDatasource) handleKeyspaces(rw http.ResponseWriter, req *http.Request) {
@@ -127,100 +181,69 @@ func (ds *CassandraDatasource) HandleMetricQueries(ctx context.Context, req *bac
 }
 
 func (ds *CassandraDatasource) handleMetricQuery(ctx *backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	err := ds.connectIfNeeded(ctx)
-	if err != nil {
-		ds.logger.Warn("Failed to connect", "Message", err)
-		return dataResponse(data.Frames{}, errors.New("Failed to connect to server, please inspect Grafana server log for details"))
-	}
-
-	frames, err := ds.metricQuery(&query)
-
-	return dataResponse(frames, err)
-}
-
-func (ds *CassandraDatasource) getConnected(ctx *backend.PluginContext, getData func() ([]string, error)) ([]string, error) {
-	err := ds.connectIfNeeded(ctx)
-	if err != nil {
-		ds.logger.Warn("Failed to connect", "Message", err)
-
-		return nil, errors.New("Failed to connect to server, please inspect Grafana server log for details")
-	}
-
-	return getData()
+	return dataResponse(ds.metricQuery(&query))
 }
 
 func (ds *CassandraDatasource) getColumns(ctx *backend.PluginContext, keyspace, table, needType string) ([]string, error) {
-	getColumns := func() ([]string, error) {
-		if keyspace == "" {
-			return nil, errors.New("Keyspace is not set")
-		}
-
-		if table == "" {
-			return nil, errors.New("Table is not set")
-		}
-
-		keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
-		if err != nil {
-			ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
-
-			return nil, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details")
-		}
-
-		tableMetadata, ok := keyspaceMetadata.Tables[table]
-		if !ok {
-			return nil, fmt.Errorf("Table '%s' not found", table)
-		}
-
-		var columns []string = make([]string, 0)
-		for name, column := range tableMetadata.Columns {
-			if column.Type.Type().String() == needType {
-				columns = append(columns, name)
-			}
-		}
-
-		return columns, nil
+	if keyspace == "" {
+		return nil, errors.New("Keyspace is not set")
 	}
 
-	return ds.getConnected(ctx, getColumns)
+	if table == "" {
+		return nil, errors.New("Table is not set")
+	}
+
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
+	if err != nil {
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+		return nil, fmt.Errorf("Failed to retrieve keyspace metadata, please inspect Grafana server log for details")
+	}
+
+	tableMetadata, ok := keyspaceMetadata.Tables[table]
+	if !ok {
+		return nil, fmt.Errorf("Table '%s' not found", table)
+	}
+
+	var columns []string = make([]string, 0)
+	for name, column := range tableMetadata.Columns {
+		if column.Type.Type().String() == needType {
+			columns = append(columns, name)
+		}
+	}
+
+	return columns, nil
 }
 
 func (ds *CassandraDatasource) getTables(ctx *backend.PluginContext, keyspace string) ([]string, error) {
-	getTables := func() ([]string, error) {
-		if keyspace == "" {
-			return nil, errors.New("Keyspace is not set")
-		}
-
-		keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
-		if err != nil {
-			ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
-
-			return nil, errors.New("Failed to retrieve keyspace metadata")
-		}
-
-		var tables []string = make([]string, 0)
-		for name, _ := range keyspaceMetadata.Tables {
-			tables = append(tables, name)
-		}
-
-		return tables, nil
+	if keyspace == "" {
+		return nil, errors.New("Keyspace is not set")
 	}
 
-	return ds.getConnected(ctx, getTables)
+	keyspaceMetadata, err := ds.session.KeyspaceMetadata(keyspace)
+	if err != nil {
+		ds.logger.Error("Failed to retrieve keyspace metadata", "Message", err, "Keyspace", keyspace)
+
+		return nil, errors.New("Failed to retrieve keyspace metadata")
+	}
+
+	var tables []string = make([]string, 0)
+	for name, _ := range keyspaceMetadata.Tables {
+		tables = append(tables, name)
+	}
+
+	return tables, nil
 }
 
 func (ds *CassandraDatasource) getKeyspaces(ctx *backend.PluginContext) ([]string, error) {
-	getKeyspaces := func() ([]string, error) {
-		keyspaces, err := ds.processor.processKeyspacesQuery(ds)
-		if err != nil {
-			ds.logger.Error("Failed to get keyspaces list", "Message", err)
+	keyspaces, err := ds.processor.processKeyspacesQuery(ds)
+	if err != nil {
+		ds.logger.Error("Failed to get keyspaces list", "Message", err)
 
-			return nil, errors.New("Failed to get keyspaces list")
-		}
-
-		return keyspaces, nil
+		return nil, errors.New("Failed to get keyspaces list")
 	}
 
-	return ds.getConnected(ctx, getKeyspaces)
+	return keyspaces, nil
 }
 
 func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
@@ -231,7 +254,7 @@ func (ds *CassandraDatasource) CheckHealth(ctx context.Context, req *backend.Che
 		}, nil
 	}
 
-	err := ds.connect(&req.PluginContext)
+	err := ds.session.Query("SELECT keyspace_name FROM system_schema.keyspaces;").Exec()
 	if err != nil {
 		ds.logger.Warn("Failed to connect", "Message", err)
 
@@ -288,95 +311,8 @@ func (ds *CassandraDatasource) getRequestOptions(jsonData []byte) (DataSourceOpt
 	return options, nil
 }
 
-func (ds *CassandraDatasource) connectIfNeeded(context *backend.PluginContext) error {
-	if ds.session != nil {
-		return nil
-	}
-
-	return ds.connect(context)
-}
-
-func (ds *CassandraDatasource) connect(context *backend.PluginContext) error {
-	hosts := strings.Split(context.DataSourceInstanceSettings.URL, ";")
-
-	err := ds.tryToConnect(hosts, context)
-	if err != nil {
-		ds.logger.Error("Failed to connect", "Message", err)
-
-		return errors.New("Failed to connect, please inspect Grafana server log for details")
-	}
-
-	return nil
-}
-
-func (ds *CassandraDatasource) tryToConnect(hosts []string, context *backend.PluginContext) error {
-	options, err := ds.getRequestOptions(context.DataSourceInstanceSettings.JSONData)
-	if err != nil {
-		ds.logger.Error("Failed to parse connection parameters", "Message", err)
-
-		return errors.New("Failed to parse connection parameters, please inspect Grafana server log for details")
-	}
-
-	ds.logger.Debug("Connecting", "Hosts", hosts)
-
-	cluster := gocql.NewCluster(hosts...)
-
-	if options.Timeout != nil {
-		cluster.Timeout = time.Duration(*options.Timeout) * time.Second
-	}
-
-	consistency, err := parseConsistency(options.Consistency)
-	if err != nil {
-		ds.logger.Error("Failed to parse consistency", "Message", err, "Consistency", options.Consistency)
-
-		return errors.New("Failed to parse consistency, please inspect Grafana server log for details")
-	}
-
-	cluster.Consistency = consistency
-	cluster.Keyspace = options.Keyspace
-	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: options.User,
-		Password: context.DataSourceInstanceSettings.DecryptedSecureJSONData["password"],
-	}
-	cluster.DisableInitialHostLookup = true // AWS Specific Required
-
-	if options.UseCustomTLS {
-		ds.logger.Debug("Setting TLS Configuration...")
-
-		tlsConfig, err := PrepareTLSCfg(options.CertPath, options.RootPath, options.CaPath, options.AllowInsecureTLS)
-		if err != nil {
-			ds.logger.Error("Failed to create TLS config", "Message", err)
-
-			return errors.New("Failed to create TLS config, please inspect Grafana server log for details")
-		}
-
-		cluster.SslOpts = &gocql.SslOptions{Config: tlsConfig}
-	}
-
-	session, err := cluster.CreateSession()
-	if err != nil {
-		ds.logger.Warn("Failed to create session", "Message", err)
-
-		return errors.New("Failed to create Cassandra session, please inspect Grafana server log for details")
-	}
-
-	ds.session = session
-
-	return nil
-}
-
 func parseConsistency(consistencyStr string) (consistency gocql.Consistency, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			var ok bool
-			err, ok = r.(error)
-			if !ok {
-				err = fmt.Errorf("failed to parse consistency \"%s\": %v", consistencyStr, r)
-			}
-		}
-	}()
-
-	consistency = gocql.ParseConsistency(consistencyStr)
+	consistency, err = gocql.ParseConsistencyWrapper(consistencyStr)
 	return
 }
 

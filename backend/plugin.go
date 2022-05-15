@@ -20,9 +20,9 @@ type Handler struct {
 }
 
 func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	logger.Debug(fmt.Sprintf("Created datasource, ID: %d\n", settings.ID))
+	logger.Debug("Created datasource", "id", settings.ID)
 
-	return NewDataSource(), nil
+	return NewDataSource(settings)
 }
 
 func (handler *Handler) getDataSource(ctx *backend.PluginContext) (*CassandraDatasource, error) {
@@ -44,7 +44,8 @@ func (handler *Handler) getDataSource(ctx *backend.PluginContext) (*CassandraDat
 func (handler *Handler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	datasource, err := handler.getDataSource(&req.PluginContext)
 	if err != nil {
-		return fmt.Errorf("get datasource for resource call, err=%v", err)
+		logger.Error("Failed to get datasource", "error", err)
+		return fmt.Errorf("Error, check Grafana logs for more details")
 	}
 
 	return datasource.resourceHandler.CallResource(ctx, req, sender)
@@ -53,9 +54,10 @@ func (handler *Handler) CallResource(ctx context.Context, req *backend.CallResou
 func (handler *Handler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	datasource, err := handler.getDataSource(&req.PluginContext)
 	if err != nil {
+		logger.Error("Failed to get datasource", "error", err)
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
-			Message: fmt.Sprintf("Get datasource for query, err=%v", err),
+			Message: "Error, check Grafana logs for more details",
 		}, nil
 	}
 
@@ -71,7 +73,8 @@ func NewHandler() *Handler {
 	mux.HandleFunc("query", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 		datasource, err := handler.getDataSource(&req.PluginContext)
 		if err != nil {
-			return nil, fmt.Errorf("get datasource for query, err=%v", err)
+			logger.Error("Failed to get datasource", "error", err)
+			return nil, fmt.Errorf("Error, check Grafana logs for more details")
 		}
 
 		return datasource.HandleMetricQueries(ctx, req)
