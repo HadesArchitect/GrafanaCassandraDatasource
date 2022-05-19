@@ -24,8 +24,8 @@
         {"name": "GitHub", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource"},
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"}
       ],
-      "version": "2.1.0",
-      "updated": "2022-04-28",
+      "version": "2.1.1",
+      "updated": "2022-05-15",
       "screenshots": [
         {"name": "Query Configurator", "path": "img/configurator.png"},
         {"name": "Query Editor", "path": "img/editor.png"},

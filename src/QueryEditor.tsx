@@ -1,10 +1,8 @@
-import React, { ChangeEvent, PureComponent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, QueryField, InlineSwitch, Select } from '@grafana/ui';
+import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
+import { Button, InlineField, InlineFieldRow, Input, InlineSwitch, Select, TextArea } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
 import { CassandraQuery } from './models';
-
-//const { FormField } = LegacyForms;
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
@@ -97,9 +95,10 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, rawQuery: !query.rawQuery });
   };
 
-  onQueryTextChange = (request: string) => {
+  onQueryTextChange = (e: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, target: request });
+    const { value } = e.target as HTMLInputElement | HTMLTextAreaElement;
+    onChange({ ...query, target: value });
   };
 
   onKeyspaceChange = (event: SelectableValue<string>) => {
@@ -157,12 +156,11 @@ export class QueryEditor extends PureComponent<Props> {
               tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
               grow
             >
-              <QueryField
+              <TextArea
                 placeholder={'Enter a CQL query'}
-                portalOrigin="cassandra"
                 onChange={this.onQueryTextChange}
                 onBlur={this.props.onRunQuery}
-                query={this.props.query.target}
+                value={this.props.query.target}
               />
             </InlineField>
             <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
