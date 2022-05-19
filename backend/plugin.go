@@ -27,13 +27,11 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 
 func (handler *Handler) getDataSource(ctx *backend.PluginContext) (*CassandraDatasource, error) {
 	instance, err := handler.im.Get(*ctx)
-
 	if err != nil {
 		return nil, fmt.Errorf("can not found datasource instance with ID: %d", ctx.DataSourceInstanceSettings.ID)
 	}
 
 	datasource, ok := instance.(*CassandraDatasource)
-
 	if !ok {
 		return nil, errors.New("can not convert datasource instance to Cassandra Datasource")
 	}
@@ -45,7 +43,7 @@ func (handler *Handler) CallResource(ctx context.Context, req *backend.CallResou
 	datasource, err := handler.getDataSource(&req.PluginContext)
 	if err != nil {
 		logger.Error("Failed to get datasource", "error", err)
-		return fmt.Errorf("Error, check Grafana logs for more details")
+		return fmt.Errorf("error, check Grafana logs for more details")
 	}
 
 	return datasource.resourceHandler.CallResource(ctx, req, sender)
@@ -74,7 +72,7 @@ func NewHandler() *Handler {
 		datasource, err := handler.getDataSource(&req.PluginContext)
 		if err != nil {
 			logger.Error("Failed to get datasource", "error", err)
-			return nil, fmt.Errorf("Error, check Grafana logs for more details")
+			return nil, fmt.Errorf("error, check Grafana logs for more details")
 		}
 
 		return datasource.HandleMetricQueries(ctx, req)
