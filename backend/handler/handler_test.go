@@ -195,7 +195,7 @@ func Test_CheckHealth(t *testing.T) {
 			},
 			want: &backend.CheckHealthResult{
 				Status:  backend.HealthStatusOk,
-				Message: "Database connected",
+				Message: "Connected",
 			},
 		},
 		{
@@ -207,7 +207,7 @@ func Test_CheckHealth(t *testing.T) {
 			},
 			want: &backend.CheckHealthResult{
 				Status:  backend.HealthStatusError,
-				Message: "Failed to connect to server: some error",
+				Message: "Error, check Grafana logs for more details",
 			},
 		},
 	}

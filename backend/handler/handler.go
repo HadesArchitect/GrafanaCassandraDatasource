@@ -173,7 +173,7 @@ func (h *handler) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusUnknown,
-			Message: fmt.Sprintf("Unable to get plugin instance: %v", err),
+			Message: "Error, check Grafana logs for more details",
 		}, nil
 	}
 
@@ -182,13 +182,13 @@ func (h *handler) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 		backend.Logger.Error("Failed to connect to server", "Message", err)
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
-			Message: fmt.Sprintf("Failed to connect to server: %v", err),
+			Message: "Error, check Grafana logs for more details",
 		}, nil
 	}
 
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
-		Message: "Database connected",
+		Message: "Connected",
 	}, nil
 }
 

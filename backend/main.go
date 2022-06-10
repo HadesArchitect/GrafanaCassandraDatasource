@@ -45,8 +45,8 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 
 	session, err := cassandra.New(sessionSettings)
 	if err != nil {
-		backend.Logger.Error("Failed to create new Cassandra connection", "Message", err)
-		return nil, fmt.Errorf("failed to create new Cassandra connection: %w", err)
+		backend.Logger.Error("Failed to create Cassandra connection", "Message", err)
+		return nil, fmt.Errorf("failed to create Cassandra connection, check Grafana logs for more details")
 	}
 
 	return plugin.New(session), nil

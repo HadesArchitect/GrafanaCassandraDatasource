@@ -13,7 +13,7 @@ type Session struct {
 	session *gocql.Session
 }
 
-// New creates a new cassandra cluster session using provided settiongs.
+// New creates a new cassandra cluster session using provided settings.
 func New(cfg Settings) (*Session, error) {
 	cluster := gocql.NewCluster(cfg.Hosts...)
 	cluster.DisableInitialHostLookup = true // required, AWS specific
@@ -96,7 +96,7 @@ func (s *Session) ExecStrictQuery(ctx context.Context, q *Query) ([]*TimeSeriesP
 	return ts, nil
 }
 
-// GetKeyspaces queries the cassandra cluster for a list of an existing keyspaces.
+// GetKeyspaces queries the cassandra cluster for a list of existing keyspaces.
 func (s *Session) GetKeyspaces(ctx context.Context) ([]string, error) {
 	statement := "SELECT keyspace_name FROM system_schema.keyspaces"
 	iter := s.session.Query(statement).WithContext(ctx).Iter()
@@ -154,7 +154,7 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 	return columns, nil
 }
 
-// Ping executes simple query to check connection status.
+// Ping executes a simple query to check the connection status.
 func (s *Session) Ping(ctx context.Context) error {
 	err := s.session.Query("SELECT key FROM system.local").WithContext(ctx).Exec()
 	if err != nil {
