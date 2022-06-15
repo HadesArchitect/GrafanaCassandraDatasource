@@ -3,12 +3,28 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 )
 
-func PrepareTLSCfg(certPath string, rootPath string, caPath string, allowInsecureTLS bool) (*tls.Config, error) {
+// dataSourceSettings is a convenient presentation of a
+// backend.DataSourceInstanceSettings JSON data.
+type dataSourceSettings struct {
+	Keyspace         string `json:"keyspace"`
+	User             string `json:"user"`
+	Password         string `json:"password"`
+	Consistency      string `json:"consistency"`
+	CertPath         string `json:"certPath"`
+	RootPath         string `json:"rootPath"`
+	CaPath           string `json:"caPath"`
+	Timeout          *int   `json:"timeout"`
+	UseCustomTLS     bool   `json:"UseCustomTLS"`
+	AllowInsecureTLS bool   `json:"allowInsecureTLS"`
+}
+
+// prepareTLSCfg is a helper to create a tls.Config using provided file paths.
+func prepareTLSCfg(certPath string, rootPath string, caPath string, allowInsecureTLS bool) (*tls.Config, error) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: allowInsecureTLS}
 	if certPath != "" && rootPath != "" {
 		cert, err := filepath.Abs(certPath)
@@ -25,6 +41,7 @@ func PrepareTLSCfg(certPath string, rootPath string, caPath string, allowInsecur
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
+
 	if caPath != "" {
 		caCertPEMPath, err := filepath.Abs(caPath)
 		if err != nil {
@@ -36,9 +53,10 @@ func PrepareTLSCfg(certPath string, rootPath string, caPath string, allowInsecur
 		}
 		roots := x509.NewCertPool()
 		if ok := roots.AppendCertsFromPEM(caCertPEM); !ok {
-			return nil, errors.New("failed to parse root certificate")
+			return nil, fmt.Errorf("failed to parse root certificate")
 		}
 		tlsConfig.RootCAs = roots
 	}
+
 	return tlsConfig, nil
 }
