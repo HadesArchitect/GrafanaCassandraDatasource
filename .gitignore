@@ -4,3 +4,4 @@ vendor
 .tscache
 coverage
 .idea
+.vscode
