@@ -25,10 +25,10 @@
         "start": "yarn watch"
     },
     "devDependencies": {
-        "@grafana/data": "^8.5.1",
-        "@grafana/runtime": "^8.5.1",
-        "@grafana/toolkit": "^8.5.1",
-        "@grafana/ui": "^8.5.1",
+        "@grafana/data": "^9.0.4",
+        "@grafana/runtime": "^9.0.4",
+        "@grafana/toolkit": "^9.0.4",
+        "@grafana/ui": "^9.0.4",
         "@types/lodash": "^4.14.182"
     },
     "engines": {
