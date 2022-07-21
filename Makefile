@@ -6,7 +6,7 @@ help: ## This help
 OS=linux
 ARCH=amd64
 
-install: fe-deps be-deps ## Build the whole datasource
+install: fe-deps be-deps ## install datasource dependencies (front and back)
 
 build: clean fe-build be-build ## Build the whole datasource
 
