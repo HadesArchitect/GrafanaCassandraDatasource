@@ -7,7 +7,7 @@
     "alerting": true,
     "executable": "cassandra-plugin",
     "metrics": true,
-    "annotations": false,
+    "annotations": true,
   
     "info": {
       "description": "Apache Cassandra Datasource for Grafana",
