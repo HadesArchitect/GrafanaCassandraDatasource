@@ -10,7 +10,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 **Supports**:
 
 * Grafana 
-    * 7.x, 8.xб 9.x are fully supported (plugin version 2.x)
+    * 7.x, 8.x, 9.x are fully supported (plugin version 2.x)
     * 5.x, 6.x are deprecated (works with plugin versions 1.x, but we recommend upgrading)
 * Cassandra 3.x, 4.x
 * DataStax Enterprise 6.x
