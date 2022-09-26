@@ -37,7 +37,7 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 		Hosts:       strings.Split(settings.URL, ";"),
 		Keyspace:    dss.Keyspace,
 		User:        dss.User,
-		Password:    dss.Password,
+		Password:    settings.DecryptedSecureJSONData["password"],
 		Consistency: dss.Consistency,
 		Timeout:     dss.Timeout,
 		TLSConfig:   tlsConfig,
