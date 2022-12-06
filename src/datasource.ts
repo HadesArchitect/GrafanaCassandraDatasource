@@ -103,7 +103,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
-        valueId: target.valueId,
+        valueId: getTemplateSrv().replace(target.valueId, options.scopedVars),
         alias: target.alias,
       };
     });
