@@ -5,7 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"local_package/cassandra"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,23 +56,23 @@ func TestPlugin_ExecQuery(t *testing.T) {
 				onExecRawQuery: func(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error) {
 					return map[string][]*cassandra.TimeSeriesPoint{
 						"1": {
-							{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
-							{Timestamp: time.Unix(1257894001, 0), Value: 6.283},
-							{Timestamp: time.Unix(1257894002, 0), Value: 2.718},
-							{Timestamp: time.Unix(1257894003, 0), Value: 1.618},
+							{Timestamp: time.Unix(1257894000, 0), Value: 3.141, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894001, 0), Value: 6.283, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894002, 0), Value: 2.718, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894003, 0), Value: 1.618, Longitude: "", Latitude: ""},
 						},
 						"2": {
-							{Timestamp: time.Unix(1257894000, 0), Value: 3.142},
-							{Timestamp: time.Unix(1257894001, 0), Value: 6.284},
-							{Timestamp: time.Unix(1257894002, 0), Value: 2.719},
-							{Timestamp: time.Unix(1257894003, 0), Value: 1.619},
+							{Timestamp: time.Unix(1257894000, 0), Value: 3.142, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894001, 0), Value: 6.284, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894002, 0), Value: 2.719, Longitude: "", Latitude: ""},
+							{Timestamp: time.Unix(1257894003, 0), Value: 1.619, Longitude: "", Latitude: ""},
 						},
 					}, nil
 				},
 			},
 			query: &cassandra.Query{
 				RawQuery: true,
-				Target:   "SELECT Time, CAST(Value as double) FROM Keyspace.Table WHERE ID IN (1, 2) AND Time >= 1257894000 AND Time <= 1257894003",
+				Target:   "SELECT Time, CAST(Value as double), Longitude, Latitude FROM Keyspace.Table WHERE ID IN (1, 2) AND Time >= 1257894000 AND Time <= 1257894003",
 			},
 			want: data.Frames{
 				{
@@ -89,6 +90,18 @@ func TestPlugin_ExecQuery(t *testing.T) {
 							2.718,
 							1.618,
 						}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1"}),
+						data.NewField("longitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
+						data.NewField("latitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
 					},
 				},
 				{
@@ -106,6 +119,18 @@ func TestPlugin_ExecQuery(t *testing.T) {
 							2.719,
 							1.619,
 						}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "2"}),
+						data.NewField("longitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
+						data.NewField("latitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
 					},
 				},
 			},
@@ -115,10 +140,10 @@ func TestPlugin_ExecQuery(t *testing.T) {
 			repo: &repositoryMock{
 				onExecStrictQuery: func(ctx context.Context, q *cassandra.Query) ([]*cassandra.TimeSeriesPoint, error) {
 					return []*cassandra.TimeSeriesPoint{
-						{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
-						{Timestamp: time.Unix(1257894001, 0), Value: 6.283},
-						{Timestamp: time.Unix(1257894002, 0), Value: 2.718},
-						{Timestamp: time.Unix(1257894003, 0), Value: 1.618},
+						{Timestamp: time.Unix(1257894000, 0), Value: 3.141, Longitude: "", Latitude: ""},
+						{Timestamp: time.Unix(1257894001, 0), Value: 6.283, Longitude: "", Latitude: ""},
+						{Timestamp: time.Unix(1257894002, 0), Value: 2.718, Longitude: "", Latitude: ""},
+						{Timestamp: time.Unix(1257894003, 0), Value: 1.618, Longitude: "", Latitude: ""},
 					}, nil
 				},
 			},
@@ -129,6 +154,8 @@ func TestPlugin_ExecQuery(t *testing.T) {
 				ColumnValue: "Value",
 				ColumnID:    "ID",
 				ValueID:     "1",
+				Longitude:   "Longitude",
+				Latitude:    "Latitude",
 				ColumnTime:  "Time",
 				TimeFrom:    time.Unix(1257894000, 0),
 				TimeTo:      time.Unix(1257894003, 0),
@@ -149,6 +176,18 @@ func TestPlugin_ExecQuery(t *testing.T) {
 							2.718,
 							1.618,
 						}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1"}),
+						data.NewField("longitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
+						data.NewField("latitude", nil, []string{
+							"",
+							"",
+							"",
+							"",
+						}),
 					},
 				},
 			},
@@ -184,6 +223,8 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 				Fields: []*data.Field{
 					data.NewField("time", nil, make([]time.Time, 0)),
 					data.NewField("test", nil, make([]float64, 0)).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
+					data.NewField("longitude", nil, make([]string, 0)),
+					data.NewField("latitude", nil, make([]string, 0)),
 				},
 			},
 		},
@@ -196,6 +237,8 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 				Fields: []*data.Field{
 					data.NewField("time", nil, make([]time.Time, 0)),
 					data.NewField("test", nil, make([]float64, 0)).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
+					data.NewField("longitude", nil, make([]string, 0)),
+					data.NewField("latitude", nil, make([]string, 0)),
 				},
 			},
 		},
@@ -203,13 +246,15 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			name: "one point",
 			id:   "test",
 			points: []*cassandra.TimeSeriesPoint{
-				{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
+				{Timestamp: time.Unix(1257894000, 0), Value: 3.141, Longitude: "", Latitude: ""},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
 					data.NewField("time", nil, []time.Time{time.Unix(1257894000, 0)}),
 					data.NewField("test", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
+					data.NewField("longitude", nil, make([]string, 0)),
+					data.NewField("latitude", nil, make([]string, 0)),
 				},
 			},
 		},
@@ -217,10 +262,10 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			name: "multi points",
 			id:   "test",
 			points: []*cassandra.TimeSeriesPoint{
-				{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
-				{Timestamp: time.Unix(1257894001, 0), Value: 6.283},
-				{Timestamp: time.Unix(1257894002, 0), Value: 2.718},
-				{Timestamp: time.Unix(1257894003, 0), Value: 1.618},
+				{Timestamp: time.Unix(1257894000, 0), Value: 3.141, Longitude: "", Latitude: ""},
+				{Timestamp: time.Unix(1257894001, 0), Value: 6.283, Longitude: "", Latitude: ""},
+				{Timestamp: time.Unix(1257894002, 0), Value: 2.718, Longitude: "", Latitude: ""},
+				{Timestamp: time.Unix(1257894003, 0), Value: 1.618, Longitude: "", Latitude: ""},
 			},
 			want: &data.Frame{
 				Name: "test",
@@ -237,6 +282,18 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 						2.718,
 						1.618,
 					}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
+					data.NewField("longitude", nil, []string{
+						"",
+						"",
+						"",
+						"",
+					}),
+					data.NewField("latitude", nil, []string{
+						"",
+						"",
+						"",
+						"",
+					}),
 				},
 			},
 		},
