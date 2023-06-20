@@ -11,6 +11,8 @@ export interface CassandraQuery extends DataQuery {
   columnValue?: string;
   columnId?: string;
   valueId?: string;
+  longitude?: string;
+  latitude?: string;
   rawQuery?: boolean;
   alias?: string;
 }
