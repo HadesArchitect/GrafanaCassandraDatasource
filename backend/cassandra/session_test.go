@@ -19,10 +19,12 @@ func Test_buildStatement(t *testing.T) {
 				Table:          "Table",
 				ColumnValue:    "Value",
 				ColumnID:       "ID",
+				Longitude:      "Longitude",
+				Latitude:       "Latitude",
 				ColumnTime:     "Time",
 				AllowFiltering: false,
 			},
-			want: "SELECT Time, CAST(Value as double) FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ?",
+			want: "SELECT Time, CAST(Value as double), Longitude, Latitude FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ?",
 		},
 		{
 			name: "with AllowFiltering",
@@ -31,10 +33,12 @@ func Test_buildStatement(t *testing.T) {
 				Table:          "Table",
 				ColumnValue:    "Value",
 				ColumnID:       "ID",
+				Longitude:      "Longitude",
+				Latitude:       "Latitude",
 				ColumnTime:     "Time",
 				AllowFiltering: true,
 			},
-			want: "SELECT Time, CAST(Value as double) FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ? ALLOW FILTERING",
+			want: "SELECT Time, CAST(Value as double), Longitude, Latitude FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ? ALLOW FILTERING",
 		},
 	}
 
