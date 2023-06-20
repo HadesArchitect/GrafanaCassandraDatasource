@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"local_package/cassandra"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -91,7 +92,7 @@ func Test_queryMetricData(t *testing.T) {
 						TimeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(125789403, 0)},
 						JSON: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
 							        "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
-								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "1",
+								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "1", "longitude": "Longitude","latitude": "Latitude",
 									"alias": "Alias", "filtering": true}`),
 					},
 				},
@@ -129,7 +130,7 @@ func Test_queryMetricData(t *testing.T) {
 						TimeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(125789403, 0)},
 						JSON: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
 							        "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
-								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "1",
+								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "1", "longitude": "Longitude","latitude": "Latitude",
 									"alias": "Alias1", "filtering": true}`),
 					},
 					{
@@ -137,7 +138,7 @@ func Test_queryMetricData(t *testing.T) {
 						TimeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(125789403, 0)},
 						JSON: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "223456789",
 							        "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
-								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "2",
+								    "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "2", "longitude": "Longitude","latitude": "Latitude",
 									"alias": "Alias2", "filtering": false}`),
 					},
 				},
