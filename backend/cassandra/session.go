@@ -56,12 +56,18 @@ func (s *Session) ExecRawQuery(ctx context.Context, q *Query) (map[string][]*Tim
 		id        string
 		value     float64
 		timestamp time.Time
+		longitude string
+		latitude  string
+		target    string
 	)
 
-	for iter.Scan(&id, &value, &timestamp) {
+	for iter.Scan(&id, &value, &timestamp, &longitude, &latitude, &target) {
 		ts[id] = append(ts[id], &TimeSeriesPoint{
 			Timestamp: timestamp,
 			Value:     value,
+			Longitude: longitude,
+			Latitude:  latitude,
+			Target:    target,
 		})
 	}
 	if err := iter.Close(); err != nil {
@@ -81,12 +87,18 @@ func (s *Session) ExecStrictQuery(ctx context.Context, q *Query) ([]*TimeSeriesP
 		ts        []*TimeSeriesPoint
 		value     float64
 		timestamp time.Time
+		longitude string
+		latitude  string
+		target    string
 	)
 
-	for iter.Scan(&timestamp, &value) {
+	for iter.Scan(&timestamp, &value, &longitude, &latitude, &target) {
 		ts = append(ts, &TimeSeriesPoint{
 			Timestamp: timestamp,
 			Value:     value,
+			Longitude: longitude,
+			Latitude:  latitude,
+			Target:    target,
 		})
 	}
 	if err := iter.Close(); err != nil {
@@ -177,9 +189,12 @@ func buildStatement(q *Query) string {
 	}
 
 	statement := fmt.Sprintf(
-		"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = ? AND %s >= ? AND %s <= ?%s",
+		"SELECT %s, CAST(%s as double), %s, %s, %s FROM %s.%s WHERE %s = ? AND %s >= ? AND %s <= ?%s",
 		q.ColumnTime,
 		q.ColumnValue,
+		q.Longitude,
+		q.Latitude,
+		q.ColumnID,
 		q.Keyspace,
 		q.Table,
 		q.ColumnID,
