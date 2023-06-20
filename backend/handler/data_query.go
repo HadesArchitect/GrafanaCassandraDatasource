@@ -1,79 +1,56 @@
 package handler
 
 import (
-	"testing"
-	"time"
+	"encoding/json"
+	"fmt"
 
 	"local_package/cassandra"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseDataQuery(t *testing.T) {
-	testCases := []struct {
-		name      string
-		timeRange backend.TimeRange
-		jsonStr   []byte
-		want      *cassandra.Query
-	}{
-		{
-			name:      "all fields",
-			timeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(1257894010, 0)},
-			jsonStr: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
-							  "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
-							  "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "123","longitude": "Longitude","latitude": "Latitude",
-							  "alias": "Alias", "filtering": true}`),
-			want: &cassandra.Query{
-				RawQuery:       true,
-				Target:         "SELECT * from Keyspace.Table",
-				Keyspace:       "Keyspace",
-				Table:          "Table",
-				ColumnValue:    "Value",
-				ColumnID:       "ID",
-				ValueID:        "123",
-				Longitude:      "Longitude",
-				Latitude:       "Latitude",
-				AliasID:        "Alias",
-				ColumnTime:     "Time",
-				TimeFrom:       time.Unix(1257894000, 0),
-				TimeTo:         time.Unix(1257894010, 0),
-				AllowFiltering: true,
-			},
-		},
-		{
-			name:      "no optional fields",
-			timeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(1257894010, 0)},
-			jsonStr: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
-					   		  "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
-					   		  "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "123","longitude": "Longitude","latitude": "Latitude"}`),
-			want: &cassandra.Query{
-				RawQuery:       true,
-				Target:         "SELECT * from Keyspace.Table",
-				Keyspace:       "Keyspace",
-				Table:          "Table",
-				ColumnValue:    "Value",
-				ColumnID:       "ID",
-				ValueID:        "123",
-				Longitude:      "Longitude",
-				Latitude:       "Latitude",
-				AliasID:        "",
-				ColumnTime:     "Time",
-				TimeFrom:       time.Unix(1257894000, 0),
-				TimeTo:         time.Unix(1257894010, 0),
-				AllowFiltering: false,
-			},
-		},
+type dataQuery struct {
+	DatasourceID int    `json:"datasourceId"`
+	QueryType    string `json:"queryType"`
+	RawQuery     bool   `json:"rawQuery"`
+	RefID        string `json:"refId"`
+	Target       string `json:"target"`
+
+	ColumnTime     string `json:"columnTime"`
+	ColumnValue    string `json:"columnValue"`
+	Keyspace       string `json:"keyspace"`
+	Table          string `json:"table"`
+	ColumnID       string `json:"columnId"`
+	ValueID        string `json:"valueId"`
+	Longitude      string `json:"longitude"`
+	Latitude       string `json:"latitude"`
+	Alias          string `json:"alias,omitempty"`
+	AllowFiltering bool   `json:"filtering,omitempty"`
+}
+
+// parseDataQuery is a simple helper to unmarshal
+// backend.DataQuery's JSON into the cassandra.Query type.
+func parseDataQuery(q *backend.DataQuery) (*cassandra.Query, error) {
+	var bq dataQuery
+	err := json.Unmarshal(q.JSON, &bq)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			query, err := parseDataQuery(&backend.DataQuery{TimeRange: tc.timeRange, JSON: tc.jsonStr})
-			if err != nil {
-				t.Fatalf("parseDataQuery: %v", err)
-			}
-
-			assert.Equal(t, tc.want, query)
-		})
-	}
+	return &cassandra.Query{
+		RawQuery:       bq.RawQuery,
+		Target:         bq.Target,
+		Keyspace:       bq.Keyspace,
+		Table:          bq.Table,
+		ColumnValue:    bq.ColumnValue,
+		ColumnID:       bq.ColumnID,
+		ValueID:        bq.ValueID,
+		Longitude:      bq.Longitude,
+		Latitude:       bq.Latitude,
+		AliasID:        bq.Alias,
+		ColumnTime:     bq.ColumnTime,
+		TimeFrom:       q.TimeRange.From,
+		TimeTo:         q.TimeRange.To,
+		AllowFiltering: bq.AllowFiltering,
+	}, nil
 }
