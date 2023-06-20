@@ -23,6 +23,8 @@ type Query struct {
 	ColumnValue    string
 	ColumnID       string
 	ValueID        string
+	Longitude      string
+	Latitude       string
 	AliasID        string
 	ColumnTime     string
 	TimeFrom       time.Time
@@ -33,4 +35,7 @@ type Query struct {
 type TimeSeriesPoint struct {
 	Timestamp time.Time
 	Value     float64
+	Longitude string
+	Latitude  string
+	Target    string
 }
