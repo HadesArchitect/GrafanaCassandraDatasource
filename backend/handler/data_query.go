@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"local_package/cassandra"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -21,6 +22,8 @@ type dataQuery struct {
 	Table          string `json:"table"`
 	ColumnID       string `json:"columnId"`
 	ValueID        string `json:"valueId"`
+	Longitude      string `json:"longitude"`
+	Latitude       string `json:"latitude"`
 	Alias          string `json:"alias,omitempty"`
 	AllowFiltering bool   `json:"filtering,omitempty"`
 }
@@ -42,6 +45,8 @@ func parseDataQuery(q *backend.DataQuery) (*cassandra.Query, error) {
 		ColumnValue:    bq.ColumnValue,
 		ColumnID:       bq.ColumnID,
 		ValueID:        bq.ValueID,
+		Longitude:      bq.Longitude,
+		Latitude:       bq.Latitude,
 		AliasID:        bq.Alias,
 		ColumnTime:     bq.ColumnTime,
 		TimeFrom:       q.TimeRange.From,
