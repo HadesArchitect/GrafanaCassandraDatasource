@@ -39,6 +39,10 @@ export class QueryEditor extends PureComponent<Props> {
       props.query.columnValue !== '' &&
       props.query.columnId &&
       props.query.columnId !== '' &&
+      props.query.longitude &&
+      props.query.longitude !== '' &&
+      props.query.latitude &&
+      props.query.latitude !== '' &&
       props.query.valueId &&
       props.query.valueId !== ''
     ) {
@@ -124,6 +128,14 @@ export class QueryEditor extends PureComponent<Props> {
   onIDColumnChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, columnId: event.value });
+  };
+  onLongChange = (event: SelectableValue<string>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, longitude: event.value });
+  };
+  onLatChange = (event: SelectableValue<string>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, latitude: event.value });
   };
 
   onIDValueChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -296,7 +308,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}
-                  options={this.getOptions('uuid')}
+                  options={this.getOptions('text')}
                   width={90}
                 />
               </InlineField>
@@ -320,6 +332,63 @@ export class QueryEditor extends PureComponent<Props> {
                 />
               </InlineField>
             </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField
+                label="Longitude Column"
+                labelWidth={30}
+                tooltip="Name of Longitude column"
+              >
+                {/* <Input
+                  name="id_column"
+                  placeholder='ID column'
+                  value={this.props.query.longitude || ''}
+                  onChange={this.onIDColumnChange}
+                  onBlur={this.onRunQuery}
+                  width={90}
+                  required
+                /> */}
+                <Select
+                  allowCustomValue={true}
+                  placeholder="Longitude Column"
+                  value={selectable(this.props.query.longitude)}
+                  onChange={this.onLongChange}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
+                  options={this.getOptions('text')}
+                  width={90}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField
+                label="Latitude Column"
+                labelWidth={30}
+                tooltip="Name of Latitude column"
+              >
+                {/* <Input
+                  name="id_column"
+                  placeholder='ID column'
+                  value={this.props.query.latitude || ''}
+                  onChange={this.onIDColumnChange}
+                  onBlur={this.onRunQuery}
+                  width={90}
+                  required
+                /> */}
+                <Select
+                  allowCustomValue={true}
+                  placeholder="Latitude Column"
+                  value={selectable(this.props.query.latitude)}
+                  onChange={this.onLatChange}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
+                  options={this.getOptions('text')}
+                  width={90}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            
             <InlineFieldRow>
               <InlineField label="Alias" labelWidth={30} tooltip="Alias for graph legend">
                 <Input
