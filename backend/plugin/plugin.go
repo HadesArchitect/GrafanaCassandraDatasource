@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"local_package/cassandra"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -134,11 +135,14 @@ func (p *Plugin) Dispose() {
 func makeDataFrameFromPoints(id string, points []*cassandra.TimeSeriesPoint) *data.Frame {
 	timeField := data.NewField("time", nil, make([]time.Time, 0, len(points)))
 	valueField := data.NewField(id, nil, make([]float64, 0, len(points)))
+	longitudeField := data.NewField("longitude", nil, make([]string, 0, len(points)))
+	latitudeField := data.NewField("latitude", nil, make([]string, 0, len(points)))
+	targetField := data.NewField("number", nil, make([]string, 0, len(points)))
 	valueField.Config = &data.FieldConfig{DisplayNameFromDS: id}
 
-	frame := data.NewFrame(id, timeField, valueField)
+	frame := data.NewFrame(id, timeField, valueField, longitudeField, latitudeField, targetField)
 	for _, p := range points {
-		frame.AppendRow(p.Timestamp, p.Value)
+		frame.AppendRow(p.Timestamp, p.Value, p.Longitude, p.Latitude, p.Target)
 	}
 
 	return frame
