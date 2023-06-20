@@ -42,22 +42,24 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
-  isEditorMode(options): boolean {
+  isEditorMode(options: any): boolean {
     return !options.targets[0].rawQuery;
   }
 
-  isEditorCompleted(options): boolean {
+  isEditorCompleted(options: any): boolean {
     return (
       options.targets[0].keyspace &&
       options.targets[0].table &&
       options.targets[0].columnTime &&
       options.targets[0].columnValue &&
       options.targets[0].columnId &&
+      options.targets[0].longitude &&
+      options.targets[0].latitude &&
       options.targets[0].valueId
     );
   }
 
-  isConfiguratorCompleted(options): boolean {
+  isConfiguratorCompleted(options: any): boolean {
     return Boolean(options.targets[0].target);
   }
 
@@ -78,8 +80,8 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
-    var from = options.range.from.valueOf();
-    var to = options.range.to.valueOf();
+    let from = options.range.from.valueOf();
+    let to = options.range.to.valueOf();
     options.scopedVars.__timeFrom = { text: from, value: from };
     options.scopedVars.__timeTo = { text: to, value: to };
 
@@ -103,6 +105,8 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
+        longitude: target.longitude,
+        latitude: target.latitude,
         valueId: getTemplateSrv().replace(target.valueId, options.scopedVars),
         alias: target.alias,
       };
