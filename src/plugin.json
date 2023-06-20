@@ -1,6 +1,6 @@
 {
     "name": "Apache Cassandra",
-    "id": "hadesarchitect-cassandra-datasource",
+    "id": "hadesarchitect-cass-datasource",
     "type": "datasource",
   
     "backend": true,
