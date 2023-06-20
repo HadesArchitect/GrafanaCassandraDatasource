@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/handler"
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
+	"local_package/cassandra"
+	"local_package/handler"
+	"local_package/plugin"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
