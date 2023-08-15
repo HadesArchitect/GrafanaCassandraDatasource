@@ -51,7 +51,7 @@ func New(fn datasource.InstanceFactoryFunc) datasource.ServeOpts {
 
 // queryMetricData is a handle to process metric requests.
 func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	p, err := h.getPluginInstance(req.PluginContext)
+	p, err := h.getPluginInstance(ctx, req.PluginContext)
 	if err != nil {
 		backend.Logger.Error("Failed to get plugin instance", "Message", err)
 		return nil, fmt.Errorf("failed to get plugin instance: %w", err)
@@ -84,7 +84,7 @@ func (h *handler) getKeyspaces(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'keyspaces' request")
 
 	pluginCtx := httpadapter.PluginConfigFromContext(req.Context())
-	p, err := h.getPluginInstance(pluginCtx)
+	p, err := h.getPluginInstance(req.Context(), pluginCtx)
 	if err != nil {
 		backend.Logger.Error("Failed to get plugin instance", "Message", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -106,7 +106,7 @@ func (h *handler) getTables(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'tables' request")
 
 	pluginCtx := httpadapter.PluginConfigFromContext(req.Context())
-	p, err := h.getPluginInstance(pluginCtx)
+	p, err := h.getPluginInstance(req.Context(), pluginCtx)
 	if err != nil {
 		backend.Logger.Error("Failed to get plugin instance", "Message", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -130,7 +130,7 @@ func (h *handler) getColumns(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'columns' request")
 
 	pluginCtx := httpadapter.PluginConfigFromContext(req.Context())
-	p, err := h.getPluginInstance(pluginCtx)
+	p, err := h.getPluginInstance(req.Context(), pluginCtx)
 	if err != nil {
 		backend.Logger.Error("Failed to get plugin instance", "Message", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -153,8 +153,8 @@ func (h *handler) getColumns(rw http.ResponseWriter, req *http.Request) {
 
 // getPluginInstance fetches plugin instance from instance manager, then
 // returns it if it has been successfully asserted that it is a plugin type.
-func (h *handler) getPluginInstance(pluginCtx backend.PluginContext) (plugin, error) {
-	instance, err := h.instanceManager.Get(pluginCtx)
+func (h *handler) getPluginInstance(ctx context.Context, pluginCtx backend.PluginContext) (plugin, error) {
+	instance, err := h.instanceManager.Get(ctx, pluginCtx)
 	if err != nil {
 		return nil, fmt.Errorf("instanceManager.Get: %w", err)
 	}
@@ -169,7 +169,7 @@ func (h *handler) getPluginInstance(pluginCtx backend.PluginContext) (plugin, er
 
 // CheckHealth is a handle to check database connection status.
 func (h *handler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	p, err := h.getPluginInstance(req.PluginContext)
+	p, err := h.getPluginInstance(ctx, req.PluginContext)
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusUnknown,
