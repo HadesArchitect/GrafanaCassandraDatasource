@@ -6,3 +6,5 @@
 * Armen Khachkinaev
     * [armen114@yandex.ru](mailto:armen114@yandex.ru)
     * [linkedin.com/in/armen-khachkinaev](https://www.linkedin.com/in/armen-khachkinaev/)
+* Vyacheslav Mitrofanov
+    * [linkedin.com/in/unflag/](https://www.linkedin.com/in/unflag/)
