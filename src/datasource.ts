@@ -26,6 +26,10 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     this.headers = { 'Content-Type': 'application/json' };
 
     this.id = instanceSettings.id;
+
+    // annotations default behaviour
+    // https://grafana.com/docs/grafana/latest/developers/plugins/create-a-grafana-plugin/extend-a-plugin/add-support-for-annotations/
+    this.annotations = {};
   }
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
