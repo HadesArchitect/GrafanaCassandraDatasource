@@ -19,11 +19,11 @@ type instanceManagerMock struct {
 	plugin *pluginMock
 }
 
-func (i *instanceManagerMock) Get(_ backend.PluginContext) (instancemgmt.Instance, error) {
+func (i *instanceManagerMock) Get(_ context.Context, _ backend.PluginContext) (instancemgmt.Instance, error) {
 	return i.plugin, nil
 }
 
-func (i *instanceManagerMock) Do(_ backend.PluginContext, _ instancemgmt.InstanceCallbackFunc) error {
+func (i *instanceManagerMock) Do(_ context.Context, _ backend.PluginContext, _ instancemgmt.InstanceCallbackFunc) error {
 	return nil
 }
 
