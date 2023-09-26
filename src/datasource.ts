@@ -42,12 +42,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
-  isEditorMode(options): boolean {
+  isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {
     return !options.targets[0].rawQuery;
   }
 
-  isEditorCompleted(options): boolean {
-    return (
+  isEditorCompleted(options: DataQueryRequest<CassandraQuery>): boolean {
+    return Boolean(
       options.targets[0].keyspace &&
       options.targets[0].table &&
       options.targets[0].columnTime &&
@@ -57,7 +57,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     );
   }
 
-  isConfiguratorCompleted(options): boolean {
+  isConfiguratorCompleted(options: DataQueryRequest<CassandraQuery>): boolean {
     return Boolean(options.targets[0].target);
   }
 
@@ -78,8 +78,8 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
-    var from = options.range.from.valueOf();
-    var to = options.range.to.valueOf();
+    let from = options.range.from.valueOf();
+    let to = options.range.to.valueOf();
     options.scopedVars.__timeFrom = { text: from, value: from };
     options.scopedVars.__timeTo = { text: to, value: to };
 
