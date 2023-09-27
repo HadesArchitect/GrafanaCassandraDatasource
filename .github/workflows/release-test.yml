@@ -1,0 +1,15 @@
+name: issue-165-debug
+on: workflow_dispatch
+jobs:
+  generate:
+    name: Create release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@master      
+      - name: yarn install
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn install
+      - name: yarn build
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn build
+      - name: sign the build
+        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} node:20-alpine yarn sign
