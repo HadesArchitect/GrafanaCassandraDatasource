@@ -7,11 +7,12 @@ import (
 
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 type repository interface {
 	ExecRawQuery(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
-	ExecStrictQuery(ctx context.Context, q *cassandra.Query) ([]*cassandra.TimeSeriesPoint, error)
+	ExecStrictQuery(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
@@ -38,6 +39,7 @@ func (p *Plugin) ExecQuery(ctx context.Context, q *cassandra.Query) (data.Frames
 		err        error
 	)
 
+	backend.Logger.Debug("ExecQuery", "query", q)
 	switch q.RawQuery {
 	case true:
 		dataFrames, err = p.execRawMetricQuery(ctx, q)
@@ -70,19 +72,21 @@ func (p *Plugin) execRawMetricQuery(ctx context.Context, q *cassandra.Query) (da
 
 // execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
 func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error) {
-	tsPoints, err := p.repo.ExecStrictQuery(ctx, q)
+	tsPointsMap, err := p.repo.ExecStrictQuery(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
 	}
 
-	id := q.AliasID
-	if id == "" {
-		id = q.ValueID
+	var frames data.Frames
+	for id, points := range tsPointsMap {
+		if q.AliasID != "" && len(tsPointsMap) == 1 {
+			id = q.AliasID
+		}
+		frame := makeDataFrameFromPoints(id, points)
+		frames = append(frames, frame)
 	}
 
-	frame := makeDataFrameFromPoints(id, tsPoints)
-
-	return data.Frames{frame}, nil
+	return frames, nil
 }
 
 // GetKeyspaces fetches and returns Cassandra's list of keyspaces.

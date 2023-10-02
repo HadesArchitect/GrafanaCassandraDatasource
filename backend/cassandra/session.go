@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"strings"
 
 	"github.com/gocql/gocql"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 // Session is a convenience wrapper for the gocql.Session.
@@ -73,22 +75,27 @@ func (s *Session) ExecRawQuery(ctx context.Context, q *Query) (map[string][]*Tim
 
 // ExecStrictQuery queries cassandra with passed Query parameters
 // and returns a slice of time series points.
-func (s *Session) ExecStrictQuery(ctx context.Context, q *Query) ([]*TimeSeriesPoint, error) {
-	statement := buildStatement(q)
-	iter := s.session.Query(statement, q.ValueID, q.TimeFrom, q.TimeTo).WithContext(ctx).Iter()
+func (s *Session) ExecStrictQuery(ctx context.Context, q *Query) (map[string][]*TimeSeriesPoint, error) {
+	iter := s.session.Query(
+		buildStatement(q),
+		strings.Split(q.ValueID, ","),
+		q.TimeFrom,
+		q.TimeTo).WithContext(ctx).Iter()
 
+	ts := make(map[string][]*TimeSeriesPoint)
 	var (
-		ts        []*TimeSeriesPoint
+		id        string
 		value     float64
 		timestamp time.Time
 	)
 
-	for iter.Scan(&timestamp, &value) {
-		ts = append(ts, &TimeSeriesPoint{
+	for iter.Scan(&id, &value, &timestamp) {
+		ts[id] = append(ts[id], &TimeSeriesPoint{
 			Timestamp: timestamp,
 			Value:     value,
 		})
 	}
+
 	if err := iter.Close(); err != nil {
 		return nil, fmt.Errorf("strict query processing: %w", err)
 	}
@@ -177,9 +184,10 @@ func buildStatement(q *Query) string {
 	}
 
 	statement := fmt.Sprintf(
-		"SELECT %s, CAST(%s as double) FROM %s.%s WHERE %s = ? AND %s >= ? AND %s <= ?%s",
-		q.ColumnTime,
+		"SELECT %s, CAST(%s as double), %s FROM %s.%s WHERE %s IN ? AND %s >= ? AND %s <= ?%s",
+		q.ColumnID,
 		q.ColumnValue,
+		q.ColumnTime,
 		q.Keyspace,
 		q.Table,
 		q.ColumnID,
@@ -187,6 +195,8 @@ func buildStatement(q *Query) string {
 		q.ColumnTime,
 		allowFiltering,
 	)
+
+	backend.Logger.Debug("Built strict statement", "statement", statement)
 
 	return statement
 }

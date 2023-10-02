@@ -97,7 +97,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         datasourceId: target.datasourceId,
         queryType: 'query',
 
-        target: getTemplateSrv().replace(target.target, options.scopedVars),
+        target: getTemplateSrv().replace(target.target, options.scopedVars, 'csv'),
         refId: target.refId,
         hide: target.hide,
         rawQuery: target.rawQuery,
@@ -107,7 +107,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
-        valueId: target.valueId,
+        valueId:  getTemplateSrv().replace(target.valueId, options.scopedVars, 'csv'),
         alias: target.alias,
       };
     });
