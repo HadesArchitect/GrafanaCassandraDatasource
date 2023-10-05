@@ -12,7 +12,7 @@ import (
 
 type repositoryMock struct {
 	onExecRawQuery    func(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
-	onExecStrictQuery func(ctx context.Context, q *cassandra.Query) ([]*cassandra.TimeSeriesPoint, error)
+	onExecStrictQuery func(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
 	onGetKeyspaces    func(ctx context.Context) ([]string, error)
 	onGetTables       func(keyspace string) ([]string, error)
 	onGetColumns      func(keyspace, table, needType string) ([]string, error)
@@ -22,7 +22,7 @@ func (m *repositoryMock) ExecRawQuery(ctx context.Context, q *cassandra.Query) (
 	return m.onExecRawQuery(ctx, q)
 }
 
-func (m *repositoryMock) ExecStrictQuery(ctx context.Context, q *cassandra.Query) ([]*cassandra.TimeSeriesPoint, error) {
+func (m *repositoryMock) ExecStrictQuery(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error) {
 	return m.onExecStrictQuery(ctx, q)
 }
 
@@ -113,12 +113,14 @@ func TestPlugin_ExecQuery(t *testing.T) {
 		{
 			name: "Strict Query",
 			repo: &repositoryMock{
-				onExecStrictQuery: func(ctx context.Context, q *cassandra.Query) ([]*cassandra.TimeSeriesPoint, error) {
-					return []*cassandra.TimeSeriesPoint{
-						{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
-						{Timestamp: time.Unix(1257894001, 0), Value: 6.283},
-						{Timestamp: time.Unix(1257894002, 0), Value: 2.718},
-						{Timestamp: time.Unix(1257894003, 0), Value: 1.618},
+				onExecStrictQuery: func(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error) {
+					return map[string][]*cassandra.TimeSeriesPoint{
+						"1": {
+							{Timestamp: time.Unix(1257894000, 0), Value: 3.141},
+							{Timestamp: time.Unix(1257894001, 0), Value: 6.283},
+							{Timestamp: time.Unix(1257894002, 0), Value: 2.718},
+							{Timestamp: time.Unix(1257894003, 0), Value: 1.618},
+						},
 					}, nil
 				},
 			},

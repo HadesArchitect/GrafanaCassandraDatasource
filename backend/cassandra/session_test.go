@@ -22,7 +22,7 @@ func Test_buildStatement(t *testing.T) {
 				ColumnTime:     "Time",
 				AllowFiltering: false,
 			},
-			want: "SELECT Time, CAST(Value as double) FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ?",
+			want: "SELECT ID, CAST(Value as double), Time FROM Keyspace.Table WHERE ID IN ? AND Time >= ? AND Time <= ?",
 		},
 		{
 			name: "with AllowFiltering",
@@ -34,7 +34,7 @@ func Test_buildStatement(t *testing.T) {
 				ColumnTime:     "Time",
 				AllowFiltering: true,
 			},
-			want: "SELECT Time, CAST(Value as double) FROM Keyspace.Table WHERE ID = ? AND Time >= ? AND Time <= ? ALLOW FILTERING",
+			want: "SELECT ID, CAST(Value as double), Time FROM Keyspace.Table WHERE ID IN ? AND Time >= ? AND Time <= ? ALLOW FILTERING",
 		},
 	}
 
