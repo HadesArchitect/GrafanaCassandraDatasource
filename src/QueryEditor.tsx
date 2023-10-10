@@ -141,6 +141,11 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, filtering: event.target.checked });
   };
 
+  onInstantChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, instant: event.target.checked });
+  };
+
   render() {
     const options = this.props;
 
@@ -149,22 +154,35 @@ export class QueryEditor extends PureComponent<Props> {
     return (
       <div>
         {options.query.rawQuery && (
-          <InlineFieldRow>
-            <InlineField
-              label="Cassandra CQL Query"
-              labelWidth={30}
-              tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
-              grow
-            >
-              <TextArea
-                placeholder={'Enter a CQL query'}
-                onChange={this.onQueryTextChange}
-                onBlur={this.props.onRunQuery}
-                value={this.props.query.target}
-              />
-            </InlineField>
-            <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
-          </InlineFieldRow>
+          <>
+            <InlineFieldRow>
+              <InlineField
+                label="Cassandra CQL Query"
+                labelWidth={30}
+                tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
+                grow
+              >
+                <TextArea
+                  placeholder={'Enter a CQL query'}
+                  onChange={this.onQueryTextChange}
+                  onBlur={this.props.onRunQuery}
+                  value={this.props.query.target}
+                />
+              </InlineField>
+              <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField label="Alias" labelWidth={8} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
+                <Input
+                    name="alias"
+                    value={this.props.query.alias || ''}
+                    onChange={this.onAliasChange}
+                    onBlur={this.props.onRunQuery}
+                    width={22}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          </>
         )}
         {!options.query.rawQuery && (
           <>
@@ -321,7 +339,7 @@ export class QueryEditor extends PureComponent<Props> {
               </InlineField>
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="Alias" labelWidth={30} tooltip="Alias for graph legend">
+              <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input
                   name="alias"
                   placeholder="my alias"
@@ -331,6 +349,21 @@ export class QueryEditor extends PureComponent<Props> {
                     this.onRunQuery(this.props);
                   }}
                   width={90}
+                />
+              </InlineField>
+            </InlineFieldRow>
+            <InlineFieldRow>
+              <InlineField
+                  label="Instant"
+                  labelWidth={30}
+                  tooltip="Queries only first point for each series(PER PARTITION LIMIT 1)"
+              >
+                <InlineSwitch
+                    value={this.props.query.instant}
+                    onChange={this.onInstantChange}
+                    onBlur={() => {
+                      this.onRunQuery(this.props);
+                    }}
                 />
               </InlineField>
             </InlineFieldRow>

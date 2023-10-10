@@ -2,13 +2,24 @@ package cassandra
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+// Settings is a set of Cassandra session settings.
+type Settings struct {
+	Hosts       []string
+	Keyspace    string
+	User        string
+	Password    string
+	Consistency string
+	Timeout     *int
+	TLSConfig   *tls.Config
+}
 
 // Session is a convenience wrapper for the gocql.Session.
 type Session struct {
@@ -48,59 +59,45 @@ func New(cfg Settings) (*Session, error) {
 	return &Session{clusterSession}, nil
 }
 
-// ExecRawQuery queries cassandra with a Query.Target query and returns
-// a map of time series points grouped by a key column name.
-func (s *Session) ExecRawQuery(ctx context.Context, q *Query) (map[string][]*TimeSeriesPoint, error) {
-	iter := s.session.Query(q.Target).WithContext(ctx).Iter()
-
-	ts := make(map[string][]*TimeSeriesPoint)
-	var (
-		id        string
-		value     float64
-		timestamp time.Time
-	)
-
-	for iter.Scan(&id, &value, &timestamp) {
-		ts[id] = append(ts[id], &TimeSeriesPoint{
-			Timestamp: timestamp,
-			Value:     value,
-		})
-	}
-	if err := iter.Close(); err != nil {
-		return nil, fmt.Errorf("raw query processing: %w", err)
+// Select queries the database with provided query string and returns result rows grouped by ID.
+// ID must be a first requested column in query and must be convertable to a string.
+func (s *Session) Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]Row, err error) {
+	if !isSelect(query) {
+		return nil, fmt.Errorf("query is not a SELECT statement: %s", query)
 	}
 
-	return ts, nil
-}
+	iter := s.session.Query(query, values...).WithContext(ctx).Iter()
+	defer func() {
+		if iterErr := iter.Close(); iterErr != nil {
+			err = fmt.Errorf("select query processing: %w", iterErr)
+		}
+	}()
 
-// ExecStrictQuery queries cassandra with passed Query parameters
-// and returns a slice of time series points.
-func (s *Session) ExecStrictQuery(ctx context.Context, q *Query) (map[string][]*TimeSeriesPoint, error) {
-	iter := s.session.Query(
-		buildStatement(q),
-		strings.Split(q.ValueID, ","),
-		q.TimeFrom,
-		q.TimeTo).WithContext(ctx).Iter()
+	rows = make(map[string][]Row)
+	for {
+		rowValues := make(map[string]interface{}, len(iter.Columns()))
+		if !iter.MapScan(rowValues) {
+			break
+		}
 
-	ts := make(map[string][]*TimeSeriesPoint)
-	var (
-		id        string
-		value     float64
-		timestamp time.Time
-	)
+		// id used to distinguish different timeseries, so it must have string type.
+		// Here we are trying to convert id column value to a string or exit early
+		// in case when such conversion is not supported.
+		idFieldName := iter.Columns()[0].Name
+		id, err := parseIDField(rowValues[idFieldName])
+		if err != nil {
+			return nil, fmt.Errorf("row processing: %w", err)
+		}
 
-	for iter.Scan(&id, &value, &timestamp) {
-		ts[id] = append(ts[id], &TimeSeriesPoint{
-			Timestamp: timestamp,
-			Value:     value,
-		})
+		row := Row{
+			Columns: columnNames(iter.Columns()),
+			Fields:  rowValues,
+		}
+		row.filterUnsupportedTypes()
+		rows[id] = append(rows[id], row)
 	}
 
-	if err := iter.Close(); err != nil {
-		return nil, fmt.Errorf("strict query processing: %w", err)
-	}
-
-	return ts, nil
+	return rows, nil
 }
 
 // GetKeyspaces queries the cassandra cluster for a list of existing keyspaces.
@@ -176,27 +173,42 @@ func (s *Session) Close() {
 	s.session.Close()
 }
 
-// buildStatement builds cassandra query statement with positional parameters.
-func buildStatement(q *Query) string {
-	var allowFiltering string
-	if q.AllowFiltering {
-		allowFiltering = " ALLOW FILTERING"
+func parseIDField(val interface{}) (string, error) {
+	var id string
+	switch v := val.(type) {
+	case string:
+		id = v
+	case gocql.UUID:
+		id = v.String()
+	case int8, int32, int64, int:
+		id = fmt.Sprintf("%d", v)
+	case float32, float64:
+		id = fmt.Sprintf("%f", v)
+	case time.Time:
+		id = v.String()
+	case bool:
+		id = fmt.Sprintf("%t", v)
+	default:
+		return "", fmt.Errorf("unsupported type: %T", val)
 	}
 
-	statement := fmt.Sprintf(
-		"SELECT %s, CAST(%s as double), %s FROM %s.%s WHERE %s IN ? AND %s >= ? AND %s <= ?%s",
-		q.ColumnID,
-		q.ColumnValue,
-		q.ColumnTime,
-		q.Keyspace,
-		q.Table,
-		q.ColumnID,
-		q.ColumnTime,
-		q.ColumnTime,
-		allowFiltering,
-	)
+	return id, nil
+}
 
-	backend.Logger.Debug("Built strict statement", "statement", statement)
+func columnNames(columnInfo []gocql.ColumnInfo) []string {
+	names := make([]string, 0, len(columnInfo))
+	for _, col := range columnInfo {
+		names = append(names, col.Name)
+	}
 
-	return statement
+	return names
+}
+
+func isSelect(query string) bool {
+	stmt := strings.TrimSpace(query)
+	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
+		return false
+	}
+
+	return true
 }

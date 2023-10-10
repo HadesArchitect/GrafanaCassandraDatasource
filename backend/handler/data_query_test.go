@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +14,7 @@ func Test_parseDataQuery(t *testing.T) {
 		name      string
 		timeRange backend.TimeRange
 		jsonStr   []byte
-		want      *cassandra.Query
+		want      *plugin.Query
 	}{
 		{
 			name:      "all fields",
@@ -22,8 +22,8 @@ func Test_parseDataQuery(t *testing.T) {
 			jsonStr: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
 							  "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
 							  "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "123",
-							  "alias": "Alias", "filtering": true}`),
-			want: &cassandra.Query{
+							  "alias": "Alias", "filtering": true, "instant": true}`),
+			want: &plugin.Query{
 				RawQuery:       true,
 				Target:         "SELECT * from Keyspace.Table",
 				Keyspace:       "Keyspace",
@@ -36,6 +36,7 @@ func Test_parseDataQuery(t *testing.T) {
 				TimeFrom:       time.Unix(1257894000, 0),
 				TimeTo:         time.Unix(1257894010, 0),
 				AllowFiltering: true,
+				Instant:        true,
 			},
 		},
 		{
@@ -44,7 +45,7 @@ func Test_parseDataQuery(t *testing.T) {
 			jsonStr: []byte(`{"datasourceId": 1, "queryType": "query", "rawQuery": true, "refId": "123456789",
 					   		  "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
 					   		  "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "123"}`),
-			want: &cassandra.Query{
+			want: &plugin.Query{
 				RawQuery:       true,
 				Target:         "SELECT * from Keyspace.Table",
 				Keyspace:       "Keyspace",
@@ -57,6 +58,7 @@ func Test_parseDataQuery(t *testing.T) {
 				TimeFrom:       time.Unix(1257894000, 0),
 				TimeTo:         time.Unix(1257894010, 0),
 				AllowFiltering: false,
+				Instant:        false,
 			},
 		},
 	}

@@ -109,6 +109,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnId: target.columnId,
         valueId:  getTemplateSrv().replace(target.valueId, options.scopedVars, 'csv'),
         alias: target.alias,
+        instant: target.instant,
       };
     });
 
