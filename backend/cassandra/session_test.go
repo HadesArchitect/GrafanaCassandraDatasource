@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseIDField(t *testing.T) {
+func Test_toString(t *testing.T) {
 	testCases := []struct {
 		name    string
 		input   interface{}
@@ -55,7 +55,7 @@ func Test_parseIDField(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			val, err := parseIDField(tc.input)
+			val, err := toString(tc.input)
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
 			} else {

@@ -80,11 +80,11 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 			break
 		}
 
-		// id used to distinguish different timeseries, so it must have string type.
-		// Here we are trying to convert id column value to a string or exit early
-		// in case when such conversion is not supported.
+		// first field is considered an id and used to distinguish different timeseries,
+		// so it must have string type. We are trying to convert id field value to
+		// a string or exit early in case when such conversion is not supported.
 		idFieldName := iter.Columns()[0].Name
-		id, err := parseIDField(rowValues[idFieldName])
+		id, err := toString(rowValues[idFieldName])
 		if err != nil {
 			return nil, fmt.Errorf("row processing: %w", err)
 		}
@@ -93,7 +93,9 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 			Columns: columnNames(iter.Columns()),
 			Fields:  rowValues,
 		}
-		row.filterUnsupportedTypes()
+		if err := row.normalize(); err != nil {
+			return nil, fmt.Errorf("row.normalize: %w", err)
+		}
 		rows[id] = append(rows[id], row)
 	}
 
@@ -173,26 +175,35 @@ func (s *Session) Close() {
 	s.session.Close()
 }
 
-func parseIDField(val interface{}) (string, error) {
-	var id string
+func isSelect(query string) bool {
+	stmt := strings.TrimSpace(query)
+	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
+		return false
+	}
+
+	return true
+}
+
+func toString(val interface{}) (string, error) {
+	var str string
 	switch v := val.(type) {
 	case string:
-		id = v
+		str = v
 	case gocql.UUID:
-		id = v.String()
+		str = v.String()
 	case int8, int32, int64, int:
-		id = fmt.Sprintf("%d", v)
+		str = fmt.Sprintf("%d", v)
 	case float32, float64:
-		id = fmt.Sprintf("%f", v)
+		str = fmt.Sprintf("%f", v)
 	case time.Time:
-		id = v.String()
+		str = v.String()
 	case bool:
-		id = fmt.Sprintf("%t", v)
+		str = fmt.Sprintf("%t", v)
 	default:
 		return "", fmt.Errorf("unsupported type: %T", val)
 	}
 
-	return id, nil
+	return str, nil
 }
 
 func columnNames(columnInfo []gocql.ColumnInfo) []string {
@@ -202,13 +213,4 @@ func columnNames(columnInfo []gocql.ColumnInfo) []string {
 	}
 
 	return names
-}
-
-func isSelect(query string) bool {
-	stmt := strings.TrimSpace(query)
-	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
-		return false
-	}
-
-	return true
 }
