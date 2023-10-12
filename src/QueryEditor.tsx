@@ -172,13 +172,12 @@ export class QueryEditor extends PureComponent<Props> {
               <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
             </InlineFieldRow>
             <InlineFieldRow>
-              <InlineField label="Alias" labelWidth={8} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
+              <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input
                     name="alias"
                     value={this.props.query.alias || ''}
                     onChange={this.onAliasChange}
                     onBlur={this.props.onRunQuery}
-                    width={22}
                 />
               </InlineField>
             </InlineFieldRow>

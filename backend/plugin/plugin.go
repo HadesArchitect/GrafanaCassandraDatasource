@@ -149,10 +149,10 @@ func makeDataFrameFromPoints(id string, alias string, rows []cassandra.Row) *dat
 		return nil
 	}
 
-	alias = formatAlias(alias, rows[0].Fields)
 	frame := data.NewFrame(id, nil)
-	fields := make([]*data.Field, 0, len(rows[0].Columns))
 
+	alias = formatAlias(alias, rows[0].Fields)
+	fields := make([]*data.Field, 0, len(rows[0].Columns))
 	for _, colName := range rows[0].Columns {
 		field := data.NewFieldFromFieldType(data.FieldTypeFor(rows[0].Fields[colName]), 0)
 		field.Name = colName
