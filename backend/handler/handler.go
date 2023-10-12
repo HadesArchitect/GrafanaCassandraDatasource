@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
@@ -14,8 +14,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-type plugin interface {
-	ExecQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error)
+type ds interface {
+	ExecQuery(ctx context.Context, q *plugin.Query) (data.Frames, error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
@@ -153,13 +153,13 @@ func (h *handler) getColumns(rw http.ResponseWriter, req *http.Request) {
 
 // getPluginInstance fetches plugin instance from instance manager, then
 // returns it if it has been successfully asserted that it is a plugin type.
-func (h *handler) getPluginInstance(ctx context.Context, pluginCtx backend.PluginContext) (plugin, error) {
+func (h *handler) getPluginInstance(ctx context.Context, pluginCtx backend.PluginContext) (ds, error) {
 	instance, err := h.instanceManager.Get(ctx, pluginCtx)
 	if err != nil {
 		return nil, fmt.Errorf("instanceManager.Get: %w", err)
 	}
 
-	p, ok := instance.(plugin)
+	p, ok := instance.(ds)
 	if !ok {
 		return nil, fmt.Errorf("invalid instance type: %T", instance)
 	}

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -23,29 +23,31 @@ type dataQuery struct {
 	ValueID        string `json:"valueId"`
 	Alias          string `json:"alias,omitempty"`
 	AllowFiltering bool   `json:"filtering,omitempty"`
+	Instant        bool   `json:"instant,omitempty"`
 }
 
 // parseDataQuery is a simple helper to unmarshal
 // backend.DataQuery's JSON into the cassandra.Query type.
-func parseDataQuery(q *backend.DataQuery) (*cassandra.Query, error) {
-	var bq dataQuery
-	err := json.Unmarshal(q.JSON, &bq)
+func parseDataQuery(q *backend.DataQuery) (*plugin.Query, error) {
+	var dq dataQuery
+	err := json.Unmarshal(q.JSON, &dq)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
 
-	return &cassandra.Query{
-		RawQuery:       bq.RawQuery,
-		Target:         bq.Target,
-		Keyspace:       bq.Keyspace,
-		Table:          bq.Table,
-		ColumnValue:    bq.ColumnValue,
-		ColumnID:       bq.ColumnID,
-		ValueID:        bq.ValueID,
-		AliasID:        bq.Alias,
-		ColumnTime:     bq.ColumnTime,
+	return &plugin.Query{
+		RawQuery:       dq.RawQuery,
+		Target:         dq.Target,
+		Keyspace:       dq.Keyspace,
+		Table:          dq.Table,
+		ColumnValue:    dq.ColumnValue,
+		ColumnID:       dq.ColumnID,
+		ValueID:        dq.ValueID,
+		AliasID:        dq.Alias,
+		ColumnTime:     dq.ColumnTime,
 		TimeFrom:       q.TimeRange.From,
 		TimeTo:         q.TimeRange.To,
-		AllowFiltering: bq.AllowFiltering,
+		AllowFiltering: dq.AllowFiltering,
+		Instant:        dq.Instant,
 	}, nil
 }

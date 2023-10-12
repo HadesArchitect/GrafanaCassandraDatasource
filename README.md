@@ -91,18 +91,59 @@ Query Editor unlocks all possibilities of CQL including Used-Defined Functions, 
 Example (using the sample table from the Query Configurator case):
 
 ```
-SELECT sensor_id, CAST(temperature as double), registered_at FROM test.test WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and registered_at < $__timeTo
+SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and registered_at < $__timeTo
 ```
 
-1. Follow the order of the SELECT expressions, it's important! 
+1. Order of fields in the SELECT expression doesn't matter except `ID` field. This field used to distinguish different time series, so it is important to keep it on the first position.
 * **Identifier** - the first property in the SELECT expression must be the ID, something that uniquely identifies the data (e.g. `sensor_id`)
-* **Value** - The second property must be the value what you are going to show 
-* **Timestamp** - The third value must be timestamp of the value.
-All other properties will be ignored
+* **Value** - There should be at least one numeric value among returned fields, if query result will be used to draw graph.
+* **Timestamp** - There should be one timestamp value, if query result will be used to draw graph.
+* There could be any number of additional fields, however be cautious when using multiple numeric fields as they are interpreted as values by grafana and therefore are drawn on TimeSeries graph.
+* Any field returned by query is available to use in `Alias` template, e.g. `{{ location }}`. Datasource interpolates such strings and updates graph legend. 
+* Datasource will try to keep all the fields, however it is not always possible since cassandra and grafana use different sets of supported types. Unsupported fields will be removed from response.
 
 2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel. **Notice** It's important to add the placeholders otherwise query will try to fetch data for the whole period of time. Don't try to specify the timeframe on your own, just put the placeholders. It's grafana's job to specify time limits.
 
 ![103153625-1fd85280-4792-11eb-9c00-085297802117](https://user-images.githubusercontent.com/1742301/148654522-8e50617d-0ba9-4c5a-a3f0-7badec92e31f.png)
+
+#### Table Mode
+In addition to TimeSeries mode datasource supports Table mode to draw tables using Cassandra query results. Use `Merge`, `Sort by`, `Organize fields` and other transformations to shape the table in any desirable way.
+There are two ways to plot not a whole timeseries but only last(most rescent) values.
+1. Inefficient way
+
+In case if table created with default ascending ordering the most recent value is always stored in the end of partition. To retrieve it `ORDER BY` and `LIMIT` clauses must be used in query:
+```
+SELECT sensor_id, temperature, registered_at, location
+FROM test.test
+WHERE sensor_id = 99051fe9-6a9c-46c2-b949-38ef78858dd0
+AND registered_at > $__timeFrom and registered_at < $__timeTo
+ORDER BY registered_at
+LIMIT 1
+```
+Note that `WHERE IN ()` clause could not be used with `ORDER BY`, so query must be duplicated for additional `sensor_id`.
+
+2. Efficient way
+
+To query the most recent values efficiently ordering must be specified during the table creation:
+```
+CREATE TABLE IF NOT EXISTS temperature (
+    sensor_id uuid,
+    registered_at timestamp,
+    temperature int,
+    location text,
+    PRIMARY KEY ((sensor_id), registered_at)
+) WITH CLUSTERING ORDER BY (registered_at DESC);
+```
+After that the most recent value will always be stored in the beginning of partition and could be queried with just `LIMIT` clause:
+```
+SELECT sensor_id, temperature, registered_at, room_name
+FROM test.test
+WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd0)
+AND registered_at > $__timeFrom and registered_at < $__timeTo
+ORDER BY registered_at
+PER PARTITION LIMIT 1
+```
+Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
 
 ## Development
 

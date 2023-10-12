@@ -1,4 +1,4 @@
-import { DataQuery } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 
 export interface CassandraQuery extends DataQuery {
   target?: string;
@@ -13,6 +13,7 @@ export interface CassandraQuery extends DataQuery {
   valueId?: string;
   rawQuery?: boolean;
   alias?: string;
+  instant?: boolean;
 }
 
 type CassandraQueryType = 'query' | 'search' | 'keyspaces' | 'tables';

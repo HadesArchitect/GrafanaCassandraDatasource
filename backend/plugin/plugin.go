@@ -3,16 +3,19 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+var aliasFormatRegexp = regexp.MustCompile(`\{\{\s*(.+?)\s*\}\}`)
+
 type repository interface {
-	ExecRawQuery(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
-	ExecStrictQuery(ctx context.Context, q *cassandra.Query) (map[string][]*cassandra.TimeSeriesPoint, error)
+	Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
@@ -33,7 +36,7 @@ func New(repo repository) *Plugin {
 }
 
 // ExecQuery executes metric query based on provided query type.
-func (p *Plugin) ExecQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error) {
+func (p *Plugin) ExecQuery(ctx context.Context, q *Query) (data.Frames, error) {
 	var (
 		dataFrames data.Frames
 		err        error
@@ -55,15 +58,15 @@ func (p *Plugin) ExecQuery(ctx context.Context, q *cassandra.Query) (data.Frames
 }
 
 // execRawMetricQuery executes repository ExecRawQuery method and transforms reposonse to data.Frames.
-func (p *Plugin) execRawMetricQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error) {
-	tsPointsMap, err := p.repo.ExecRawQuery(ctx, q)
+func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
+	rows, err := p.repo.Select(ctx, q.Target)
 	if err != nil {
-		return nil, fmt.Errorf("repo.ExecRawQuery: %w", err)
+		return nil, fmt.Errorf("repo.Select: %w", err)
 	}
 
 	var frames data.Frames
-	for id, points := range tsPointsMap {
-		frame := makeDataFrameFromPoints(id, points)
+	for id, points := range rows {
+		frame := makeDataFrameFromPoints(id, q.AliasID, points)
 		frames = append(frames, frame)
 	}
 
@@ -71,18 +74,15 @@ func (p *Plugin) execRawMetricQuery(ctx context.Context, q *cassandra.Query) (da
 }
 
 // execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
-func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error) {
-	tsPointsMap, err := p.repo.ExecStrictQuery(ctx, q)
+func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
+	rows, err := p.repo.Select(ctx, q.BuildStatement(), splitIDs(q.ValueID), q.TimeFrom, q.TimeTo)
 	if err != nil {
 		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
 	}
 
 	var frames data.Frames
-	for id, points := range tsPointsMap {
-		if q.AliasID != "" && len(tsPointsMap) == 1 {
-			id = q.AliasID
-		}
-		frame := makeDataFrameFromPoints(id, points)
+	for id, points := range rows {
+		frame := makeDataFrameFromPoints(id, q.AliasID, points)
 		frames = append(frames, frame)
 	}
 
@@ -134,16 +134,69 @@ func (p *Plugin) Dispose() {
 	p.repo.Close()
 }
 
-// makeDataFrameFromPoints creates data frames from time series points returned by repository.
-func makeDataFrameFromPoints(id string, points []*cassandra.TimeSeriesPoint) *data.Frame {
-	timeField := data.NewField("time", nil, make([]time.Time, 0, len(points)))
-	valueField := data.NewField(id, nil, make([]float64, 0, len(points)))
-	valueField.Config = &data.FieldConfig{DisplayNameFromDS: id}
+func splitIDs(s string) []string {
+	var ids []string
+	for _, id := range strings.Split(s, ",") {
+		ids = append(ids, strings.TrimSpace(id))
+	}
 
-	frame := data.NewFrame(id, timeField, valueField)
-	for _, p := range points {
-		frame.AppendRow(p.Timestamp, p.Value)
+	return ids
+}
+
+// makeDataFrameFromPoints creates data frames from time series points returned by repository.
+func makeDataFrameFromPoints(id string, alias string, rows []cassandra.Row) *data.Frame {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	frame := data.NewFrame(id, nil)
+
+	alias = formatAlias(alias, rows[0].Fields)
+	fields := make([]*data.Field, 0, len(rows[0].Columns))
+	for _, colName := range rows[0].Columns {
+		field := data.NewFieldFromFieldType(data.FieldTypeFor(rows[0].Fields[colName]), 0)
+		field.Name = colName
+		if alias != "" && field.Type().Numeric() {
+			field.SetConfig(&data.FieldConfig{DisplayNameFromDS: alias})
+		}
+		fields = append(fields, field)
+	}
+	frame.Fields = fields
+
+	for _, r := range rows {
+		values := make([]interface{}, 0, len(r.Fields))
+		for _, colName := range r.Columns {
+			values = append(values, r.Fields[colName])
+		}
+		frame.AppendRow(values...)
 	}
 
 	return frame
+}
+
+func formatAlias(alias string, values map[string]interface{}) string {
+	formattedAlias := aliasFormatRegexp.ReplaceAllFunc([]byte(alias), func(in []byte) []byte {
+		fieldName := strings.Replace(string(in), "{{", "", 1)
+		fieldName = strings.Replace(fieldName, "}}", "", 1)
+		fieldName = strings.TrimSpace(fieldName)
+		if val, exists := values[fieldName]; exists {
+			switch v := val.(type) {
+			case string:
+				return []byte(v)
+			case int8, int32, int64, int:
+				return []byte(fmt.Sprintf("%d", v))
+			case float32, float64:
+				return []byte(fmt.Sprintf("%f", v))
+			case bool:
+				return []byte(fmt.Sprintf("%t", v))
+			case time.Time:
+				return []byte(v.String())
+			default:
+				return []byte{}
+			}
+		}
+		return []byte{}
+	})
+
+	return string(formattedAlias)
 }

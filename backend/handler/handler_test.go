@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -28,7 +28,7 @@ func (i *instanceManagerMock) Do(_ context.Context, _ backend.PluginContext, _ i
 }
 
 type pluginMock struct {
-	onExecQuery    func(ctx context.Context, q *cassandra.Query) (data.Frames, error)
+	onExecQuery    func(ctx context.Context, q *plugin.Query) (data.Frames, error)
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
@@ -36,7 +36,7 @@ type pluginMock struct {
 	onDispose      func()
 }
 
-func (p *pluginMock) ExecQuery(ctx context.Context, q *cassandra.Query) (data.Frames, error) {
+func (p *pluginMock) ExecQuery(ctx context.Context, q *plugin.Query) (data.Frames, error) {
 	return p.onExecQuery(ctx, q)
 }
 
@@ -74,7 +74,7 @@ func Test_queryMetricData(t *testing.T) {
 		{
 			name: "one query",
 			plugin: &pluginMock{
-				onExecQuery: func(_ context.Context, q *cassandra.Query) (data.Frames, error) {
+				onExecQuery: func(_ context.Context, q *plugin.Query) (data.Frames, error) {
 					return data.Frames{{
 						Name: "1",
 						Fields: []*data.Field{
@@ -112,7 +112,7 @@ func Test_queryMetricData(t *testing.T) {
 		{
 			name: "two queries",
 			plugin: &pluginMock{
-				onExecQuery: func(_ context.Context, q *cassandra.Query) (data.Frames, error) {
+				onExecQuery: func(_ context.Context, q *plugin.Query) (data.Frames, error) {
 					return data.Frames{{
 						Name: q.ValueID,
 						Fields: []*data.Field{
