@@ -181,7 +181,7 @@ func TestPlugin_ExecQuery(t *testing.T) {
 			p := &Plugin{repo: tc.repo}
 			dataFrames, err := p.ExecQuery(context.TODO(), tc.query)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.want, dataFrames)
+			assert.EqualValues(t, tc.want, dataFrames)
 		})
 	}
 }
@@ -395,7 +395,7 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			dataFrame := makeDataFrameFromPoints(tc.id, tc.alias, tc.rows)
-			assert.Equal(t, tc.want, dataFrame)
+			assert.EqualValues(t, tc.want, dataFrame)
 		})
 	}
 }
