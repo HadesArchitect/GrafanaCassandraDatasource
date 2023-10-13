@@ -82,10 +82,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
-    let from = options.range.from.valueOf();
-    let to = options.range.to.valueOf();
-    options.scopedVars.__timeFrom = { text: from, value: from };
-    options.scopedVars.__timeTo = { text: to, value: to };
+    let from = options.range.from;
+    let to = options.range.to;
+    options.scopedVars.__timeFrom = { text: from.valueOf(), value: from.valueOf() };
+    options.scopedVars.__timeTo = { text: to.valueOf(), value: to.valueOf() };
+    options.scopedVars.__unixEpochFrom = { text: from.unix(), value: from.unix() };
+    options.scopedVars.__unixEpochTo = { text: to.unix(), value: to.unix() };
 
     //remove placeholder targets
     options.targets = _.filter(options.targets, (target) => {
