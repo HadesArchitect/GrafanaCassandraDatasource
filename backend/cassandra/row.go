@@ -23,6 +23,9 @@ func (r *Row) normalize() error {
 	for _, colName := range r.Columns {
 		switch v := r.Fields[colName].(type) {
 		case int8, int16, int32, int64, float32, float64, string, bool, time.Time:
+		// nulls are not supported yet, so just in case they will`
+		// https://github.com/gocql/gocql/issues/1248
+		case *int, *int8, *int16, *int32, *int64, *float32, *float64, *string, *bool:
 		case int:
 			r.Fields[colName] = int64(v)
 		case []byte:

@@ -139,8 +139,7 @@ After that the most recent value will always be stored in the beginning of parti
 SELECT sensor_id, temperature, registered_at, room_name
 FROM test.test
 WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd0)
-AND registered_at > $__timeFrom and registered_at < $__timeTo
-ORDER BY registered_at
+AND registered_at > $__timeFrom AND registered_at < $__timeTo
 PER PARTITION LIMIT 1
 ```
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
@@ -152,7 +151,7 @@ However, it is not always enough. One of possible cases could be unix time, whic
 ```
 SELECT sensor_id, temperature, dateOf(maxTimeuuid(registered_at)), location
 FROM test.test WHERE sensor_id = 99051fe9-6a9c-46c2-b949-38ef78858dd0
-AND registered_at > $__timeFrom and registered_at < $__timeTo
+AND registered_at > $__timeFrom AND registered_at < $__timeTo
 ```
 This query returns proper timestamp even if it stored as number of milliseconds.
 
@@ -160,7 +159,7 @@ This query returns proper timestamp even if it stored as number of milliseconds.
 ```
 SELECT sensor_id, temperature, dateOf(maxTimeuuid(registered_at*1000)), location
 FROM test.test WHERE sensor_id = 99051fe9-6a9c-46c2-b949-38ef78858dd0
-AND registered_at > $__unixEpochFrom and registered_at < $__unixEpochTo
+AND registered_at > $__unixEpochFrom AND registered_at < $__unixEpochTo
 ```
 * There are two important parts in this query:
   * `dateOf(maxTimeuuid(registered_at*1000))` used to convert seconds to milliseconds(`registered_at*1000`) and then to convert milliseconds to `timestamp` type, which is handed over to grafana.
