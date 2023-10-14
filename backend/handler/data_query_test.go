@@ -61,6 +61,29 @@ func Test_parseDataQuery(t *testing.T) {
 				Instant:        false,
 			},
 		},
+		{
+			name:      "alert query",
+			timeRange: backend.TimeRange{From: time.Unix(1257894000, 0), To: time.Unix(1257894010, 0)},
+			jsonStr: []byte(`{"datasourceId": 1, "queryType": "alert", "rawQuery": true, "refId": "123456789",
+					   		  "target": "SELECT * from Keyspace.Table", "columnTime": "Time", "columnValue": "Value",
+					   		  "keyspace": "Keyspace", "table": "Table", "columnId": "ID", "valueId": "123"}`),
+			want: &plugin.Query{
+				RawQuery:       true,
+				Target:         "SELECT * from Keyspace.Table",
+				Keyspace:       "Keyspace",
+				Table:          "Table",
+				ColumnValue:    "Value",
+				ColumnID:       "ID",
+				ValueID:        "123",
+				AliasID:        "",
+				ColumnTime:     "Time",
+				TimeFrom:       time.Unix(1257894000, 0),
+				TimeTo:         time.Unix(1257894010, 0),
+				AllowFiltering: false,
+				Instant:        false,
+				IsAlertQuery:   true,
+			},
+		},
 	}
 
 	for _, tc := range testCases {

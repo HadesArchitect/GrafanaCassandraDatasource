@@ -41,6 +41,7 @@ func New(fn datasource.InstanceFactoryFunc) datasource.ServeOpts {
 	// QueryDataHandler
 	queryTypeMux := datasource.NewQueryTypeMux()
 	queryTypeMux.HandleFunc("query", h.queryMetricData)
+	queryTypeMux.HandleFunc("alert", h.queryMetricData)
 
 	return datasource.ServeOpts{
 		CheckHealthHandler:  h,
@@ -59,6 +60,7 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 
 	responses := backend.Responses{}
 	for _, q := range req.Queries {
+		backend.Logger.Debug("Process metrics request", "Request", q.JSON)
 		cassQuery, err := parseDataQuery(&q)
 		if err != nil {
 			backend.Logger.Error("Failed to parse query", "Message", err)

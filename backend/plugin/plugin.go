@@ -64,13 +64,7 @@ func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames,
 		return nil, fmt.Errorf("repo.Select: %w", err)
 	}
 
-	var frames data.Frames
-	for id, points := range rows {
-		frame := makeDataFrameFromPoints(id, q.AliasID, points)
-		frames = append(frames, frame)
-	}
-
-	return frames, nil
+	return makeDataFrames(q, rows), nil
 }
 
 // execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
@@ -80,13 +74,7 @@ func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *Query) (data.Fram
 		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
 	}
 
-	var frames data.Frames
-	for id, points := range rows {
-		frame := makeDataFrameFromPoints(id, q.AliasID, points)
-		frames = append(frames, frame)
-	}
-
-	return frames, nil
+	return makeDataFrames(q, rows), nil
 }
 
 // GetKeyspaces fetches and returns Cassandra's list of keyspaces.
@@ -143,14 +131,29 @@ func splitIDs(s string) []string {
 	return ids
 }
 
-// makeDataFrameFromPoints creates data frames from time series points returned by repository.
-func makeDataFrameFromPoints(id string, alias string, rows []cassandra.Row) *data.Frame {
+func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
+	var frames data.Frames
+	for id, points := range rows {
+		frame := makeDataFrameFromRows(id, q.AliasID, points)
+		if q.IsAlertQuery {
+			// alerting doesn't support narrow frames
+			frame = narrowFrameToWideFrame(frame)
+		}
+		frames = append(frames, frame)
+	}
+
+	return frames
+}
+
+// makeDataFrameFromRows creates data frames from time series points returned by repository.
+func makeDataFrameFromRows(id string, alias string, rows []cassandra.Row) *data.Frame {
 	if len(rows) == 0 {
 		return nil
 	}
 
 	frame := data.NewFrame(id, nil)
 
+	// use first of the returned rows to interpolate legend alias.
 	alias = formatAlias(alias, rows[0].Fields)
 	fields := make([]*data.Field, 0, len(rows[0].Columns))
 	for _, colName := range rows[0].Columns {
@@ -174,6 +177,7 @@ func makeDataFrameFromPoints(id string, alias string, rows []cassandra.Row) *dat
 	return frame
 }
 
+// formatAlias performs legend alies interpolation.
 func formatAlias(alias string, values map[string]interface{}) string {
 	formattedAlias := aliasFormatRegexp.ReplaceAllFunc([]byte(alias), func(in []byte) []byte {
 		fieldName := strings.Replace(string(in), "{{", "", 1)
@@ -199,4 +203,72 @@ func formatAlias(alias string, values map[string]interface{}) string {
 	})
 
 	return string(formattedAlias)
+}
+
+// narrowFrameToWideFrame performs rudimentary frames conversion from narrow to wide format.
+// It puts non-TS fields to labels and removes from fields list. Conflicting labels are replaced.
+// Any other field is ignored and could cause grafana alerting error during alert query execution.
+// https://grafana.com/developers/plugin-tools/introduction/data-frames#data-frames-as-time-series
+func narrowFrameToWideFrame(frame *data.Frame) *data.Frame {
+	if len(frame.Fields) == 0 {
+		return frame
+	}
+
+	labels := makeLabelsFromNonTSFields(frame)
+	for i := 0; i < len(frame.Fields); i++ {
+		if frame.Fields[i].Type().Numeric() {
+			if frame.Fields[i].Labels == nil {
+				frame.Fields[i].Labels = make(map[string]string, len(labels))
+			}
+			for k, v := range labels {
+				frame.Fields[i].Labels[k] = v
+			}
+		}
+	}
+
+	return removeNonTSFields(frame)
+}
+
+// makeLabelsFromNonTSFields creates map of labels and their corresponding
+// values from all fields that are not numeric or timestamps. Only first
+// value from each field used as label value.
+func makeLabelsFromNonTSFields(frame *data.Frame) map[string]string {
+	labels := make(map[string]string)
+	if frame == nil || len(frame.Fields) == 0 || frame.Fields[0].Len() == 0 {
+		return labels
+	}
+
+	for _, f := range frame.Fields {
+		if !f.Type().Numeric() && !f.Type().Time() {
+			labels[f.Name] = fmt.Sprintf("%v", f.CopyAt(0))
+		}
+	}
+
+	return labels
+}
+
+// removeNonTSFields deletes all fields that are not numeric or timestamps
+// from frame. These values should be previously stored to labels
+// using makeLabelsFromNonTSFields method. Result is not stable, e.g.
+// elements can change their positions during filtration.
+func removeNonTSFields(frame *data.Frame) *data.Frame {
+	if frame == nil {
+		return nil
+	}
+
+	i, j := 0, len(frame.Fields)-1
+	for i <= j {
+		// keep numeric and timestamp fields
+		if frame.Fields[i].Type().Numeric() || frame.Fields[i].Type().Time() {
+			i++
+			continue
+		}
+		// move all the other fields to the end of the Fields slice
+		frame.Fields[i], frame.Fields[j] = frame.Fields[j], frame.Fields[i]
+		j--
+	}
+
+	frame.Fields = frame.Fields[0:i]
+
+	return frame
 }

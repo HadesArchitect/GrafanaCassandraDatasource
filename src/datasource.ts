@@ -82,13 +82,6 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
-    let from = options.range.from;
-    let to = options.range.to;
-    options.scopedVars.__timeFrom = { text: from.valueOf(), value: from.valueOf() };
-    options.scopedVars.__timeTo = { text: to.valueOf(), value: to.valueOf() };
-    options.scopedVars.__unixEpochFrom = { text: from.unix(), value: from.unix() };
-    options.scopedVars.__unixEpochTo = { text: to.unix(), value: to.unix() };
-
     //remove placeholder targets
     options.targets = _.filter(options.targets, (target) => {
       return target.target !== 'select metric';
@@ -97,7 +90,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     const targets: CassandraQuery[] = _.map(options.targets, (target) => {
       return {
         datasourceId: target.datasourceId,
-        queryType: 'query',
+        queryType: target.queryType,
 
         target: getTemplateSrv().replace(target.target, options.scopedVars, 'csv'),
         refId: target.refId,

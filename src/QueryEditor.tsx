@@ -150,6 +150,9 @@ export class QueryEditor extends PureComponent<Props> {
     const options = this.props;
 
     this.props.query.queryType = 'query';
+    if (this.props.app === 'unified-alerting') {
+      this.props.query.queryType = 'alert';
+    }
 
     return (
       <div>
@@ -159,7 +162,7 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField
                 label="Cassandra CQL Query"
                 labelWidth={30}
-                tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
+                tooltip="Enter Cassandra CQL query. You can use $__timeFrom/$__timeTo and $__unixEpochFrom/$__unixEpochTo variables, they will be replaced by chosen range"
                 grow
               >
                 <TextArea
@@ -175,9 +178,9 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input
                     name="alias"
-                    value={this.props.query.alias || ''}
                     onChange={this.onAliasChange}
                     onBlur={this.props.onRunQuery}
+                    value={this.props.query.alias || ''}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -294,7 +297,7 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField
                 label="ID Column"
                 labelWidth={30}
-                tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
+                tooltip="Specify name of a ID column to identify the row (id, sensor_id etc.)"
               >
                 {/* <Input
                   name="id_column"

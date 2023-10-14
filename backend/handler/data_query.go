@@ -3,9 +3,23 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"time"
 
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
+
+var (
+	timeFromRegexp      = regexp.MustCompile(`\$__timeFrom`)
+	timeToRegexp        = regexp.MustCompile(`\$__timeTo`)
+	unixEpochFromRegexp = regexp.MustCompile(`\$__unixEpochFrom`)
+	unixEpochToRegexp   = regexp.MustCompile(`\$__unixEpochTo`)
+)
+
+const (
+	queryTypeQuery = "query"
+	queryTypeAlert = "alert"
 )
 
 type dataQuery struct {
@@ -35,6 +49,10 @@ func parseDataQuery(q *backend.DataQuery) (*plugin.Query, error) {
 		return nil, fmt.Errorf("json.Unmarshal: %w", err)
 	}
 
+	if dq.RawQuery {
+		dq.applyTimeRange(q.TimeRange.From, q.TimeRange.To)
+	}
+
 	return &plugin.Query{
 		RawQuery:       dq.RawQuery,
 		Target:         dq.Target,
@@ -49,5 +67,16 @@ func parseDataQuery(q *backend.DataQuery) (*plugin.Query, error) {
 		TimeTo:         q.TimeRange.To,
 		AllowFiltering: dq.AllowFiltering,
 		Instant:        dq.Instant,
+		IsAlertQuery:   dq.QueryType == queryTypeAlert,
 	}, nil
+}
+
+func (dq *dataQuery) applyTimeRange(from time.Time, to time.Time) {
+	query := []byte(dq.Target)
+	query = timeFromRegexp.ReplaceAll(query, []byte(fmt.Sprintf("%d", from.UnixMilli())))
+	query = timeToRegexp.ReplaceAll(query, []byte(fmt.Sprintf("%d", to.UnixMilli())))
+	query = unixEpochFromRegexp.ReplaceAll(query, []byte(fmt.Sprintf("%d", from.Unix())))
+	query = unixEpochToRegexp.ReplaceAll(query, []byte(fmt.Sprintf("%d", to.Unix())))
+
+	dq.Target = string(query)
 }
