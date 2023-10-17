@@ -19,7 +19,7 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	err := json.Unmarshal(settings.JSONData, &dss)
 	if err != nil {
 		backend.Logger.Error("Failed to parse connection parameter", "Message", err)
-		return nil, fmt.Errorf("failed to parse connection parameters: %w", err)
+		return nil, fmt.Errorf("Failed to parse connection parameters: %w", err)
 	}
 
 	var tlsConfig *tls.Config
@@ -29,7 +29,7 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 		tlsConfig, err = prepareTLSCfg(dss.CertPath, dss.RootPath, dss.CaPath, dss.AllowInsecureTLS)
 		if err != nil {
 			backend.Logger.Error("Failed to create TLS config", "Message", err)
-			return nil, fmt.Errorf("failed to create TLS config: %w", err)
+			return nil, fmt.Errorf("Failed to create TLS config: %w", err)
 		}
 	}
 
@@ -46,7 +46,7 @@ func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	session, err := cassandra.New(sessionSettings)
 	if err != nil {
 		backend.Logger.Error("Failed to create Cassandra connection", "Message", err)
-		return nil, fmt.Errorf("failed to create Cassandra connection, check Grafana logs for more details")
+		return nil, fmt.Errorf("Failed to create Cassandra connection, check Grafana logs for more details")
 	}
 
 	return plugin.New(session), nil
