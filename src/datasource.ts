@@ -1,20 +1,8 @@
 import _ from 'lodash';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import { DataQueryRequest, DataQueryResponse, DataSourceJsonData, DataSourceInstanceSettings } from '@grafana/data';
-import { CassandraQuery } from './models';
+import { DataQueryRequest, DataQueryResponse, DataSourceInstanceSettings } from '@grafana/data';
+import { CassandraQuery,CassandraVariableQuery, CassandraDataSourceOptions } from './models';
 import { Observable } from 'rxjs';
-
-export interface CassandraDataSourceOptions extends DataSourceJsonData {
-  keyspace: string;
-  consistency: string;
-  user: string;
-  certPath: string;
-  rootPath: string;
-  caPath: string;
-  useCustomTLS: boolean;
-  timeout: number;
-  allowInsecureTLS: boolean;
-}
 
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
   headers: any;
@@ -44,6 +32,15 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
 
     return super.query(this.buildQueryParameters(options));
+  }
+
+  async metricFindQuery(query: CassandraVariableQuery, options?: any) {
+    const response = await this.getResource('variables', {query: query.rawQuery});
+    const variables = JSON.parse(response) as string[][];
+
+console.log(variables); // REMOVE ME
+
+    return variables.map((frame: any) => ({ text: frame[0], value: frame[1] }));
   }
 
   isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {

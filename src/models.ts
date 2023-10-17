@@ -1,4 +1,5 @@
 import { DataQuery } from '@grafana/schema';
+import { DataSourceJsonData } from '@grafana/data';
 
 export interface CassandraQuery extends DataQuery {
   target?: string;
@@ -14,6 +15,22 @@ export interface CassandraQuery extends DataQuery {
   rawQuery?: boolean;
   alias?: string;
   instant?: boolean;
+}
+
+export interface CassandraVariableQuery {
+  rawQuery: string;
+}
+
+export interface CassandraDataSourceOptions extends DataSourceJsonData {
+  keyspace: string;
+  consistency: string;
+  user: string;
+  certPath: string;
+  rootPath: string;
+  caPath: string;
+  useCustomTLS: boolean;
+  timeout: number;
+  allowInsecureTLS: boolean;
 }
 
 type CassandraQueryType = 'query' | 'alert';
