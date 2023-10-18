@@ -14,6 +14,7 @@ import (
 type repositoryMock struct {
 	onSelect       func(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error)
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
+	onGetVariables func(ctx context.Context, query string) ([][]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
 }
@@ -28,6 +29,10 @@ func (m *repositoryMock) GetKeyspaces(ctx context.Context) ([]string, error) {
 
 func (m *repositoryMock) GetTables(keyspace string) ([]string, error) {
 	return m.onGetTables(keyspace)
+}
+
+func (m *repositoryMock) GetVariables(ctx context.Context, query string) ([][]string, error) {
+	return m.onGetVariables(ctx, query)
 }
 
 func (m *repositoryMock) GetColumns(keyspace, table, needType string) ([]string, error) {

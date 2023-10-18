@@ -155,7 +155,7 @@ func (s *Session) GetVariables(ctx context.Context, query string) ([][]string, e
 			variables = append(variables, []string{column1, column2})
 		}
 	} else {
-		return nil, fmt.Errorf("An error in query: expected 1 or 2 columns, got %w", len(iter.Columns()))
+		return nil, fmt.Errorf("An error in query: expected 1 or 2 columns, got %d", len(iter.Columns()))
 	}
 
 	if err := iter.Close(); err != nil {

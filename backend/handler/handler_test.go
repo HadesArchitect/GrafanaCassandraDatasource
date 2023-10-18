@@ -30,6 +30,7 @@ func (i *instanceManagerMock) Do(_ context.Context, _ backend.PluginContext, _ i
 type pluginMock struct {
 	onExecQuery    func(ctx context.Context, q *plugin.Query) (data.Frames, error)
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
+	onGetVariables func(ctx context.Context, query string) ([][]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
 	onCheckHealth  func(ctx context.Context) error
@@ -42,6 +43,10 @@ func (p *pluginMock) ExecQuery(ctx context.Context, q *plugin.Query) (data.Frame
 
 func (p *pluginMock) GetKeyspaces(ctx context.Context) ([]string, error) {
 	return p.onGetKeyspaces(ctx)
+}
+
+func (p *pluginMock) GetVariables(ctx context.Context, query string) ([][]string, error) {
+	return p.onGetVariables(ctx, query)
 }
 
 func (p *pluginMock) GetTables(keyspace string) ([]string, error) {
