@@ -38,9 +38,10 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     const response = await this.getResource('variables', {query: query.rawQuery});
     const variables = JSON.parse(response) as string[][];
 
-console.log(variables); // REMOVE ME
-
-    return variables.map((frame: any) => ({ text: frame[0], value: frame[1] }));
+    return variables.map((frame: any) => ({
+      text: "" === frame[0] ? frame[1] : frame[0],
+      value: frame[1] 
+    }));
   }
 
   isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {

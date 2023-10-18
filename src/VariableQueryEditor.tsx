@@ -22,7 +22,7 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
 
   return (
     <>
-        <label className="small">Specify a query that returns variable values. If the query returns one column, it will be interpreted as values, if the query returns two columns, the first one is interpreted as a label (human-readable) and the second one as a value. Due to grafana limitations, you MUST cast both the labels and values to strings.</label>
+        <label className="small">Specify a query that returns variable values. If the query returns one column, it will be interpreted as values, if the query returns two columns, the first one is interpreted as a label (human-readable) and the second one as a value. Due to grafana limitations, both the labels and values must be strings, use `CAST(column as text)` if needed.</label>
         <br />
         <TextArea
           name="rawQuery"
