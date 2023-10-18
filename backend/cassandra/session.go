@@ -137,6 +137,34 @@ func (s *Session) GetTables(keyspace string) ([]string, error) {
 	return tables, nil
 }
 
+// GetTables queries the cassandra cluster for a list of an existing tables in a given keyspace.
+func (s *Session) GetVariables(ctx context.Context, query string) ([][]string, error) {
+	iter := s.session.Query(query).WithContext(ctx).Iter()
+
+    var variables [][]string
+
+	// check if one or two columns (are labels present?)
+	if (len(iter.Columns()) == 1) {
+		var column string
+		for iter.Scan(&column) {
+			variables = append(variables, []string{"", column})
+		}
+	} else if (len(iter.Columns()) == 2) {
+		var column1, column2 string
+		for iter.Scan(&column1, &column2) {
+			variables = append(variables, []string{column1, column2})
+		}
+	} else {
+		return nil, fmt.Errorf("An error in query: expected 1 or 2 columns, got %w", len(iter.Columns()))
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, fmt.Errorf("query processing: %w", err)
+	}
+
+	return variables, nil
+}
+
 // GetColumns queries the cassandra cluster for a list of an
 // existing columns of a given type for a given keyspace, table.
 func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error) {

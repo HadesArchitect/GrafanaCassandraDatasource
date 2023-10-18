@@ -18,6 +18,7 @@ type repository interface {
 	Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
+	GetVariables(ctx context.Context, query string) ([][]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
 	Ping(ctx context.Context) error
 	Close()
@@ -95,6 +96,18 @@ func (p *Plugin) GetTables(keyspace string) ([]string, error) {
 	}
 
 	return tables, nil
+}
+
+// GetVariables fetches and returns query variables
+func (p *Plugin) GetVariables(ctx context.Context, query string) ([][]string, error) {
+	backend.Logger.Debug("GetVariables", "query", query)
+	
+	variables, err := p.repo.GetVariables(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("repo.GetVariables: %w", err)
+	}
+
+	return variables, nil
 }
 
 // GetColumns fetches and returns Cassandra's list of columns of given type for provided keyspace and table.
