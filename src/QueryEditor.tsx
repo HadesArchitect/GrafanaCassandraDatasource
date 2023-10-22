@@ -1,8 +1,8 @@
-import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, InlineSwitch, Select, TextArea } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
-import { CassandraQuery } from './models';
+import React, {ChangeEvent, FormEvent, PureComponent} from 'react';
+import {Button, InlineField, InlineFieldRow, InlineSwitch, Input, Select, TextArea} from '@grafana/ui';
+import {CoreApp, QueryEditorProps, SelectableValue} from '@grafana/data';
+import {CassandraDatasource, CassandraDataSourceOptions} from './datasource';
+import {CassandraQuery} from './models';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
@@ -150,7 +150,7 @@ export class QueryEditor extends PureComponent<Props> {
     const options = this.props;
 
     this.props.query.queryType = 'query';
-    if (this.props.app === 'unified-alerting') {
+    if (this.props.app !== undefined && this.props.app === CoreApp.UnifiedAlerting) {
       this.props.query.queryType = 'alert';
     }
 
@@ -162,7 +162,7 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField
                 label="Cassandra CQL Query"
                 labelWidth={30}
-                tooltip="Enter Cassandra CQL query. You can use $__timeFrom/$__timeTo and $__unixEpochFrom/$__unixEpochTo variables, they will be replaced by chosen range"
+                tooltip="Enter Cassandra CQL query. There are $__timeFrom/$__timeTo, $__unixEpochFrom/$__unixEpochTo and $__from/$__to variables to dynamically limit time range in queries. You should always use them to avoid excessive data fetching from DB."
                 grow
               >
                 <TextArea

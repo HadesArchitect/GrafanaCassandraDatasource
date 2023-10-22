@@ -15,7 +15,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
       event.target.setCustomValidity('Cannot be empty');
       event.target.placeholder = 'This field cannot be empty!';
       event.target.style.setProperty('border-color', 'red');
-      console.log(event.target.form);
     } else {
       event.target.setCustomValidity('');
       event.target.placeholder = 'cassandra:9042';
