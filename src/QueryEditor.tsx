@@ -28,7 +28,15 @@ export class QueryEditor extends PureComponent<Props> {
         children?: React.ReactNode;
       }>
   ) {
-    if (
+    this.props.query.queryType = 'query';
+    if (this.props.app && this.props.app === CoreApp.UnifiedAlerting) {
+      this.props.query.queryType = 'alert';
+    }
+
+    const { onChange, query } = this.props;
+    onChange({ ...query, queryType: props.query.queryType });
+
+    if ((
       props.query.keyspace &&
       props.query.keyspace !== '' &&
       props.query.table &&
@@ -41,7 +49,8 @@ export class QueryEditor extends PureComponent<Props> {
       props.query.columnId !== '' &&
       props.query.valueId &&
       props.query.valueId !== ''
-    ) {
+      ) || (props.query.target && props.query.target !== ''))
+    {
       this.props.onRunQuery();
     }
   }
@@ -149,11 +158,6 @@ export class QueryEditor extends PureComponent<Props> {
   render() {
     const options = this.props;
 
-    this.props.query.queryType = 'query';
-    if (this.props.app !== undefined && this.props.app === CoreApp.UnifiedAlerting) {
-      this.props.query.queryType = 'alert';
-    }
-
     return (
       <div>
         {options.query.rawQuery && (
@@ -168,7 +172,9 @@ export class QueryEditor extends PureComponent<Props> {
                 <TextArea
                   placeholder={'Enter a CQL query'}
                   onChange={this.onQueryTextChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   value={this.props.query.target}
                 />
               </InlineField>
@@ -179,7 +185,9 @@ export class QueryEditor extends PureComponent<Props> {
                 <Input
                     name="alias"
                     onChange={this.onAliasChange}
-                    onBlur={this.props.onRunQuery}
+                    onBlur={() => {
+                      this.onRunQuery(this.props);
+                    }}
                     value={this.props.query.alias || ''}
                 />
               </InlineField>
