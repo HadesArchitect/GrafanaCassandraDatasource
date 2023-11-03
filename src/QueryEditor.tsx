@@ -1,8 +1,8 @@
-import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, InlineSwitch, Select, TextArea } from '@grafana/ui';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { CassandraDatasource, CassandraDataSourceOptions } from './datasource';
-import { CassandraQuery } from './models';
+import React, {ChangeEvent, FormEvent, PureComponent} from 'react';
+import {Button, InlineField, InlineFieldRow, InlineSwitch, Input, Select, TextArea} from '@grafana/ui';
+import {CoreApp, QueryEditorProps, SelectableValue} from '@grafana/data';
+import {CassandraDatasource, CassandraDataSourceOptions} from './datasource';
+import {CassandraQuery} from './models';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
@@ -28,7 +28,15 @@ export class QueryEditor extends PureComponent<Props> {
         children?: React.ReactNode;
       }>
   ) {
-    if (
+    this.props.query.queryType = 'query';
+    if (this.props.app && this.props.app === CoreApp.UnifiedAlerting) {
+      this.props.query.queryType = 'alert';
+    }
+
+    const { onChange, query } = this.props;
+    onChange({ ...query, queryType: props.query.queryType });
+
+    if ((
       props.query.keyspace &&
       props.query.keyspace !== '' &&
       props.query.table &&
@@ -41,7 +49,8 @@ export class QueryEditor extends PureComponent<Props> {
       props.query.columnId !== '' &&
       props.query.valueId &&
       props.query.valueId !== ''
-    ) {
+      ) || (props.query.target && props.query.target !== ''))
+    {
       this.props.onRunQuery();
     }
   }
@@ -149,8 +158,6 @@ export class QueryEditor extends PureComponent<Props> {
   render() {
     const options = this.props;
 
-    this.props.query.queryType = 'query';
-
     return (
       <div>
         {options.query.rawQuery && (
@@ -159,13 +166,15 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField
                 label="Cassandra CQL Query"
                 labelWidth={30}
-                tooltip="Enter Cassandra CQL query. Also you can use $__timeFrom and $__timeTo variables, it will be replaced by chosen range"
+                tooltip="Enter Cassandra CQL query. There are $__timeFrom/$__timeTo, $__unixEpochFrom/$__unixEpochTo and $__from/$__to variables to dynamically limit time range in queries. You should always use them to avoid excessive data fetching from DB."
                 grow
               >
                 <TextArea
                   placeholder={'Enter a CQL query'}
                   onChange={this.onQueryTextChange}
-                  onBlur={this.props.onRunQuery}
+                  onBlur={() => {
+                    this.onRunQuery(this.props);
+                  }}
                   value={this.props.query.target}
                 />
               </InlineField>
@@ -175,9 +184,11 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input
                     name="alias"
-                    value={this.props.query.alias || ''}
                     onChange={this.onAliasChange}
-                    onBlur={this.props.onRunQuery}
+                    onBlur={() => {
+                      this.onRunQuery(this.props);
+                    }}
+                    value={this.props.query.alias || ''}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -294,7 +305,7 @@ export class QueryEditor extends PureComponent<Props> {
               <InlineField
                 label="ID Column"
                 labelWidth={30}
-                tooltip="Specify name of a UUID column to identify the row (id, sensor_id etc.)"
+                tooltip="Specify name of a ID column to identify the row (id, sensor_id etc.)"
               >
                 {/* <Input
                   name="id_column"

@@ -1,6 +1,6 @@
-# Cassandra DataSource for Grafana 
+# Apache Cassandra Datasource for Grafana
 
-Apache Cassandra Datasource for Grafana. This datasource is to visualise **time-series data** stored in Cassandra/DSE, if you are looking for Cassandra **metrics**, you may need [datastax/metric-collector-for-apache-cassandra](https://github.com/datastax/metric-collector-for-apache-cassandra) instead.
+This datasource is to visualise **time-series data** stored in Cassandra/DSE, if you are looking for Cassandra **metrics**, you may need [datastax/metric-collector-for-apache-cassandra](https://github.com/datastax/metric-collector-for-apache-cassandra) instead.
 
 ![Release Status](https://github.com/HadesArchitect/GrafanaCassandraDatasource/workflows/Handle%20Release/badge.svg)
  ![CodeQL](https://github.com/HadesArchitect/grafana-cassandra-source/workflows/CodeQL/badge.svg?branch=master)
@@ -18,10 +18,28 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 * AWS Keyspaces (limited support)  ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/AWS-Keyspaces))
 * Linux, OSX (incl. M1), Windows
 
+**Features**:
+* Connect to Cassandra using auth credentials and TLS
+* Query configurator
+* Raw CQL query editor
+* Table mode
+* Annotations
+* Alerting
+
 **Contacts**:
 
 * [![Discord Chat](https://img.shields.io/badge/discord-chat%20with%20us-green)](https://discord.gg/FU2Cb4KTyp) 
-* [![Github discussions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions) 
+* [![Github discussions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions)
+
+**TOC**
+- [About](#about)
+- [Usage](#usage)
+- [Installation](#installation)
+- [Building query](#building-query)
+- [Table Mode](#table-mode)
+- [Alerting](#alerting)
+- [Tips and tricks](#tips-and-tricks)
+- [Development](#tips-and-tricks)
 
 ## Usage
 
@@ -36,7 +54,7 @@ You can find more detailed instructions in [the datasource wiki](https://github.
 
 ![Datasource Configuration](https://user-images.githubusercontent.com/1742301/148654400-3ac4a477-8ca3-4606-86e7-5d10cbdc4ea9.png)
 
-### Panel Setup
+### Building query
 
 There are **two ways** to query data from Cassandra/DSE, **Query Configurator** and **Query Editor**. Configurator is easier to use but has limited capabilities, Editor is more powerful but requires understanding of [CQL](https://cassandra.apache.org/doc/latest/cql/). 
 
@@ -94,8 +112,8 @@ Example (using the sample table from the Query Configurator case):
 SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and registered_at < $__timeTo
 ```
 
-1. Order of fields in the SELECT expression doesn't matter except `ID` field. This field used to distinguish different time series, so it is important to keep it on the first position.
-* **Identifier** - the first property in the SELECT expression must be the ID, something that uniquely identifies the data (e.g. `sensor_id`)
+1. Order of fields in the SELECT expression doesn't matter except `ID` field. This field used to distinguish different time series, so it is important to keep it or any other column with low cardinality on the first position.
+* **Identifier** - the first property in the SELECT expression should be the ID, something that uniquely identifies the data (e.g. `sensor_id`)
 * **Value** - There should be at least one numeric value among returned fields, if query result will be used to draw graph.
 * **Timestamp** - There should be one timestamp value, if query result will be used to draw graph.
 * There could be any number of additional fields, however be cautious when using multiple numeric fields as they are interpreted as values by grafana and therefore are drawn on TimeSeries graph.
@@ -106,7 +124,7 @@ SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sens
 
 ![103153625-1fd85280-4792-11eb-9c00-085297802117](https://user-images.githubusercontent.com/1742301/148654522-8e50617d-0ba9-4c5a-a3f0-7badec92e31f.png)
 
-#### Table Mode
+### Table Mode
 In addition to TimeSeries mode datasource supports Table mode to draw tables using Cassandra query results. Use `Merge`, `Sort by`, `Organize fields` and other transformations to shape the table in any desirable way.
 There are two ways to plot not a whole timeseries but only last(most rescent) values.
 1. Inefficient way
@@ -120,7 +138,7 @@ AND registered_at > $__timeFrom and registered_at < $__timeTo
 ORDER BY registered_at
 LIMIT 1
 ```
-Note that `WHERE IN ()` clause could not be used with `ORDER BY`, so query must be duplicated for additional `sensor_id`.
+Note that `WHERE IN ()` clause could not be used with `ORDER BY`, so query must be duplicated for any additional `sensor_id`.
 
 2. Efficient way
 
@@ -139,11 +157,37 @@ After that the most recent value will always be stored in the beginning of parti
 SELECT sensor_id, temperature, registered_at, room_name
 FROM test.test
 WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd0)
-AND registered_at > $__timeFrom and registered_at < $__timeTo
-ORDER BY registered_at
+AND registered_at > $__timeFrom AND registered_at < $__timeTo
 PER PARTITION LIMIT 1
 ```
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
+
+### Annotations
+[Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
+
+### Alerting
+Alerting is supported, however it has some limitations. Grafana does not support long(narrow) series in alerting, 
+so query result must be converted to wide series before handing it over to grafana. Datasource performs it in pretty
+simple way - it creates labels using all the non-timeseries field and then removes that fields from response.
+Basically, this query(using example table)
+```
+SELECT sensor_id, temperature, registered_at, location
+FROM test.test
+WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd0)
+AND registered_at > $__timeFrom AND registered_at < $__timeTo
+```
+will produce two wide series for alerting
+```
+99051fe9-6a9c-46c2-b949-38ef78858dd0 {location="kitchen", sensor_id="99051fe9-6a9c-46c2-b949-38ef78858dd0"}
+99051fe9-6a9c-46c2-b949-38ef78858dd1 {location="bedroom", sensor_id="99051fe9-6a9c-46c2-b949-38ef78858dd1"}
+
+
+```
+More information on series types in [grafana developers documentation](https://grafana.com/developers/plugin-tools/introduction/data-frames#data-frames-as-time-series).
+
+[Grafana Alerting documentation](https://grafana.com/docs/grafana/latest/alerting/alerting-rules/create-grafana-managed-rule/)
+
+### Tips and tricks
 
 #### Unix epoch time format
 Usually there are no problems - Cassandra can store timestamps using different formats as shown in [documentation](https://cassandra.apache.org/doc/latest/cassandra/cql/types.html#timestamps).
@@ -152,7 +196,7 @@ However, it is not always enough. One of possible cases could be unix time, whic
 ```
 SELECT sensor_id, temperature, dateOf(maxTimeuuid(registered_at)), location
 FROM test.test WHERE sensor_id = 99051fe9-6a9c-46c2-b949-38ef78858dd0
-AND registered_at > $__timeFrom and registered_at < $__timeTo
+AND registered_at > $__timeFrom AND registered_at < $__timeTo
 ```
 This query returns proper timestamp even if it stored as number of milliseconds.
 
@@ -160,11 +204,46 @@ This query returns proper timestamp even if it stored as number of milliseconds.
 ```
 SELECT sensor_id, temperature, dateOf(maxTimeuuid(registered_at*1000)), location
 FROM test.test WHERE sensor_id = 99051fe9-6a9c-46c2-b949-38ef78858dd0
-AND registered_at > $__unixEpochFrom and registered_at < $__unixEpochTo
+AND registered_at > $__unixEpochFrom AND registered_at < $__unixEpochTo
 ```
 * There are two important parts in this query:
   * `dateOf(maxTimeuuid(registered_at*1000))` used to convert seconds to milliseconds(`registered_at*1000`) and then to convert milliseconds to `timestamp` type, which is handed over to grafana.
   * `$__unixEpochFrom` and `$__unixEpochTo` are variables with unix time in the seconds format that are used to fill out conditions part of the query.
+
+#### Cassandra fat partitions
+Cassandra stores data in `partitions` which are minimal storage units for the DB. It means that using the example table
+```
+CREATE TABLE IF NOT EXISTS temperature (
+    sensor_id uuid,
+    registered_at timestamp,
+    temperature int,
+    PRIMARY KEY ((sensor_id), registered_at)
+);
+```
+will lead to partitions bloating and performance degradation, because all the data for all time for specific `sensor_id` is stored in just one partition(first part of `PRIMARY KEY` is `PARTITION KEY`).
+To avoid that there is a technique called `bucketing`, which basically means that partitions are split up into smaller pieces.
+For instance, we can split that example table partitions by time: year, month, day, or even hour and less. What to choose depends on how
+much data stored in each partition. To achieve that the example table has to be modified like this:
+```
+CREATE TABLE IF NOT EXISTS temperature (
+    sensor_id uuid,
+    date date,
+    registered_at timestamp,
+    temperature int,
+    PRIMARY KEY ((sensor_id, date), registered_at)
+);
+```
+After that change the database schema became more effective because of bucketing by date, and queries will have a form of
+```
+SELECT sensor_id, temperature, registered_at
+FROM temperature
+WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) 
+AND date = '${__from:date:YYYY-MM-DD}'
+AND registered_at > $__timeFrom 
+AND registered_at < $__timeTo
+```
+Note that `$__from`/`$__to` variables are used. They are [grafana built-in variables](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to), and they have formatting capabilities which are perfect for our case.
+In case when time range includes more than one day, each day has to be added into `AND date IN (...)` predicate. Another way to make it more convenient is to consider using larger buckets, e.g. month instead of day-size.
 
 ## Development
 

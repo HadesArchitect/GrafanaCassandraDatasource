@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -180,13 +181,19 @@ func TestPlugin_ExecQuery(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			p := &Plugin{repo: tc.repo}
 			dataFrames, err := p.ExecQuery(context.TODO(), tc.query)
+			sort.Slice(dataFrames, func(i, j int) bool {
+				return dataFrames[i].Name < dataFrames[j].Name
+			})
+			sort.Slice(tc.want, func(i, j int) bool {
+				return tc.want[i].Name < tc.want[j].Name
+			})
 			assert.NoError(t, err)
 			assert.EqualValues(t, tc.want, dataFrames)
 		})
 	}
 }
 
-func Test_makeDataFrameFromPoints(t *testing.T) {
+func Test_makeDataFrameFromRows(t *testing.T) {
 	testCases := []struct {
 		name  string
 		id    string
@@ -202,24 +209,26 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			want:  nil,
 		},
 		{
-			name: "empty points",
-			id:   "test",
-			rows: []cassandra.Row{},
-			want: nil,
+			name:  "empty points",
+			id:    "test",
+			alias: "",
+			rows:  []cassandra.Row{},
+			want:  nil,
 		},
 		{
-			name: "one point",
-			id:   "test",
+			name:  "one point",
+			id:    "test",
+			alias: "",
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1"}),
+					data.NewField("ID", nil, []string{"test"}),
 					data.NewField("Value", nil, []float64{3.141}),
 					data.NewField("Time", nil, []time.Time{time.UnixMilli(1257894000000).UTC()}),
 				},
@@ -232,13 +241,13 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1"}),
+					data.NewField("ID", nil, []string{"test"}),
 					data.NewField("Value", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "alias"}),
 					data.NewField("Time", nil, []time.Time{time.UnixMilli(1257894000000).UTC()}),
 				},
@@ -251,14 +260,14 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1"}),
-					data.NewField("Value", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1"}),
+					data.NewField("ID", nil, []string{"test"}),
+					data.NewField("Value", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
 					data.NewField("Time", nil, []time.Time{time.UnixMilli(1257894000000).UTC()}),
 				},
 			},
@@ -270,44 +279,45 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Another Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Another Value": int64(111), "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Another Value": int64(111), "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1"}),
-					data.NewField("Value", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1"}),
-					data.NewField("Another Value", nil, []int64{111}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1"}),
+					data.NewField("ID", nil, []string{"test"}),
+					data.NewField("Value", nil, []float64{3.141}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
+					data.NewField("Another Value", nil, []int64{111}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test"}),
 					data.NewField("Time", nil, []time.Time{time.UnixMilli(1257894000000).UTC()}),
 				},
 			},
 		},
 		{
-			name: "multi points",
-			id:   "test",
+			name:  "multi points",
+			id:    "test",
+			alias: "",
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1", "1", "1", "1"}),
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
 					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
 					data.NewField("Time", nil, []time.Time{
 						time.UnixMilli(1257894000000).UTC(),
@@ -325,25 +335,25 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1", "1", "1", "1"}),
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
 					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "alias"}),
 					data.NewField("Time", nil, []time.Time{
 						time.UnixMilli(1257894000000).UTC(),
@@ -361,26 +371,26 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 			rows: []cassandra.Row{
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 3.141, "Time": time.UnixMilli(1257894000000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 6.283, "Time": time.UnixMilli(1257894001000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 2.718, "Time": time.UnixMilli(1257894002000).UTC()},
 				},
 				{
 					Columns: []string{"ID", "Value", "Time"},
-					Fields:  map[string]interface{}{"ID": "1", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
+					Fields:  map[string]interface{}{"ID": "test", "Value": 1.618, "Time": time.UnixMilli(1257894003000).UTC()},
 				},
 			},
 			want: &data.Frame{
 				Name: "test",
 				Fields: []*data.Field{
-					data.NewField("ID", nil, []string{"1", "1", "1", "1"}),
-					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "1 alias"}),
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}).SetConfig(&data.FieldConfig{DisplayNameFromDS: "test alias"}),
 					data.NewField("Time", nil, []time.Time{
 						time.UnixMilli(1257894000000).UTC(),
 						time.UnixMilli(1257894001000).UTC(),
@@ -394,8 +404,417 @@ func Test_makeDataFrameFromPoints(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			dataFrame := makeDataFrameFromPoints(tc.id, tc.alias, tc.rows)
+			dataFrame := makeDataFrameFromRows(tc.id, tc.alias, tc.rows)
 			assert.EqualValues(t, tc.want, dataFrame)
+		})
+	}
+}
+
+func Test_narrowFrameToWideFrame(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input *data.Frame
+		want  *data.Frame
+	}{
+		{
+			name:  "empty",
+			input: &data.Frame{},
+			want:  &data.Frame{},
+		},
+		{
+			name: "multi points without labels",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", map[string]string{"ID": "test"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "multiple non-TS fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+					data.NewField("Location", nil, []string{"room", "room", "room", "room"}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", map[string]string{"ID": "test", "Location": "room"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "multi points with labels",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", map[string]string{"SomeLabel": "SomeValue"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", map[string]string{"SomeLabel": "SomeValue", "ID": "test"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "multi points with labels conflict",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", map[string]string{"ID": "SomeID"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", map[string]string{"ID": "test"}, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			frame := narrowFrameToWideFrame(tc.input)
+			sort.Slice(frame.Fields, func(i, j int) bool {
+				return frame.Fields[i].Name < frame.Fields[j].Name
+			})
+			sort.Slice(tc.want.Fields, func(i, j int) bool {
+				return tc.want.Fields[i].Name < tc.want.Fields[j].Name
+			})
+			assert.Equal(t, tc.want, frame)
+		})
+	}
+}
+
+func Test_makeLabelsFromNonTSFields(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input *data.Frame
+		want  map[string]string
+	}{
+		{
+			name:  "empty",
+			input: &data.Frame{},
+			want:  map[string]string{},
+		},
+		{
+			name:  "nil",
+			input: nil,
+			want:  map[string]string{},
+		},
+		{
+			name: "no string fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: map[string]string{},
+		},
+		{
+			name: "one string field",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: map[string]string{"ID": "test"},
+		},
+		{
+			name: "one string field with different values",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test1", "test2", "test3", "test4"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: map[string]string{"ID": "test1"},
+		},
+		{
+			name: "multiple string fields, simple",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test1", "test2", "test3", "test4"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+					data.NewField("Location", nil, []string{"room1", "room2", "room3", "room4"}),
+				},
+			},
+			want: map[string]string{"ID": "test1", "Location": "room1"},
+		},
+		{
+			name: "multiple non TS fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test1", "test2", "test3", "test4"}),
+					data.NewField("TestField1", nil, []string{"testVal1", "testVal2", "testVal3", "testVal4"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("TestField2", nil, []bool{true, false, true, false}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+					data.NewField("Location", nil, []string{"room1", "room2", "room3", "room4"}),
+					data.NewField("TestField3", nil, []string{"testVal31", "testVal32", "testVal33", "testVal34"}),
+				},
+			},
+			want: map[string]string{"ID": "test1", "TestField1": "testVal1", "TestField2": "true", "Location": "room1", "TestField3": "testVal31"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			labels := makeLabelsFromNonTSFields(tc.input)
+			assert.Equal(t, tc.want, labels)
+		})
+	}
+}
+
+func Test_removeNonTSFields(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input *data.Frame
+		want  *data.Frame
+	}{
+		{
+			name:  "empty",
+			input: &data.Frame{},
+			want:  &data.Frame{},
+		},
+		{
+			name:  "nil",
+			input: nil,
+			want:  nil,
+		},
+		{
+			name: "no string fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "one string field",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test", "test", "test", "test"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "multiple string fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test1", "test2", "test3", "test4"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+					data.NewField("Location", nil, []string{"room1", "room2", "room3", "room4"}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+		{
+			name: "multiple non TS fields",
+			input: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("ID", nil, []string{"test1", "test2", "test3", "test4"}),
+					data.NewField("TestField1", nil, []string{"testVal1", "testVal2", "testVal3", "testVal4"}),
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("TestField2", nil, []bool{true, false, true, false}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+					data.NewField("Location", nil, []string{"room1", "room2", "room3", "room4"}),
+					data.NewField("TestField3", nil, []string{"testVal31", "testVal32", "testVal33", "testVal34"}),
+				},
+			},
+			want: &data.Frame{
+				Name: "test",
+				Fields: []*data.Field{
+					data.NewField("Value", nil, []float64{3.141, 6.283, 2.718, 1.618}),
+					data.NewField("Time", nil, []time.Time{
+						time.UnixMilli(1257894000000).UTC(),
+						time.UnixMilli(1257894001000).UTC(),
+						time.UnixMilli(1257894002000).UTC(),
+						time.UnixMilli(1257894003000).UTC(),
+					}),
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			frame := removeNonTSFields(tc.input)
+			if frame != nil {
+				sort.Slice(frame.Fields, func(i, j int) bool {
+					return frame.Fields[i].Name < frame.Fields[j].Name
+				})
+			}
+
+			if tc.want != nil {
+				sort.Slice(tc.want.Fields, func(i, j int) bool {
+					return tc.want.Fields[i].Name < tc.want.Fields[j].Name
+				})
+			}
+
+			assert.Equal(t, tc.want, frame)
 		})
 	}
 }

@@ -21,17 +21,17 @@ type Query struct {
 	TimeTo         time.Time
 	AllowFiltering bool
 	Instant        bool
+	IsAlertQuery   bool
 }
 
 // BuildStatement builds cassandra query statement with positional parameters.
 func (q *Query) BuildStatement() string {
-	var (
-		allowFiltering    string
-		perPartitionLimit string
-	)
+	var allowFiltering string
 	if q.AllowFiltering {
 		allowFiltering = " ALLOW FILTERING"
 	}
+
+	var perPartitionLimit string
 	if q.Instant {
 		perPartitionLimit = " PER PARTITION LIMIT 1"
 	}

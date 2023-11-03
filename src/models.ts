@@ -16,4 +16,4 @@ export interface CassandraQuery extends DataQuery {
   instant?: boolean;
 }
 
-type CassandraQueryType = 'query' | 'search' | 'keyspaces' | 'tables';
+type CassandraQueryType = 'query' | 'alert';
