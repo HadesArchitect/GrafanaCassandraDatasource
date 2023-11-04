@@ -11,7 +11,7 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
   const [state, setState] = useState(query);
 
   const saveQuery = () => {
-    onChange(state, `${state.rawQuery}`);
+    onChange(state, `${state.query}`);
   };
 
   const handleChange = (event: React.FormEvent<HTMLTextAreaElement>) =>
@@ -22,15 +22,15 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
 
   return (
     <>
-        <label className="small">Specify a query that returns variable values. If the query returns one column, it will be interpreted as values, if the query returns two columns, the first one is interpreted as a label (human-readable) and the second one as a value. Due to grafana limitations, both the labels and values must be strings, use `CAST(column as text)` if needed.</label>
+        <label className="small">Specify a query that returns variable values and, optionally, their labels. Only strings are allowed here, so use CAST(column as text) if needed. First returned column interpreted as a value and second as a label. Labels should be used in cases when there is an intention to hide exact variable values behind human-readable names in the Grafana UI.</label>
         <br />
         <TextArea
           name="rawQuery"
           className="gf-form-input"
           onBlur={saveQuery}
           onChange={handleChange}
-          value={state.rawQuery}
-          placeholder={'SELECT CAST(location AS text), CAST(sensor_id AS text) FROM sensors.sensors_locations'}
+          value={state.query}
+          placeholder={'SELECT sensor_id, location FROM sensors.sensors_locations'}
         />
     </>
   );

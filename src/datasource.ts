@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import { DataQueryRequest, DataQueryResponse, DataSourceInstanceSettings } from '@grafana/data';
+import {DataQueryRequest, DataQueryResponse, DataSourceInstanceSettings} from '@grafana/data';
 import { CassandraQuery,CassandraVariableQuery, CassandraDataSourceOptions } from './models';
 import { Observable } from 'rxjs';
 
@@ -34,14 +34,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
+  // metricFindQuery implicitly returns array of MetricFindValue objects. It assumed, that
+  // backend returns some compatible type to be correctly used in dashboard variables context.
+  // https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/datasource.ts#L595
   async metricFindQuery(query: CassandraVariableQuery, options?: any) {
-    const response = await this.getResource('variables', {query: query.rawQuery});
-    const variables = JSON.parse(response) as string[][];
-
-    return variables.map((frame: any) => ({
-      text: "" === frame[0] ? frame[1] : frame[0],
-      value: frame[1] 
-    }));
+    const response = await this.getResource('variables', {query: query.query});
+    return response;
   }
 
   isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {

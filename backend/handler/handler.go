@@ -18,7 +18,7 @@ type ds interface {
 	ExecQuery(ctx context.Context, q *plugin.Query) (data.Frames, error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
-	GetVariables(ctx context.Context, query string) ([][]string, error)
+	GetVariables(ctx context.Context, query string) ([]plugin.Variable, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
 	CheckHealth(ctx context.Context) error
 	Dispose()
@@ -36,9 +36,9 @@ func New(fn datasource.InstanceFactoryFunc) datasource.ServeOpts {
 	// CallResourceHandler
 	mux := http.NewServeMux()
 	mux.HandleFunc("/keyspaces", h.getKeyspaces)
-	mux.HandleFunc("/variables", h.getVariables)
 	mux.HandleFunc("/tables", h.getTables)
 	mux.HandleFunc("/columns", h.getColumns)
+	mux.HandleFunc("/variables", h.getVariables)
 
 	// QueryDataHandler
 	queryTypeMux := datasource.NewQueryTypeMux()
@@ -129,37 +129,6 @@ func (h *handler) getTables(rw http.ResponseWriter, req *http.Request) {
 	writeHTTPResult(rw, tables)
 }
 
-// getVariables is a handle to fetch variable values
-func (h *handler) getVariables(rw http.ResponseWriter, req *http.Request) {
-	backend.Logger.Debug("Process 'variables' request")
-
-	pluginCtx := httpadapter.PluginConfigFromContext(req.Context())
-	p, err := h.getPluginInstance(req.Context(), pluginCtx)
-	if err != nil {
-		backend.Logger.Error("Failed to get plugin instance", "Message", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	query := req.URL.Query().Get("query")
-
-	variables, err := p.GetVariables(req.Context(), query)
-	if err != nil {
-		backend.Logger.Error("Failed to get variables", "Message", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	serialisedVars, err := json.Marshal(variables)
-	if err != nil {
-		backend.Logger.Error("Failed to serialise variables", "Message", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	writeHTTPResult(rw, []string{string(serialisedVars)})
-}
-
 // getColumns is a handle to fetch columns list.
 func (h *handler) getColumns(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'columns' request")
@@ -184,6 +153,30 @@ func (h *handler) getColumns(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	writeHTTPResult(rw, columns)
+}
+
+// getVariables is a handle to fetch variable values.
+func (h *handler) getVariables(rw http.ResponseWriter, req *http.Request) {
+	backend.Logger.Debug("Process 'variables' request")
+
+	pluginCtx := httpadapter.PluginConfigFromContext(req.Context())
+	p, err := h.getPluginInstance(req.Context(), pluginCtx)
+	if err != nil {
+		backend.Logger.Error("Failed to get plugin instance", "Message", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	query := req.URL.Query().Get("query")
+
+	variables, err := p.GetVariables(req.Context(), query)
+	if err != nil {
+		backend.Logger.Error("Failed to get variables", "Message", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	writeHTTPResult(rw, variables)
 }
 
 // getPluginInstance fetches plugin instance from instance manager, then
@@ -227,10 +220,9 @@ func (h *handler) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 	}, nil
 }
 
-// writeHTTPResult is a simple helper to serialize the
-// list of strings and put it in a http response.
-func writeHTTPResult(rw http.ResponseWriter, list []string) {
-	jsonBytes, err := json.MarshalIndent(list, "", "    ")
+// writeHTTPResult is a simple helper to serialize data and put it in a http response.
+func writeHTTPResult(rw http.ResponseWriter, val any) {
+	jsonBytes, err := json.MarshalIndent(val, "", "    ")
 	if err != nil {
 		backend.Logger.Error("Failed to marshal list", "Message", err)
 		rw.WriteHeader(http.StatusInternalServerError)

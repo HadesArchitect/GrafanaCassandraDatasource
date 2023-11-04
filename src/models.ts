@@ -18,7 +18,7 @@ export interface CassandraQuery extends DataQuery {
 }
 
 export interface CassandraVariableQuery {
-  rawQuery: string;
+  query: string;
 }
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {
