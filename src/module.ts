@@ -10,4 +10,4 @@ export const plugin = new DataSourcePlugin<CassandraDatasource, CassandraQuery, 
 )
   .setConfigEditor(ConfigEditor)
   .setQueryEditor(QueryEditor)
-  .setVariableQueryEditor(VariableQueryEditor); // Deprecated, but now documentation on the new approach available atm
+  .setVariableQueryEditor(VariableQueryEditor); // Deprecated, but there is no documentation on the new approach available atm.

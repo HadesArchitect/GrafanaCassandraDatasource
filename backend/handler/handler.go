@@ -18,8 +18,8 @@ type ds interface {
 	ExecQuery(ctx context.Context, q *plugin.Query) (data.Frames, error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
-	GetVariables(ctx context.Context, query string) ([]plugin.Variable, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
+	GetVariables(ctx context.Context, query string) ([]plugin.Variable, error)
 	CheckHealth(ctx context.Context) error
 	Dispose()
 }

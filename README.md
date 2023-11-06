@@ -23,6 +23,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 * Query configurator
 * Raw CQL query editor
 * Table mode
+* Variables
 * Annotations
 * Alerting
 
@@ -160,6 +161,9 @@ AND registered_at > $__timeFrom AND registered_at < $__timeTo
 PER PARTITION LIMIT 1
 ```
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
+
+### Variables
+[Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
 
 ### Annotations
 [Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)

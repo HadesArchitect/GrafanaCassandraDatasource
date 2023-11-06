@@ -100,12 +100,12 @@ func (p *Plugin) GetTables(keyspace string) ([]string, error) {
 // GetColumns fetches and returns Cassandra's list of columns
 // of given type for provided keyspace and table.
 func (p *Plugin) GetColumns(keyspace, table, needType string) ([]string, error) {
-	tables, err := p.repo.GetColumns(keyspace, table, needType)
+	columns, err := p.repo.GetColumns(keyspace, table, needType)
 	if err != nil {
 		return nil, fmt.Errorf("repo.GetColumns: %w", err)
 	}
 
-	return tables, nil
+	return columns, nil
 }
 
 // GetVariables fetches and returns data to create variables.
