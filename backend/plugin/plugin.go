@@ -97,14 +97,34 @@ func (p *Plugin) GetTables(keyspace string) ([]string, error) {
 	return tables, nil
 }
 
-// GetColumns fetches and returns Cassandra's list of columns of given type for provided keyspace and table.
+// GetColumns fetches and returns Cassandra's list of columns
+// of given type for provided keyspace and table.
 func (p *Plugin) GetColumns(keyspace, table, needType string) ([]string, error) {
-	tables, err := p.repo.GetColumns(keyspace, table, needType)
+	columns, err := p.repo.GetColumns(keyspace, table, needType)
 	if err != nil {
 		return nil, fmt.Errorf("repo.GetColumns: %w", err)
 	}
 
-	return tables, nil
+	return columns, nil
+}
+
+// GetVariables fetches and returns data to create variables.
+func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, error) {
+	backend.Logger.Debug("GetVariables", "query", query)
+
+	idRows, err := p.repo.Select(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("repo.Select: %w", err)
+	}
+
+	vars := make([]Variable, 0, len(idRows))
+	for _, rows := range idRows {
+		for _, row := range rows {
+			vars = append(vars, makeVariableFromRow(row))
+		}
+	}
+
+	return vars, nil
 }
 
 // CheckHealth executes repository Ping method to check database health.
@@ -271,4 +291,23 @@ func removeNonTSFields(frame *data.Frame) *data.Frame {
 	frame.Fields = frame.Fields[0:i]
 
 	return frame
+}
+
+// Variable is a type to transfer variable data from backend to frontend,
+// where it will be put into MetricFindValue type.
+// https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/datasource.ts#L595
+type Variable struct {
+	Value string `json:"value"`
+	Label string `json:"text"`
+}
+
+func makeVariableFromRow(row cassandra.Row) Variable {
+	var v Variable
+	v.Value = fmt.Sprintf("%v", row.Fields[row.Columns[0]])
+	v.Label = v.Value
+	if len(row.Columns) > 1 {
+		v.Label = fmt.Sprintf("%v", row.Fields[row.Columns[1]])
+	}
+
+	return v
 }

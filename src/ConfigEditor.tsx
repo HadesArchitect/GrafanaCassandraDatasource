@@ -1,7 +1,7 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select, InlineSwitch } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { CassandraDataSourceOptions } from './datasource';
+import { CassandraDataSourceOptions } from './models';
 
 const { SecretFormField } = LegacyForms;
 

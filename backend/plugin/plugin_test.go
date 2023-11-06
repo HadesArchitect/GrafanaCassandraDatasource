@@ -193,6 +193,78 @@ func TestPlugin_ExecQuery(t *testing.T) {
 	}
 }
 
+func TestPlugin_GetVariables(t *testing.T) {
+	testCases := []struct {
+		name string
+		repo *repositoryMock
+		want []Variable
+	}{
+		{
+			name: "response with labels",
+			repo: &repositoryMock{
+				onSelect: func(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error) {
+					return map[string][]cassandra.Row{
+						"1": {
+							{
+								Columns: []string{"Value", "Label"},
+								Fields:  map[string]interface{}{"Value": "1", "Label": "Text1"},
+							},
+						},
+						"2": {
+							{
+								Columns: []string{"Value", "Label"},
+								Fields:  map[string]interface{}{"Value": "2", "Label": "Text2"},
+							},
+						},
+					}, nil
+				},
+			},
+			want: []Variable{
+				{Value: "1", Label: "Text1"},
+				{Value: "2", Label: "Text2"},
+			},
+		},
+		{
+			name: "response without labels",
+			repo: &repositoryMock{
+				onSelect: func(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error) {
+					return map[string][]cassandra.Row{
+						"1": {
+							{
+								Columns: []string{"Value"},
+								Fields:  map[string]interface{}{"Value": "1"},
+							},
+						},
+						"2": {
+							{
+								Columns: []string{"Value"},
+								Fields:  map[string]interface{}{"Value": "2"},
+							},
+						},
+					}, nil
+				},
+			},
+			want: []Variable{
+				{Value: "1", Label: "1"},
+				{Value: "2", Label: "2"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &Plugin{repo: tc.repo}
+			vars, err := p.GetVariables(context.TODO(), "SELECT * FROM keyspace.table")
+			assert.NoError(t, err)
+
+			sort.Slice(vars, func(i, j int) bool {
+				return vars[i].Value < vars[j].Value
+			})
+			assert.Equal(t, tc.want, vars)
+		})
+	}
+}
+
 func Test_makeDataFrameFromRows(t *testing.T) {
 	testCases := []struct {
 		name  string

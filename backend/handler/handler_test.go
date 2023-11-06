@@ -32,6 +32,7 @@ type pluginMock struct {
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
+	onGetVariables func(ctx context.Context, query string) ([]plugin.Variable, error)
 	onCheckHealth  func(ctx context.Context) error
 	onDispose      func()
 }
@@ -50,6 +51,10 @@ func (p *pluginMock) GetTables(keyspace string) ([]string, error) {
 
 func (p *pluginMock) GetColumns(keyspace, table, needType string) ([]string, error) {
 	return p.onGetColumns(keyspace, table, needType)
+}
+
+func (p *pluginMock) GetVariables(ctx context.Context, query string) ([]plugin.Variable, error) {
+	return p.onGetVariables(ctx, query)
 }
 
 func (p *pluginMock) CheckHealth(ctx context.Context) error {
@@ -228,7 +233,7 @@ func Test_CheckHealth(t *testing.T) {
 func Test_writeHTTPResult(t *testing.T) {
 	testCases := []struct {
 		name   string
-		input  []string
+		input  any
 		status int
 		want   string
 	}{
@@ -260,6 +265,29 @@ func Test_writeHTTPResult(t *testing.T) {
     "ONE",
     "TWO",
     "THREE"
+]`,
+		},
+		{
+			name: "variables",
+			input: []plugin.Variable{
+				{Value: "value1", Label: "text1"},
+				{Value: "value2", Label: "text2"},
+				{Value: "value3", Label: "text3"},
+			},
+			status: http.StatusOK,
+			want: `[
+    {
+        "value": "value1",
+        "text": "text1"
+    },
+    {
+        "value": "value2",
+        "text": "text2"
+    },
+    {
+        "value": "value3",
+        "text": "text3"
+    }
 ]`,
 		},
 	}

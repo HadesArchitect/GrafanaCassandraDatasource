@@ -23,12 +23,12 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 * Query configurator
 * Raw CQL query editor
 * Table mode
+* Variables
 * Annotations
 * Alerting
 
 **Contacts**:
 
-* [![Discord Chat](https://img.shields.io/badge/discord-chat%20with%20us-green)](https://discord.gg/FU2Cb4KTyp) 
 * [![Github discussions](https://img.shields.io/badge/github-discussions-green)](https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions)
 
 **TOC**
@@ -45,7 +45,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 
 You can find more detailed instructions in [the datasource wiki](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki).
 
-### Installation 
+### Installation
 
 1. Install the plugin using grafana console tool: `grafana-cli plugins install hadesarchitect-cassandra-datasource`. The plugin will be installed into your grafana plugins directory; the default is `/var/lib/grafana/plugins`. Alternatively, download the plugin using [latest release](https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases/latest), please download `cassandra-datasource-VERSION.zip` and uncompress a file into the Grafana plugins directory (`grafana/plugins`).
 2. Add the Apache Cassandra Data Source as a data source at the datasource configuration page.
@@ -161,6 +161,9 @@ AND registered_at > $__timeFrom AND registered_at < $__timeTo
 PER PARTITION LIMIT 1
 ```
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
+
+### Variables
+[Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
 
 ### Annotations
 [Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)

@@ -1,8 +1,8 @@
-import React, {ChangeEvent, FormEvent, PureComponent} from 'react';
-import {Button, InlineField, InlineFieldRow, InlineSwitch, Input, Select, TextArea} from '@grafana/ui';
-import {CoreApp, QueryEditorProps, SelectableValue} from '@grafana/data';
-import {CassandraDatasource, CassandraDataSourceOptions} from './datasource';
-import {CassandraQuery} from './models';
+import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
+import { Button, InlineField, InlineFieldRow, Input, InlineSwitch, Select, TextArea } from '@grafana/ui';
+import { CoreApp, QueryEditorProps, SelectableValue } from '@grafana/data';
+import { CassandraDatasource } from './datasource';
+import { CassandraQuery, CassandraDataSourceOptions } from './models';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
@@ -198,16 +198,6 @@ export class QueryEditor extends PureComponent<Props> {
           <>
             <InlineFieldRow>
               <InlineField label="Keyspace" labelWidth={30} tooltip="Specify keyspace to work with">
-                {/* <Input
-                  name="keyspace"
-                  value={this.props.query.keyspace || ''}
-                  placeholder="keyspace name"
-                  onChange={this.onKeyspaceChange}
-                  spellCheck={false}
-                  onBlur={this.onRunQuery}
-                  required
-                  width={90}
-                /> */}
                 <Select
                   allowCustomValue={true}
                   value={selectable(this.props.query.keyspace)}
@@ -224,15 +214,6 @@ export class QueryEditor extends PureComponent<Props> {
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField label="Table" labelWidth={30} tooltip="Specify table to work with">
-                {/* <Input
-                  name="table"
-                  value={this.props.query.table || ''}
-                  placeholder="table name"
-                  onChange={this.onTableChange}
-                  onBlur={this.onRunQuery}
-                  required
-                  width={90}
-                /> */}
                 <Select
                   allowCustomValue={true}
                   value={selectable(this.props.query.table)}
@@ -252,14 +233,6 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a timestamp column to identify time (created_at, time etc.)"
               >
-                {/* <Input
-                  value={this.props.query.columnTime || ''}
-                  placeholder="time column"
-                  onChange={this.onTimeColumnChange}
-                  onBlur={this.onRunQuery}
-                  width={90}
-                  required
-                /> */}
                 <Select
                   allowCustomValue={true}
                   value={selectable(this.props.query.columnTime)}
@@ -279,15 +252,6 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a numeric column to retrieve value (temperature, price etc.)"
               >
-                {/* <Input
-                  name="value_column"
-                  placeholder='value column'
-                  value={this.props.query.columnValue || ''}
-                  onChange={this.onValueColumnChange}
-                  onBlur={this.onRunQuery}
-                  width={90}
-                  required
-                /> */}
                 <Select
                   allowCustomValue={true}
                   placeholder="value column"
@@ -307,15 +271,6 @@ export class QueryEditor extends PureComponent<Props> {
                 labelWidth={30}
                 tooltip="Specify name of a ID column to identify the row (id, sensor_id etc.)"
               >
-                {/* <Input
-                  name="id_column"
-                  placeholder='ID column'
-                  value={this.props.query.columnId || ''}
-                  onChange={this.onIDColumnChange}
-                  onBlur={this.onRunQuery}
-                  width={90}
-                  required
-                /> */}
                 <Select
                   allowCustomValue={true}
                   placeholder="ID column"

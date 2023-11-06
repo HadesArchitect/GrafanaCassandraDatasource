@@ -126,7 +126,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -180,8 +180,8 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 0
       },
       "hiddenSeries": false,
@@ -260,6 +260,107 @@
       "yaxis": {
         "align": false
       }
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "${DS_APACHE_CASSANDRA}"
+      },
+      "description": "This panel demonstrates the powerful Query Editor of Apache Cassandra Datasource for Grafana",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "alias": "{{ sensor_id }}:{{ location }}",
+          "columnId": " ",
+          "columnTime": " ",
+          "columnValue": " ",
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "${DS_APACHE_CASSANDRA}"
+          },
+          "datasourceId": 1,
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sensor_id = ${loc} AND registered_at > $__timeFrom and registered_at < $__timeTo",
+          "type": "timeserie"
+        }
+      ],
+      "title": "Query By Variable Demo",
+      "transformations": [],
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -564,7 +665,30 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "hadesarchitect-cassandra-datasource",
+          "uid": "${DS_APACHE_CASSANDRA}"
+        },
+        "definition": "select sensor_id, location from test.sensors_locations",
+        "hide": 0,
+        "includeAll": false,
+        "label": "",
+        "multi": false,
+        "name": "loc",
+        "options": [],
+        "query": {
+          "rawQuery": "select sensor_id, location from test.sensors_locations"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-5m",
@@ -574,6 +698,6 @@
   "timezone": "",
   "title": "Cassandra Datasource Demo",
   "uid": "g-XtNls7z",
-  "version": 15,
+  "version": 21,
   "weekStart": ""
 }
