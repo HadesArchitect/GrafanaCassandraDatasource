@@ -7,8 +7,8 @@ services:
     environment:
       GF_LOG_LEVEL: debug
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_AUTH_BASIC_ENABLED: false
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_BASIC_ENABLED: "false"
       GF_DEFAULT_APP_MODE: development
     volumes:
       - ./grafana.db:/var/lib/grafana/grafana.db
