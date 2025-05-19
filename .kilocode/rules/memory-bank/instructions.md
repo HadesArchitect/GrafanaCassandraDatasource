@@ -32,12 +32,10 @@ flowchart TD
    - Current work focus
    - Recent changes
    - Next steps
-   - Active decisions and considerations
-   - Important patterns and preferences
-   - Learnings and project insights
 
 4. `architecture.md`
    - System architecture
+   - Source Code paths
    - Key technical decisions
    - Design patterns in use
    - Component relationships
