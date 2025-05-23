@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 )
 
-func newDataSource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	var dss dataSourceSettings
 	err := json.Unmarshal(settings.JSONData, &dss)
 	if err != nil {
