@@ -20,6 +20,20 @@
   - glob updated to 11.0.0
   - prettier updated to 3.4.2
   - Other dependencies remain at current stable versions
+* Updated backend dependencies to latest compatible versions:
+  - Updated Go version from 1.21 to 1.24.1
+  - Updated core dependencies:
+    - github.com/gocql/gocql: v1.5.2 → v1.7.0
+    - github.com/grafana/grafana-plugin-sdk-go: v0.172.0 → v0.277.1
+    - github.com/stretchr/testify: v1.8.4 → v1.10.0
+  - Notable indirect dependency updates:
+    - OpenTelemetry packages updated to v1.36.0
+    - gRPC updated to v1.72.1
+    - Protocol Buffers updated to v1.36.6
+  - Compatibility fixes:
+    - Downgraded tablewriter from v1.0.6 to v0.0.5 for SDK compatibility
+    - Updated datasource factory function to include context parameter
+* Updated vendor directory to sync with go.mod
 * Updated Docker Compose Grafana image from 10.1.2 to 10.4.19 (latest 10.x)
 * Fixed compatibility issues with missing @grafana/e2e version
 * Note: @grafana/e2e is deprecated in favor of @grafana/plugin-e2e for newer Grafana versions

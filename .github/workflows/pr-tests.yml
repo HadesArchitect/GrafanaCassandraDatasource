@@ -14,8 +14,8 @@ jobs:
       - name: yarn build
         run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn build
       - name: go mod vendor
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.21.1-alpine go mod vendor
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go mod vendor
       - name: go build linux
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.21.1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_amd64 .
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_amd64 .
       - name: backend tests
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.21.1-alpine go test ./...
+        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go test ./...
