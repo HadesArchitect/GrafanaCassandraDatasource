@@ -16,15 +16,15 @@ jobs:
       - name: go mod vendor
         run: make be-deps
       - name: go build linux
-        run: OS=linux ARCH=amd64 make be-build
+        run: make be-build
       - name: backend tests 
         run: make be-test 
       - name: go build windows
-        run: OS=windows ARCH=amd64 make be-build
+        run: make OS=windows ARCH=amd64 be-build
       - name: go build darwin
-        run: OS=darwin ARCH=amd64 make be-build
+        run: make OS=darwin ARCH=amd64 be-build
       - name: go build arm64 (m1)
-        run: OS=darwin ARCH=arm64 make be-build
+        run: make OS=darwin ARCH=arm64 be-build
       - name: sign the build
         run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} node:20-alpine yarn sign
       - name: Package plugin

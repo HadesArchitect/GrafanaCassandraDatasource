@@ -16,6 +16,6 @@ jobs:
       - name: go mod vendor
         run: make be-deps
       - name: go build linux
-        run: OS=linux ARCH=amd64 make be-build
+        run: make be-build
       - name: backend tests
         run: make be-test
