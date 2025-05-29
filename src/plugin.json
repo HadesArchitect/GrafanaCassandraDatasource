@@ -25,7 +25,7 @@
         {"name": "MIT License", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"}
       ],
       "version": "3.1.1",
-      "updated": "2025-05-23",
+      "updated": "2025-05-29",
       "screenshots": [
         {"name": "Query Configurator", "path": "img/configurator.png"},
         {"name": "Query Editor", "path": "img/editor.png"},

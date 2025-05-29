@@ -160,7 +160,11 @@ PER PARTITION LIMIT 1
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
 
 ### Variables
-[Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
+- [Configuring variables in Cassandra Datasource](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Variables)
+- [Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
+
+### Aliases
+Using aliases explained in [documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Aliases)
 
 ### Annotations
 [Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
