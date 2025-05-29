@@ -1,2 +1,2 @@
-FROM grafana/grafana:10.1.2
+FROM grafana/grafana:12.0.1
 RUN grafana-cli plugins install hadesarchitect-cassandra-datasource
