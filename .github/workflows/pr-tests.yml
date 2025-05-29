@@ -10,12 +10,12 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master
       - name: yarn install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn install
+        run: make fe-deps
       - name: yarn build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn build
+        run: make fe-build
       - name: go mod vendor
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go mod vendor
+        run: make be-deps
       - name: go build linux
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_amd64 .
+        run: OS=linux ARCH=amd64 make be-build
       - name: backend tests
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1.24.1-alpine go test ./...
+        run: make be-test

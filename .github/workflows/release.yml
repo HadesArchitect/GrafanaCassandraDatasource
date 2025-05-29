@@ -10,21 +10,21 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@master      
       - name: yarn install
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn install
+        run: make fe-deps
       - name: yarn build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:20-alpine yarn build
+        run: make fe-build
       - name: go mod vendor
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go mod vendor
+        run: make be-deps
       - name: go build linux
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e CGO_ENABLED=0 golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_amd64 .
-      - name: backend tests
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go test -buildvcs=false -v -vet=off ./...
+        run: OS=linux ARCH=amd64 make be-build
+      - name: backend tests 
+        run: make be-test 
       - name: go build windows
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=windows -e GOARCH=amd64 golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_windows_amd64.exe .
+        run: OS=windows ARCH=amd64 make be-build
       - name: go build darwin
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=darwin -e GOARCH=amd64 golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_darwin_amd64 .
+        run: OS=darwin ARCH=amd64 make be-build
       - name: go build arm64 (m1)
-        run: docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e GOOS=linux -e GOARCH=arm64 golang:1-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_linux_arm64 .
+        run: OS=darwin ARCH=arm64 make be-build
       - name: sign the build
         run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} node:20-alpine yarn sign
       - name: Package plugin
