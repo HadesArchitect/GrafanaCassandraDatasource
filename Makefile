@@ -28,13 +28,13 @@ stop: ## Stops dev environment
 	docker-compose stop
 
 fe-deps: ## Install frontend dependencies
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${GOLANG}-alpine yarn install
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn install
 
 fe-build: ## Build frontend
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${GOLANG}-alpine yarn build
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn build
 
 fe-watch: ## Watch frontend
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${GOLANG}-alpine yarn watch
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn watch
 
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:${GOLANG}-alpine go mod vendor
