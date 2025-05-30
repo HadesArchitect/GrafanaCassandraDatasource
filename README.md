@@ -7,7 +7,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 **Supports**:
 
 * Grafana 
-    * 7.4+, 8.x, 9.x, 10.x are fully supported (plugin version 3.x)
+    * 7.4 - 12.x are fully supported (plugin version 3.x)
     * 5.x, 6.x, 7.0-7.3 are deprecated (works with plugin versions 1.x/2.x, but we recommend upgrading)
 * Cassandra 3.x, 4.x, 5.x
 * DataStax Enterprise 6.x
@@ -160,7 +160,11 @@ PER PARTITION LIMIT 1
 Note that `PER PARTITION LIMIT 1` used instead of `LIMIT 1` to query one row for each partition and not just one row total.
 
 ### Variables
-[Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
+- [Configuring variables in Cassandra Datasource](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Variables)
+- [Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
+
+### Aliases
+Using aliases explained in [documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Aliases)
 
 ### Annotations
 [Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
