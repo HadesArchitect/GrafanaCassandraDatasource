@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
   headers: any;
   id: number;
+  private keyspaces: string[] = [];
 
   constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
     super(instanceSettings);
@@ -62,7 +63,17 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   async getKeyspaces(): Promise<string[]> {
-    return this.getResource('keyspaces');
+    if (0 !== this.keyspaces.length) {
+      return this.keyspaces;
+    }
+
+    try {
+      this.keyspaces = await this.getResource('keyspaces');
+      return this.keyspaces;
+    } catch (error) {
+      console.warn('Failed to fetch keyspaces:', error);
+      return [];
+    }
   }
 
   async getTables(keyspace: string): Promise<string[]> {

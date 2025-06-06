@@ -22,6 +22,13 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
+  componentDidMount() {
+    // Warm up the datasource cache on initialization.
+    this.props.datasource.getKeyspaces().catch(error => {
+      console.warn('QueryEditor: Failed to warm up keyspace cache on mount', error);
+    });
+  }
+
   onRunQuery(
     props: Readonly<Props> &
       Readonly<{
