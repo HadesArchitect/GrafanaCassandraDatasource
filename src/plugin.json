@@ -1,40 +1,63 @@
 {
-    "name": "Apache Cassandra",
-    "id": "hadesarchitect-cassandra-datasource",
-    "type": "datasource",
-  
-    "backend": true,
-    "alerting": true,
-    "executable": "cassandra-plugin",
-    "metrics": true,
-    "annotations": true,
-  
-    "info": {
-      "description": "Apache Cassandra Datasource for Grafana",
-      "keywords": ["cassandra", "apache cassandra", "datasource", "dse", "datastax astra", "datastax enterprise"],
-      "author": {
-        "name": "Aleks Volochnev, Armen Khachkinaev, Vyacheslav Mitrofanov",
-        "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/contributors.md"
-      },
-      "logos": {
-        "small": "img/cassandra.svg",
-        "large": "img/cassandra.svg"
-      },
-      "links": [
-        {"name": "GitHub", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource"},
-        {"name": "MIT License", "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"}
-      ],
-      "version": "3.1.1",
-      "updated": "2025-05-29",
-      "screenshots": [
-        {"name": "Query Configurator", "path": "img/configurator.png"},
-        {"name": "Query Editor", "path": "img/editor.png"},
-        {"name": "Configuration", "path": "img/config.png"},
-        {"name": "Suggestions", "path": "img/suggestions.png"}
-      ]
+  "name": "Apache Cassandra",
+  "id": "hadesarchitect-cassandra-datasource",
+  "type": "datasource",
+  "backend": true,
+  "alerting": true,
+  "executable": "cassandra-plugin",
+  "metrics": true,
+  "annotations": true,
+  "info": {
+    "description": "Apache Cassandra Datasource for Grafana",
+    "keywords": [
+      "cassandra",
+      "apache cassandra",
+      "datasource",
+      "dse",
+      "datastax astra",
+      "datastax enterprise"
+    ],
+    "author": {
+      "name": "Aleks Volochnev, Armen Khachkinaev, Vyacheslav Mitrofanov",
+      "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/contributors.md"
     },
-    "dependencies": {
-      "grafanaDependency": ">=7.4.0",
-      "plugins": []
-    }
+    "logos": {
+      "small": "img/cassandra.svg",
+      "large": "img/cassandra.svg"
+    },
+    "links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource"
+      },
+      {
+        "name": "MIT License",
+        "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"
+      }
+    ],
+    "version": "3.0.0",
+    "updated": "2025-06-14",
+    "screenshots": [
+      {
+        "name": "Query Configurator",
+        "path": "img/configurator.png"
+      },
+      {
+        "name": "Query Editor",
+        "path": "img/editor.png"
+      },
+      {
+        "name": "Configuration",
+        "path": "img/config.png"
+      },
+      {
+        "name": "Suggestions",
+        "path": "img/suggestions.png"
+      }
+    ]
+  },
+  "dependencies": {
+    "grafanaDependency": ">=7.4.0",
+    "plugins": []
+  }
 }
