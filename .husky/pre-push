@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Check if there are any changesets pending
+if [ -z "$(find .changeset -name '*.md' -not -name 'README.md' 2>/dev/null)" ]; then
+  echo "⚠️  No changesets found!"
+  echo ""
+  echo "It looks like you're trying to push changes without a changeset."
+  echo "If your changes should be published, you should run:"
+  echo ""
+  echo "  yarn changeset"
+  echo ""
+  echo "If your changes should not be published (docs, tests, etc.), you can run:"
+  echo ""
+  echo "  yarn changeset --empty"
+  echo ""
+  echo "Learn more about changesets at https://github.com/changesets/changesets"
+  echo ""
+  printf "Do you want to proceed without a changeset? (y/N): "
+  read -r response
+  case "$response" in
+    [yY][eE][sS]|[yY])
+      echo "⚠️  Proceeding without changeset..."
+      ;;
+    *)
+      echo "❌ Push cancelled. Please create a changeset first."
+      exit 1
+      ;;
+  esac
+else
+  echo "✅ Changesets found, proceeding with push..."
+fi

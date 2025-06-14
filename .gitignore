@@ -9,6 +9,8 @@ vendor
 coverage
 .idea
 .vscode
+.eslintcache
 
 # OS generated files
 .DS_Store
+

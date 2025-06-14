@@ -49,3 +49,6 @@ be-test: ## Run backend unit tests
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:${GOLANG}-alpine go test ./...
 # backend tests in CI required `-vet=off`
 # docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go test -buildvcs=false -v -vet=off ./...
+
+update-versions: ## Update version in plugin.json to match package.json
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine node scripts/update-versions.js
