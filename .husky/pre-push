@@ -1,0 +1,33 @@
+# Check if there are any pending changesets
+echo "🔍 Checking for pending changesets..."
+
+# Run changeset status and capture output
+changeset_output=$(yarn changeset:status 2>&1)
+changeset_exit_code=$?
+
+# If changeset status fails, skip the check
+if [ $changeset_exit_code -ne 0 ]; then
+    echo "⚠️  Could not check changeset status, skipping check"
+    exit 0
+fi
+
+# Check if there are changes that need changesets
+if echo "$changeset_output" | grep -q "No changesets found"; then
+    echo "⚠️  No changesets found!"
+    echo ""
+    echo "If you've made changes that affect users, please create a changeset:"
+    echo "  yarn changeset"
+    echo "  or"
+    echo "  make changeset"
+    echo ""
+    echo "If this is just a documentation or internal change, you can skip this check."
+    echo ""
+    read -p "Continue with push anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Push cancelled"
+        exit 1
+    fi
+fi
+
+echo "✅ Changeset check passed"

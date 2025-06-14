@@ -49,3 +49,15 @@ be-test: ## Run backend unit tests
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:${GOLANG}-alpine go test ./...
 # backend tests in CI required `-vet=off`
 # docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:1-alpine go test -buildvcs=false -v -vet=off ./...
+
+changeset: ## Create a new changeset
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn changeset
+
+changeset-version: ## Update versions and generate changelog
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn changeset:version
+
+changeset-status: ## Check pending changesets
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn changeset:status
+
+sync-plugin-version: ## Sync version from package.json to src/plugin.json
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine node scripts/sync-plugin-version.js

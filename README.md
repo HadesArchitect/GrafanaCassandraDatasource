@@ -251,4 +251,5 @@ In case when time range includes more than one day, each day has to be added int
 
 ## Development
 
-[Developer documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Developer-Guide)
+- [Old Developer Documentation Wiki](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Developer-Guide)
+- [NEW Developer Documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/development)
