@@ -8,6 +8,8 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   headers: any;
   id: number;
   private keyspaces: string[] = [];
+  private tables: Map<string, string[]> = new Map();
+  private columns: Map<string, string[]> = new Map();
 
   constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
     super(instanceSettings);
@@ -77,15 +79,39 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   async getTables(keyspace: string): Promise<string[]> {
-    return this.getResource('tables', { keyspace: keyspace });
+    if (this.tables.has(keyspace)) {
+      return this.tables.get(keyspace)!;
+    }
+
+    try {
+      const tables = await this.getResource('tables', { keyspace: keyspace });
+      this.tables.set(keyspace, tables);
+      return tables;
+    } catch (error) {
+      console.warn(`Failed to fetch tables for keyspace '${keyspace}':`, error);
+      return [];
+    }
   }
 
   async getColumns(keyspace: string, table: string, needType: string): Promise<string[]> {
-    return this.getResource('columns', {
-      keyspace: keyspace,
-      table: table,
-      needType: needType,
-    });
+    const cacheKey = `${keyspace}.${table}.${needType}`;
+    
+    if (this.columns.has(cacheKey)) {
+      return this.columns.get(cacheKey)!;
+    }
+
+    try {
+      const columns = await this.getResource('columns', {
+        keyspace: keyspace,
+        table: table,
+        needType: needType,
+      });
+      this.columns.set(cacheKey, columns);
+      return columns;
+    } catch (error) {
+      console.warn(`Failed to fetch columns for keyspace '${keyspace}', table '${table}', type '${needType}':`, error);
+      return [];
+    }
   }
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
