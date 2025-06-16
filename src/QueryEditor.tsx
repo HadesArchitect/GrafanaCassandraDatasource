@@ -15,6 +15,14 @@ function selectable(value?: string): SelectableValue<string> {
 }
 
 export class QueryEditor extends PureComponent<Props> {
+  state = {
+    keyspaceOptions: [] as Array<SelectableValue<string>>,
+    tableOptions: [] as Array<SelectableValue<string>>,
+    timeColumnOptions: [] as Array<SelectableValue<string>>,
+    valueColumnOptions: [] as Array<SelectableValue<string>>,
+    idColumnOptions: [] as Array<SelectableValue<string>>
+  };
+
   constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>) {
     super(props);
 
@@ -22,11 +30,64 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({ ...query, datasourceId: props.datasource.id });
   }
 
-  componentDidMount() {
-    // Warm up the datasource cache on initialization.
-    this.props.datasource.getKeyspaces().catch(error => {
-      console.warn('QueryEditor: Failed to warm up keyspace cache on mount', error);
+  loadKeyspaceOptions = () => {
+    this.props.datasource.getKeyspaces().then((keyspaces: string[]) => {
+      const keyspaceOptions: Array<SelectableValue<string>> = [];
+      keyspaces.forEach((keyspace: string) => {
+        keyspaceOptions.push({ label: keyspace, value: keyspace });
+      });
+      this.setState({ keyspaceOptions });
+    }).catch(error => {
+      console.warn('QueryEditor: Failed to get keyspaces', error);
+      this.setState({ keyspaceOptions: [] });
     });
+  };
+
+  loadTableOptions = (keyspace: string) => {
+    this.props.datasource.getTables(keyspace).then((tables: string[]) => {
+      const tableOptions: Array<SelectableValue<string>> = [];
+      tables.forEach((table: string) => {
+        tableOptions.push({ label: table, value: table });
+      });
+      this.setState({ tableOptions });
+    }).catch(error => {
+      console.warn('QueryEditor: Failed to get tables', error);
+      this.setState({ tableOptions: [] });
+    });
+  };
+
+  loadColumnType = (keyspace: string, table: string, columnType: string, stateKey: string) => {
+    this.props.datasource.getColumns(keyspace, table, columnType).then((columns: string[]) => {
+      const columnOptions: Array<SelectableValue<string>> = [];
+      columns.forEach((column: string) => {
+        columnOptions.push({ label: column, value: column });
+      });
+      this.setState({ [stateKey]: columnOptions });
+    }).catch(error => {
+      console.warn(`QueryEditor: Failed to get ${columnType} columns`, error);
+      this.setState({ [stateKey]: [] });
+    });
+  };
+
+  loadColumnOptions = (keyspace: string, table: string) => {
+    this.loadColumnType(keyspace, table, 'timestamp', 'timeColumnOptions');
+    this.loadColumnType(keyspace, table, 'int', 'valueColumnOptions');
+    this.loadColumnType(keyspace, table, 'uuid', 'idColumnOptions');
+  };
+
+  componentDidMount() {
+    // Load keyspace options on initialization.
+    this.loadKeyspaceOptions();
+
+    // Get tables and set them as options if keyspace is set.
+    if (this.props.query.keyspace) {
+      this.loadTableOptions(this.props.query.keyspace);
+    }
+
+    // Load column options if both keyspace and table are set.
+    if (this.props.query.keyspace && this.props.query.table) {
+      this.loadColumnOptions(this.props.query.keyspace, this.props.query.table);
+    }
   }
 
   onRunQuery(
@@ -62,49 +123,6 @@ export class QueryEditor extends PureComponent<Props> {
     }
   }
 
-  getKeyspaces(): Array<SelectableValue<string>> {
-    const result: Array<SelectableValue<string>> = [];
-    this.props.datasource.getKeyspaces().then((keyspaces: string[]) => {
-      keyspaces.forEach((keyspace: string) => {
-        result.push({ label: keyspace, value: keyspace });
-      });
-    });
-
-    return result;
-  }
-
-  getTables(): Array<SelectableValue<string>> {
-    if (!this.props.query.keyspace) {
-      return [];
-    }
-
-    const result: Array<SelectableValue<string>> = [];
-    this.props.datasource.getTables(this.props.query.keyspace).then((tables: string[]) => {
-      tables.forEach((table: string) => {
-        result.push({ label: table, value: table });
-      });
-    });
-
-    return result;
-  }
-
-  getOptions(needType: string): Array<SelectableValue<string>> {
-    if (!this.props.query.keyspace || !this.props.query.table) {
-      return [];
-    }
-
-    const columnOptions: Array<SelectableValue<string>> = [];
-
-    this.props.datasource
-      .getColumns(this.props.query.keyspace, this.props.query.table, needType)
-      .then((columns: string[]) => {
-        columns.forEach((column: string) => {
-          columnOptions.push({ label: column, value: column });
-        });
-      });
-
-    return columnOptions;
-  }
 
   onChangeQueryType = () => {
     const { onChange, query } = this.props;
@@ -119,12 +137,54 @@ export class QueryEditor extends PureComponent<Props> {
 
   onKeyspaceChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, keyspace: event.value });
+    
+    // Clear table and column selections when keyspace changes
+    onChange({
+      ...query,
+      keyspace: event.value,
+      table: undefined,
+      columnTime: undefined,
+      columnValue: undefined,
+      columnId: undefined
+    });
+
+    // Get tables and set them as options when keyspace changes.
+    if (event.value) {
+      this.loadTableOptions(event.value);
+    } else {
+      this.setState({ tableOptions: [] });
+    }
+
+    // Clear column options
+    this.setState({
+      timeColumnOptions: [],
+      valueColumnOptions: [],
+      idColumnOptions: []
+    });
   };
 
   onTableChange = (event: SelectableValue<string>) => {
     const { onChange, query } = this.props;
-    onChange({ ...query, table: event.value });
+    
+    // Clear column selections when table changes
+    onChange({
+      ...query,
+      table: event.value,
+      columnTime: undefined,
+      columnValue: undefined,
+      columnId: undefined
+    });
+
+    // Load column options if both keyspace and table are set
+    if (query.keyspace && event.value) {
+      this.loadColumnOptions(query.keyspace, event.value);
+    } else {
+      this.setState({
+        timeColumnOptions: [],
+        valueColumnOptions: [],
+        idColumnOptions: []
+      });
+    }
   };
 
   onTimeColumnChange = (value: SelectableValue<string>) => {
@@ -166,6 +226,8 @@ export class QueryEditor extends PureComponent<Props> {
     const options = this.props;
 
     return (
+      <>
+      <div><button></button></div>
       <div>
         {options.query.rawQuery && (
           <>
@@ -210,7 +272,7 @@ export class QueryEditor extends PureComponent<Props> {
                   value={selectable(this.props.query.keyspace)}
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
-                  options={this.getKeyspaces()}
+                  options={this.state.keyspaceOptions}
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}
@@ -226,7 +288,7 @@ export class QueryEditor extends PureComponent<Props> {
                   value={selectable(this.props.query.table)}
                   placeholder="table name"
                   onChange={this.onTableChange}
-                  options={this.getTables()}
+                  options={this.state.tableOptions}
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}
@@ -248,7 +310,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}
-                  options={this.getOptions('timestamp')}
+                  options={this.state.timeColumnOptions}
                   width={90}
                 />
               </InlineField>
@@ -263,7 +325,7 @@ export class QueryEditor extends PureComponent<Props> {
                   allowCustomValue={true}
                   placeholder="value column"
                   value={selectable(this.props.query.columnValue)}
-                  options={this.getOptions('int')}
+                  options={this.state.valueColumnOptions}
                   onChange={this.onValueColumnChange}
                   onBlur={() => {
                     this.onRunQuery(this.props);
@@ -286,7 +348,7 @@ export class QueryEditor extends PureComponent<Props> {
                   onBlur={() => {
                     this.onRunQuery(this.props);
                   }}
-                  options={this.getOptions('uuid')}
+                  options={this.state.idColumnOptions}
                   width={90}
                 />
               </InlineField>
@@ -357,6 +419,6 @@ export class QueryEditor extends PureComponent<Props> {
           </>
         )}
       </div>
-    );
+    </>);
   }
 }
