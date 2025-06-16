@@ -227,7 +227,6 @@ export class QueryEditor extends PureComponent<Props> {
 
     return (
       <>
-      <div><button></button></div>
       <div>
         {options.query.rawQuery && (
           <>
