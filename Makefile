@@ -16,7 +16,7 @@ frontend: fe-deps fe-build ## Install frontend dependencies and build frontend
 
 backend: be-deps be-build ## Install backend dependencies and build backend
 
-test: be-test ## Run unit tests
+test: be-test fe-test ## Run tests
 
 clean: ## Cleans destination folder
 	rm -rf ./dist/*
@@ -35,6 +35,9 @@ fe-build: ## Build frontend
 
 fe-watch: ## Watch frontend
 	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn watch
+
+fe-test: ## Test frontend
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine yarn test:ci
 
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:${GOLANG}-alpine go mod vendor

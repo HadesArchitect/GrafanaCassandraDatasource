@@ -19,3 +19,5 @@ jobs:
         run: make be-build
       - name: backend tests
         run: make be-test
+      - name: backend tests
+        run: make fe-test
