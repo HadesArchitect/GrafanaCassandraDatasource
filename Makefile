@@ -6,7 +6,7 @@ help: ## This help
 OS=linux
 ARCH=amd64
 GOLANG=1.24.3
-NODE=20
+NODE=22
 
 install: fe-deps be-deps ## install datasource dependencies (front and back)
 
@@ -55,3 +55,6 @@ be-test: ## Run backend unit tests
 
 update-versions: ## Update version in plugin.json to match package.json
 	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine node scripts/update-versions.js
+
+sign: ## Sign the plugin before release
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${TOKEN} node:${NODE}-alpine yarn sign

@@ -28,7 +28,7 @@ jobs:
       - name: go build arm64 (m1)
         run: make OS=darwin ARCH=arm64 be-build
       - name: sign the build
-        run: docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} node:20-alpine yarn sign
+        run: make TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} sign
       - name: Package plugin
         id: package-plugin
         run: |
