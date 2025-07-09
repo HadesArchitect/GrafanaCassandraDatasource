@@ -31,6 +31,8 @@ services:
 
 2. Create a `datasource/` directory and add the data source configuration:
 
+### Basic Configuration
+
 ```datasource/cassandra.yaml
 apiVersion: 1
 datasources:
@@ -44,6 +46,74 @@ datasources:
       user: cassandra
     secureJsonData:
       password: cassandra
+```
+
+### TLS Configuration with File Paths
+
+```datasource/cassandra-tls-files.yaml
+apiVersion: 1
+datasources:
+  - name: "Cassandra TLS (Files)"
+    type: hadesarchitect-cassandra-datasource
+    access: proxy
+    url: "cassandra:9042"
+    jsonData:
+      keyspace: system
+      consistency: ONE
+      user: cassandra
+      useCustomTLS: true
+      useCertContent: false
+      certPath: "/path/to/client-cert.pem"
+      rootPath: "/path/to/client-key.pem"
+      caPath: "/path/to/ca-cert.pem"
+      allowInsecureTLS: false
+    secureJsonData:
+      password: cassandra
+```
+
+### TLS Configuration with Certificate Content
+
+```datasource/cassandra-tls-content.yaml
+apiVersion: 1
+datasources:
+  - name: "Cassandra TLS (Content)"
+    type: hadesarchitect-cassandra-datasource
+    access: proxy
+    url: "cassandra:9042"
+    jsonData:
+      keyspace: system
+      consistency: ONE
+      user: cassandra
+      useCustomTLS: true
+      useCertContent: true
+      allowInsecureTLS: false
+    secureJsonData:
+      password: cassandra
+      certContent: |
+        -----BEGIN CERTIFICATE-----
+        MIIDXTCCAkWgAwIBAgIJAKoK/heBjcOuMA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
+        BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX
+        aWRnaXRzIFB0eSBMdGQwHhcNMTcwODI3MjM1NzU5WhcNMTgwODI3MjM1NzU5WjBF
+        MQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50
+        ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+        CgKCAQEAuuExKvlfqgE2pqbahyrCV2gOcwrVoJBNGit9HjyTU09RnNFzUDtrS7FgF
+        -----END CERTIFICATE-----
+      rootContent: |
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC64TEq+V+qATam
+        ptqHKsJXaA5zCtWgkE0aK30ePJNTT1Gc0XNQOtLsWAX6AAOCAQ8AMIIBCgKCAQEA
+        uuExKvlfqgE2pqbahyrCV2gOcwrVoJBNGit9HjyTU09RnNFzUDtrS7FgF6AAOCAQ
+        8AMIIBCgKCAQEAuuExKvlfqgE2pqbahyrCV2gOcwrVoJBNGit9HjyTU09RnNFzUD
+        -----END PRIVATE KEY-----
+      caContent: |
+        -----BEGIN CERTIFICATE-----
+        MIIDXTCCAkWgAwIBAgIJAKoK/heBjcOuMA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
+        BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX
+        aWRnaXRzIFB0eSBMdGQwHhcNMTcwODI3MjM1NzU5WhcNMTgwODI3MjM1NzU5WjBF
+        MQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50
+        ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+        CgKCAQEAuuExKvlfqgE2pqbahyrCV2gOcwrVoJBNGit9HjyTU09RnNFzUDtrS7FgF
+        -----END CERTIFICATE-----
 ```
 
 3. Start the services:

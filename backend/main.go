@@ -27,7 +27,18 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	if dss.UseCustomTLS {
 		backend.Logger.Debug("Setting TLS Configuration...")
 
-		tlsConfig, err = prepareTLSCfg(dss.CertPath, dss.RootPath, dss.CaPath, dss.AllowInsecureTLS)
+		if dss.UseCertContent {
+			// Use certificate content from secure data
+			certContent := settings.DecryptedSecureJSONData["certContent"]
+			rootContent := settings.DecryptedSecureJSONData["rootContent"]
+			caContent := settings.DecryptedSecureJSONData["caContent"]
+
+			tlsConfig, err = prepareTLSCfgFromContent(certContent, rootContent, caContent, dss.AllowInsecureTLS)
+		} else {
+			// Use certificate file paths
+			tlsConfig, err = prepareTLSCfgFromPaths(dss.CertPath, dss.RootPath, dss.CaPath, dss.AllowInsecureTLS)
+		}
+
 		if err != nil {
 			backend.Logger.Error("Failed to create TLS config", "Message", err)
 			return nil, fmt.Errorf("Failed to create TLS config: %w", err)
