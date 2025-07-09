@@ -1,3 +1,11 @@
+# Grafana Provisioning with Cassandra Data Source
+
+This setup allows you to quickly start Grafana with a preconfigured Cassandra data source using Docker Compose.
+
+## Quick Start
+
+1. Create the following files in your project directory:
+
 ```docker-compose.yaml
 services:
   grafana:
@@ -21,6 +29,8 @@ services:
       - /var/lib/cassandra
 ```
 
+2. Create a `datasource/` directory and add the data source configuration:
+
 ```datasource/cassandra.yaml
 apiVersion: 1
 datasources:
@@ -35,3 +45,12 @@ datasources:
     secureJsonData:
       password: cassandra
 ```
+
+3. Start the services:
+```bash
+docker-compose up -d
+```
+
+4. Access Grafana at http://localhost:3000 (no login required)
+
+The Cassandra data source will be automatically configured and ready to use.
