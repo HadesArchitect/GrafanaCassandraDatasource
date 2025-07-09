@@ -9,7 +9,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_BASIC_ENABLED: "false"
       GF_DEFAULT_APP_MODE: development
-      #GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: hadesarchitect-cassandra-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: hadesarchitect-cassandra-datasource
     volumes:
       - /var/lib/grafana
       - ./dist:/var/lib/grafana/plugins/cassandra
