@@ -314,13 +314,13 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <>
               <InlineFieldRow>
                 <InlineField
-                  label="Certificate Path"
+                  label="Public Key Path"
                   labelWidth={30}
-                  tooltip="Path to certificate file"
+                  tooltip="Path to public key file"
                 >
                   <Input
                     value={options.jsonData.certPath}
-                    placeholder="certificate path"
+                    placeholder="public key path"
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const jsonData = {
                         ...options.jsonData,
@@ -334,13 +334,13 @@ export class ConfigEditor extends PureComponent<Props, State> {
               </InlineFieldRow>
               <InlineFieldRow>
                 <InlineField
-                  label="Root Certificate Path"
+                  label="Private Key Path"
                   labelWidth={30}
-                  tooltip="Path to root certificate file"
+                  tooltip="Path to private key file"
                 >
                   <Input
                     value={options.jsonData.rootPath}
-                    placeholder="root certificate path"
+                    placeholder="Path to private key"
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const jsonData = {
                         ...options.jsonData,
@@ -354,13 +354,13 @@ export class ConfigEditor extends PureComponent<Props, State> {
               </InlineFieldRow>
               <InlineFieldRow>
                 <InlineField
-                  label="RootCA Certificate Path"
+                  label="Root CA Certificate Path"
                   labelWidth={30}
-                  tooltip="Path to CA certificate file"
+                  tooltip="Path to Root CA certificate file"
                 >
                   <Input
                     value={options.jsonData.caPath}
-                    placeholder="CA certificate path"
+                    placeholder="Root CA certificate path"
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const jsonData = {
                         ...options.jsonData,
@@ -378,9 +378,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <>
               <InlineFieldRow>
                 <InlineField
-                  label="Certificate Content"
+                  label="Public Key Content"
                   labelWidth={30}
-                  tooltip="Paste certificate content directly"
+                  tooltip="Paste public key directly"
                 >
                   <TextArea
                     value={(options.secureJsonData?.certContent as string) || ''}
@@ -393,9 +393,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
               </InlineFieldRow>
               <InlineFieldRow>
                 <InlineField
-                  label="Root Certificate Content"
+                  label="Private Key Content"
                   labelWidth={30}
-                  tooltip="Paste root certificate content directly"
+                  tooltip="Paste private key directly"
                 >
                   <TextArea
                     value={(options.secureJsonData?.rootContent as string) || ''}
@@ -410,7 +410,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 <InlineField
                   label="RootCA Certificate Content"
                   labelWidth={30}
-                  tooltip="Paste CA certificate content directly"
+                  tooltip="Paste RootCA certificate directly"
                 >
                   <TextArea
                     value={(options.secureJsonData?.caContent as string) || ''}
