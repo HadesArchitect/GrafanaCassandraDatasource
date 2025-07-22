@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select, InlineSwitch } from '@grafana/ui';
+import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select, InlineSwitch, TextArea } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CassandraDataSourceOptions } from './models';
 
@@ -69,6 +69,61 @@ export class ConfigEditor extends PureComponent<Props, State> {
       useCustomTLS: event.currentTarget.checked,
     };
     onOptionsChange({ ...options, jsonData });
+  };
+
+  onUseCertContentChange = (event: React.FormEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      useCertContent: event.currentTarget.checked,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+
+  onCertContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const { onOptionsChange, options } = this.props;
+    onOptionsChange({
+      ...options,
+      secureJsonFields: {
+        ...options.secureJsonFields,
+        certContent: true,
+      },
+      secureJsonData: {
+        ...options.secureJsonData,
+        certContent: event.target.value,
+      },
+    });
+  };
+
+  onRootContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const { onOptionsChange, options } = this.props;
+    onOptionsChange({
+      ...options,
+      secureJsonFields: {
+        ...options.secureJsonFields,
+        rootContent: true,
+      },
+      secureJsonData: {
+        ...options.secureJsonData,
+        rootContent: event.target.value,
+      },
+    });
+  };
+
+  onCaContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const { onOptionsChange, options } = this.props;
+    onOptionsChange({
+      ...options,
+      secureJsonFields: {
+        ...options.secureJsonFields,
+        caContent: true,
+      },
+      secureJsonData: {
+        ...options.secureJsonData,
+        caContent: event.target.value,
+      },
+    });
   };
 
   onPasswordReset = () => {
@@ -215,88 +270,159 @@ export class ConfigEditor extends PureComponent<Props, State> {
               <InlineSwitch value={options.jsonData.useCustomTLS} onChange={this.onUseCustomTLSChange} />
             </InlineField>
           </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField
-              label="Allow self-signed certificates"
-              labelWidth={30}
-              tooltip="Enable `custom TLS settings` to allow self-signed certificates"
-              disabled={!options.jsonData.useCustomTLS}
-            >
-              <InlineSwitch
-                value={options.jsonData.allowInsecureTLS}
-                onChange={(event: React.FormEvent<HTMLInputElement>) => {
-                  const jsonData = {
-                    ...options.jsonData,
-                    allowInsecureTLS: event.currentTarget.checked,
-                  };
-                  onOptionsChange({ ...options, jsonData });
-                }}
-              />
-            </InlineField>
-          </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField
-              label="Certificate Path"
-              labelWidth={30}
-              disabled={!options.jsonData.useCustomTLS}
-              tooltip="Enable `custom TLS settings` to configure certificates"
-            >
-              <Input
-                value={options.jsonData.certPath}
-                placeholder="certificate path"
-                onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  const jsonData = {
-                    ...options.jsonData,
-                    certPath: event.currentTarget.value,
-                  };
-                  onOptionsChange({ ...options, jsonData });
-                }}
-                width={60}
-              />
-            </InlineField>
-          </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField
-              label="Root Certificate Path"
-              labelWidth={30}
-              disabled={!options.jsonData.useCustomTLS}
-              tooltip="Enable `custom TLS settings` to configure certificates"
-            >
-              <Input
-                value={options.jsonData.rootPath}
-                placeholder="root certificate path"
-                onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  const jsonData = {
-                    ...options.jsonData,
-                    rootPath: event.currentTarget.value,
-                  };
-                  onOptionsChange({ ...options, jsonData });
-                }}
-                width={60}
-              />
-            </InlineField>
-          </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField
-              label="RootCA Certificate Path"
-              labelWidth={30}
-              disabled={!options.jsonData.useCustomTLS}
-              tooltip="Enable `custom TLS settings` to configure certificates"
-            >
-              <Input
-                value={options.jsonData.caPath}
-                placeholder="CA certificate path"
-                onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  const jsonData = {
-                    ...options.jsonData,
-                    caPath: event.currentTarget.value,
-                  };
-                  onOptionsChange({ ...options, jsonData });
-                }}
-                width={60}
-              />
-            </InlineField>
-          </InlineFieldRow>
+          {options.jsonData.useCustomTLS && (
+            <>
+              <InlineFieldRow>
+                <InlineField
+                  label="Allow self-signed certificates"
+                  labelWidth={30}
+                  tooltip="Allow self-signed certificates"
+                >
+                  <InlineSwitch
+                    value={options.jsonData.allowInsecureTLS}
+                    onChange={(event: React.FormEvent<HTMLInputElement>) => {
+                      const jsonData = {
+                        ...options.jsonData,
+                        allowInsecureTLS: event.currentTarget.checked,
+                      };
+                      onOptionsChange({ ...options, jsonData });
+                    }}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField
+                  label="Certificate input method"
+                  labelWidth={30}
+                  tooltip="Choose whether to use file paths or paste certificate content directly"
+                >
+                  <InlineSwitch
+                    value={options.jsonData.useCertContent}
+                    onChange={this.onUseCertContentChange}
+                  />
+                </InlineField>
+                <InlineField
+                  label={options.jsonData.useCertContent ? "Use content" : "Use file paths"}
+                  labelWidth={15}
+                >
+                  <span />
+                </InlineField>
+              </InlineFieldRow>
+            </>
+          )}
+          {options.jsonData.useCustomTLS && !options.jsonData.useCertContent && (
+            <>
+              <InlineFieldRow>
+                <InlineField
+                  label="Public Key Path"
+                  labelWidth={30}
+                  tooltip="Path to public key file"
+                >
+                  <Input
+                    value={options.jsonData.certPath}
+                    placeholder="public key path"
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const jsonData = {
+                        ...options.jsonData,
+                        certPath: event.currentTarget.value,
+                      };
+                      onOptionsChange({ ...options, jsonData });
+                    }}
+                    width={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField
+                  label="Private Key Path"
+                  labelWidth={30}
+                  tooltip="Path to private key file"
+                >
+                  <Input
+                    value={options.jsonData.rootPath}
+                    placeholder="Path to private key"
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const jsonData = {
+                        ...options.jsonData,
+                        rootPath: event.currentTarget.value,
+                      };
+                      onOptionsChange({ ...options, jsonData });
+                    }}
+                    width={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField
+                  label="Root CA Certificate Path"
+                  labelWidth={30}
+                  tooltip="Path to Root CA certificate file"
+                >
+                  <Input
+                    value={options.jsonData.caPath}
+                    placeholder="Root CA certificate path"
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const jsonData = {
+                        ...options.jsonData,
+                        caPath: event.currentTarget.value,
+                      };
+                      onOptionsChange({ ...options, jsonData });
+                    }}
+                    width={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+            </>
+          )}
+          {options.jsonData.useCustomTLS && options.jsonData.useCertContent && (
+            <>
+              <InlineFieldRow>
+                <InlineField
+                  label="Public Key Content"
+                  labelWidth={30}
+                  tooltip="Paste public key directly"
+                >
+                  <TextArea
+                    value={(options.secureJsonData?.certContent as string) || ''}
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                    onChange={this.onCertContentChange}
+                    rows={6}
+                    cols={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField
+                  label="Private Key Content"
+                  labelWidth={30}
+                  tooltip="Paste private key directly"
+                >
+                  <TextArea
+                    value={(options.secureJsonData?.rootContent as string) || ''}
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                    onChange={this.onRootContentChange}
+                    rows={6}
+                    cols={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+              <InlineFieldRow>
+                <InlineField
+                  label="RootCA Certificate Content"
+                  labelWidth={30}
+                  tooltip="Paste RootCA certificate directly"
+                >
+                  <TextArea
+                    value={(options.secureJsonData?.caContent as string) || ''}
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+                    onChange={this.onCaContentChange}
+                    rows={6}
+                    cols={60}
+                  />
+                </InlineField>
+              </InlineFieldRow>
+            </>
+          )}
         </FieldSet>
       </>
     );
