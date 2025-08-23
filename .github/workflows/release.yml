@@ -13,6 +13,8 @@ jobs:
         run: make fe-deps
       - name: yarn build
         run: make fe-build
+      - name: frontend tests
+        run: make fe-test        
       - name: backend tests 
         run: make be-test
       - name: go mod vendor
