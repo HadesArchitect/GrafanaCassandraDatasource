@@ -23,6 +23,7 @@ To see the datasource in action, please follow the [Quick Demo](https://github.c
 * Variables
 * Annotations
 * Alerting
+* Provisioning
 
 **Contacts**:
 
