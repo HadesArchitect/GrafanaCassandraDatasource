@@ -227,6 +227,7 @@ export class QueryEditor extends PureComponent<Props> {
 
     return (
       <>
+      <Button icon="pen" variant="secondary" onClick={this.onChangeQueryType} style={{ margin: '10px 0' }}>Toggle editor mode</Button>
       <div>
         {options.query.rawQuery && (
           <>
@@ -246,7 +247,6 @@ export class QueryEditor extends PureComponent<Props> {
                   value={this.props.query.target}
                 />
               </InlineField>
-              <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
@@ -278,7 +278,6 @@ export class QueryEditor extends PureComponent<Props> {
                   width={90}
                 />
               </InlineField>
-              <Button icon="pen" variant="secondary" aria-label="Toggle editor mode" onClick={this.onChangeQueryType} />
             </InlineFieldRow>
             <InlineFieldRow>
               <InlineField label="Table" labelWidth={30} tooltip="Specify table to work with">

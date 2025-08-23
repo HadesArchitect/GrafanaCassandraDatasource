@@ -6,6 +6,7 @@
 
 - d96a689: Added keyspace, table, column caching for faster GUI(@HadesArchitect)
 - 532f4e3: Added support for TLS certificate configuration via direct content input alongside existing file path support (#210)
+- Made 'toggle editor mode' button more visible to improve UI
 
 ### Patch Changes
 
