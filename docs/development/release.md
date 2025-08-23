@@ -45,8 +45,8 @@ This document describes the manual release process for the Grafana Cassandra Dat
 9. **Create GitHub release**
    - Navigate to https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases
    - Click "Create a new release"
-   - Select the git tag created in step 8 (e.g., `v3.0.1`)
-   - Set release title to match the version (e.g., `v3.0.1`)
+   - Select the git tag created in step 8 (e.g., `3.0.1`)
+   - Set release title to match the version (e.g., `3.0.1`)
    - Copy the relevant section from `CHANGELOG.md` as the release description
    - Mark as "Latest release" if this is the newest version
    - Click "Publish release"
