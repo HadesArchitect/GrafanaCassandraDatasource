@@ -13,6 +13,18 @@ cqlsh cassandra -e "CREATE TABLE IF NOT EXISTS test.sensors_locations (bucket te
 cqlsh cassandra -e "insert into test.sensors_locations (bucket, location, sensor_id) values ('default', 'kitchen', 99051fe9-6a9c-46c2-b949-38ef78858dd0);";
 cqlsh cassandra -e "insert into test.sensors_locations (bucket, location, sensor_id) values ('default', 'bedroom', 99051fe9-6a9c-46c2-b949-38ef78858dd1);";
 
+echo "Writing sample data for last 5 minutes...";
+# Generate data points for last 5 minutes (60 data points at 5-second intervals)
+for i in {1..60}; do
+    # Calculate timestamp for i*5 seconds ago
+    # Using GNU date syntax (appropriate for Docker container)
+    timestamp=$(date -u -d "$i * 5 seconds ago" +"%Y-%m-%d %H:%M:%S")
+    cqlsh cassandra -e "insert into test.test (sensor_id, registered_at, temperature, location) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, '${timestamp}', $(shuf -i 18-32 -n 1), 'kitchen');";
+    cqlsh cassandra -e "insert into test.test (sensor_id, registered_at, temperature, location) values (99051fe9-6a9c-46c2-b949-38ef78858dd1, '${timestamp}', $(shuf -i 12-40 -n 1), 'bedroom');";
+done
+
+echo "Sample data preload completed.";
+
 while true; do
     echo "Writing sample data...";
     cqlsh cassandra -e "insert into test.test (sensor_id, registered_at, temperature, location) values (99051fe9-6a9c-46c2-b949-38ef78858dd0, toTimestamp(now()), $(shuf -i 18-32 -n 1), 'kitchen');";
