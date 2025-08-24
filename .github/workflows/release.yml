@@ -1,47 +1,28 @@
+# This GitHub Action automates the process of building Grafana plugins.
+# (For more information, see https://github.com/grafana/plugin-actions/blob/main/build-plugin/README.md)
+name: Release
+
 on:
   release:
     types: [created]
-name: Handle Release
+
+permissions: read-all
+
 jobs:
-  generate:
-    name: Create release artifacts
+  release:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@master      
-      - name: yarn install
-        run: make fe-deps
-      - name: yarn build
-        run: make fe-build
-      - name: frontend tests
-        run: make fe-test        
-      - name: backend tests 
-        run: make be-test
-      - name: go mod tidy
-        run: make be-tidy
-      - name: go mod vendor
-        run: make be-deps
-      - name: go build linux
-        run: make be-build
-      - name: backend tests 
-        run: make be-test 
-      - name: go build windows
-        run: make OS=windows ARCH=amd64 be-build
-      - name: go build darwin
-        run: make OS=darwin ARCH=amd64 be-build
-      - name: go build arm64 (m1)
-        run: make OS=darwin ARCH=arm64 be-build
-      - name: sign the build
-        run: make TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} sign
-      - name: Package plugin
-        id: package-plugin
-        run: |
-          mv dist/ hadesarchitect-cassandra-datasource
-          zip -r cassandra-datasource-${{ github.event.release.tag_name }}.zip ./hadesarchitect-cassandra-datasource
-          md5sum cassandra-datasource-${{ github.event.release.tag_name }}.zip > cassandra-datasource-${{ github.event.release.tag_name }}.zip.md5
-      - name: Upload the artifacts
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
         with:
-          args: './cassandra-datasource-${{ github.event.release.tag_name }}.*'
+          persist-credentials: false
+
+      - uses: grafana/plugin-actions/build-plugin@main # zizmor: ignore[unpinned-uses] provided by grafana
+        # Uncomment to enable plugin signing
+        # (For more info on how to generate the access policy token see https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token)
+        with:
+        # Make sure to save the token in your repository secrets
+        policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+        # Usage of GRAFANA_API_KEY is deprecated, prefer `policy_token` option above
+        #grafana_token: $

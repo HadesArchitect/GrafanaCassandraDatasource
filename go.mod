@@ -1,4 +1,4 @@
-module github.com/HadesArchitect/GrafanaCassandraDatasource/backend
+module github.com/HadesArchitect/GrafanaCassandraDatasource
 
 go 1.24.3
 
