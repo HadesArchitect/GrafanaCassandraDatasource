@@ -6,16 +6,14 @@ on:
   release:
     types: [created]
 
-permissions: 
-  read-all
-  id-token: write
-  contents: write
-  attestations: write
+permissions: read-all
 
 jobs:
   release:
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
