@@ -24,14 +24,17 @@ This document describes the manual release process for the Grafana Cassandra Dat
 5. **Test manually with oldest supported Grafana**
    - Test the plugin with Grafana 7.4 (minimum supported version for plugin v3)
 
-6. **Update version and changelog**
+6. **Update changelog**
    ```bash
    yarn changeset:version
    ```
 
+7. **Update version**
+   - set proper version in `package.json`
+
 7. **Check src/plugin.json version and date**
-   - Verify the version number is correct
-   - Update the `updated` field with current date if needed
+   - `node scripts/update-versions.js`
+   - Verify the `version` number and `updated` date are correct
 
 8. **Create and push git tag**
    ```bash
@@ -42,8 +45,8 @@ This document describes the manual release process for the Grafana Cassandra Dat
 9. **Create GitHub release**
    - Navigate to https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases
    - Click "Create a new release"
-   - Select the git tag created in step 8 (e.g., `v3.0.1`)
-   - Set release title to match the version (e.g., `v3.0.1`)
+   - Select the git tag created in step 8 (e.g., `3.0.1`)
+   - Set release title to match the version (e.g., `3.0.1`)
    - Copy the relevant section from `CHANGELOG.md` as the release description
    - Mark as "Latest release" if this is the newest version
    - Click "Publish release"
@@ -61,3 +64,5 @@ This document describes the manual release process for the Grafana Cassandra Dat
 - Creating the GitHub release will automatically trigger the build workflow that creates and uploads release artifacts
 - The workflow will generate `cassandra-datasource-VERSION.zip` and corresponding `.md5` files
 - Verify that the workflow completes successfully and artifacts are attached to the release
+- Plugin must be signed (done by Github CI)
+- And submitted (https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin)

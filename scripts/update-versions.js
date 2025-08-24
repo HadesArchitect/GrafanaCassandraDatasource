@@ -9,6 +9,7 @@ const version = packageJson.version;
 const pluginJsonPath = path.join('src', 'plugin.json');
 const pluginJson = JSON.parse(fs.readFileSync(pluginJsonPath, 'utf8'));
 pluginJson.info.version = version;
+pluginJson.info.updated = new Date().toISOString().split('T')[0];
 fs.writeFileSync(pluginJsonPath, JSON.stringify(pluginJson, null, 2) + '\n');
 
 console.log(`Updated version to ${version} in src/plugin.json`);

@@ -14,7 +14,7 @@ build: clean fe-build be-build ## Build the whole datasource
 
 frontend: fe-deps fe-build ## Install frontend dependencies and build frontend
 
-backend: be-deps be-build ## Install backend dependencies and build backend
+backend: be-tidy be-deps be-build ## Install backend dependencies and build backend
 
 test: be-test fe-test ## Run tests
 
@@ -47,6 +47,7 @@ be-tidy: ## Go mod tidy
 
 be-build: ## Build backend (Builds linux-amd64 version by deafult. Run with args to adjust target (make be-build OS=windows ARCH=arm64))
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e CGO_ENABLED=0 -e GOOS=$(OS) -e GOARCH=$(ARCH) golang:${GOLANG}-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_$(OS)_$(ARCH) .
+	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend -e CGO_ENABLED=0 -e GOOS=$(OS) -e GOARCH=$(ARCH) golang:${GOLANG}-alpine cp go.mod ../dist/
 
 be-test: ## Run backend unit tests
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/backend golang:${GOLANG}-alpine go test ./...

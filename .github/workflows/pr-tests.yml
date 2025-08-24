@@ -13,11 +13,13 @@ jobs:
         run: make fe-deps
       - name: yarn build
         run: make fe-build
+      - name: go mod tidy
+        run: make be-tidy
       - name: go mod vendor
         run: make be-deps
       - name: go build linux
         run: make be-build
       - name: backend tests
         run: make be-test
-      - name: backend tests
+      - name: frontend tests
         run: make fe-test
