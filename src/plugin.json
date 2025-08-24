@@ -32,7 +32,7 @@
       },
       {
         "name": "MIT License",
-        "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/master/LICENSE"
+        "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/LICENSE"
       }
     ],
     "version": "3.1.0",
