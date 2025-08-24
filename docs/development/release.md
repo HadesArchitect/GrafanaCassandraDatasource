@@ -64,3 +64,5 @@ This document describes the manual release process for the Grafana Cassandra Dat
 - Creating the GitHub release will automatically trigger the build workflow that creates and uploads release artifacts
 - The workflow will generate `cassandra-datasource-VERSION.zip` and corresponding `.md5` files
 - Verify that the workflow completes successfully and artifacts are attached to the release
+- Plugin must be signed (done by Github CI)
+- And submitted (https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin)
