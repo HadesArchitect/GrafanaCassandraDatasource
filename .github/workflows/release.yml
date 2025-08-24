@@ -17,6 +17,8 @@ jobs:
         run: make fe-test        
       - name: backend tests 
         run: make be-test
+      - name: go mod tidy
+        run: make be-tidy
       - name: go mod vendor
         run: make be-deps
       - name: go build linux
