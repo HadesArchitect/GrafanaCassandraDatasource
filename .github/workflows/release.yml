@@ -6,7 +6,11 @@ on:
   release:
     types: [created]
 
-permissions: read-all
+permissions: 
+  read-all
+  id-token: write
+  contents: write
+  attestations: write
 
 jobs:
   release:
@@ -14,46 +18,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v4
-=======
-      - name: Checkout the repository
-        uses: actions/checkout@master      
-      - name: yarn install
-        run: make fe-deps
-      - name: yarn build
-        run: make fe-build
-      - name: frontend tests
-        run: make fe-test        
-      - name: backend tests 
-        run: make be-test
-      - name: go mod tidy
-        run: make be-tidy
-      - name: go mod vendor
-        run: make be-deps
-      - name: go build linux
-        run: make be-build
-      - name: backend tests 
-        run: make be-test 
-      - name: go build windows
-        run: make OS=windows ARCH=amd64 be-build
-      - name: go build darwin
-        run: make OS=darwin ARCH=amd64 be-build
-      - name: go build arm64 (m1)
-        run: make OS=darwin ARCH=arm64 be-build
-      - name: sign the build
-        run: make TOKEN=${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }} sign
-      - name: Package plugin
-        id: package-plugin
-        run: |
-          mv dist/ hadesarchitect-cassandra-datasource
-          zip -r cassandra-datasource-${{ github.event.release.tag_name }}.zip ./hadesarchitect-cassandra-datasource
-          md5sum cassandra-datasource-${{ github.event.release.tag_name }}.zip > cassandra-datasource-${{ github.event.release.tag_name }}.zip.md5
-      - name: Upload the artifacts
-        uses: skx/github-action-publish-binaries@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
->>>>>>> f5da432 (3.1.0 (#222))
         with:
           persist-credentials: false
 
@@ -63,5 +28,6 @@ jobs:
         with:
           # Make sure to save the token in your repository secrets
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          attestation: true
           # Usage of GRAFANA_API_KEY is deprecated, prefer `policy_token` option above
           #grafana_token: $
