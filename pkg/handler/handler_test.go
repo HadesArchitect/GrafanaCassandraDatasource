@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/plugin"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"

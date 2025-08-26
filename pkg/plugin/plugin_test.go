@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/cassandra"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 )

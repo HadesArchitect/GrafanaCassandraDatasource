@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HadesArchitect/GrafanaCassandraDatasource/backend/cassandra"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/cassandra"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
