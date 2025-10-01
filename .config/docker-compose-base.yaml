@@ -7,15 +7,15 @@ services:
       context: .
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-12.1.0}
+        grafana_version: ${GRAFANA_VERSION:-12.2.0}
         development: ${DEVELOPMENT:-false}
         anonymous_auth_enabled: ${ANONYMOUS_AUTH_ENABLED:-true}
     ports:
       - 3000:3000/tcp
       - 2345:2345/tcp # delve
     security_opt:
-      - "apparmor:unconfined"
-      - "seccomp:unconfined"
+      - 'apparmor:unconfined'
+      - 'seccomp:unconfined'
     cap_add:
       - SYS_PTRACE
     volumes:
@@ -29,4 +29,3 @@ services:
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: hadesarchitect-cassandra-datasource
-      GF_DEFAULT_APP_MODE: development
