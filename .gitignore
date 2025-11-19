@@ -11,6 +11,8 @@ coverage
 .vscode
 .eslintcache
 
+.kilocode/mcp.json
+
 # OS generated files
 .DS_Store
 
