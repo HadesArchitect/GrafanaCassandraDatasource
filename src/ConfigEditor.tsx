@@ -171,8 +171,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
       { label: 'LOCAL_ONE', value: 'LOCAL_ONE' },
     ];
 
-    if (!this.props.options.jsonData.consistency || this.props.options.jsonData.consistency === '') {
-      this.props.options.jsonData.consistency = consistencyOptions[0].value;
+    if (!jsonData.consistency || jsonData.consistency === '') {
+      const updatedJsonData = {
+        ...jsonData,
+        consistency: consistencyOptions[0].value,
+      };
+      onOptionsChange({ ...options, jsonData: updatedJsonData });
     }
 
     return (
@@ -214,8 +218,11 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 isSearchable={true}
                 value={options.jsonData.consistency || consistencyOptions[0]}
                 onChange={(value) => {
-                  jsonData.consistency = value.value!;
-                  onOptionsChange({ ...options, jsonData });
+                  const updatedJsonData = {
+                    ...jsonData,
+                    consistency: value.value!,
+                  };
+                  onOptionsChange({ ...options, jsonData: updatedJsonData });
                 }}
                 width={60}
               />
