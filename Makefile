@@ -45,8 +45,8 @@ be-deps: ## Install backend dependencies
 be-tidy: ## Go mod tidy
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg golang:${GOLANG}-alpine go mod tidy
 
-be-build: ## Build backend (Builds linux-amd64 version by deafult. Run with args to adjust target (make be-build OS=windows ARCH=arm64))
-	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg -e CGO_ENABLED=0 -e GOOS=$(OS) -e GOARCH=$(ARCH) golang:${GOLANG}-alpine go build -buildvcs=false -o ../dist/cassandra-plugin_$(OS)_$(ARCH) .
+be-build: ## Build backend 
+	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp -e GOOS=$(OS) -e GOARCH=$(ARCH) golang:${GOLANG}-alpine go run mage.go
 
 be-test: ## Run backend unit tests
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg golang:${GOLANG}-alpine go test ./...

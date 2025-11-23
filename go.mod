@@ -5,6 +5,7 @@ go 1.24.3
 require (
 	github.com/gocql/gocql v1.7.0
 	github.com/grafana/grafana-plugin-sdk-go v0.278.0
+	github.com/magefile/mage v1.15.0
 	github.com/stretchr/testify v1.10.0
 )
 
@@ -48,7 +49,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
-	github.com/magefile/mage v1.15.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattetti/filebuffer v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
