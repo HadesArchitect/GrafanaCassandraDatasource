@@ -77,12 +77,12 @@ describe('QueryEditor', () => {
     jest.clearAllMocks();
   });
 
-  it('should render without crashing', () => {
-    expect(async () => await renderComponent({ ...mockProps })).not.toThrow();
+  it('should render without crashing', async () => {
+    await renderComponent({ ...mockProps });
   });
 
-  it('should render without mutating props', () => {
-    expect(async () => await renderComponent({ ...getFrozenProps() })).not.toThrow();
+  it('should render without mutating props', async () => {
+    await renderComponent({ ...getFrozenProps() });
   });
 
   it('should render run onRunQuery without mutating props', async () => {
