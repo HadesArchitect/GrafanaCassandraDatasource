@@ -24,7 +24,7 @@ This document describes the manual release process for the Grafana Cassandra Dat
 
 5. **Test manually with oldest supported Grafana**
    - Test the plugin with Grafana 7.4 (minimum supported version for plugin v3)
-   - See [Testing with Grafana](build.md#testing-with-oldest-supported-version) for instructions
+   - See [Testing with Grafana](build.md#testing-with-specific-grafana-version) for instructions
 
 6. **Update changelog**
    ```bash
