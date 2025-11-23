@@ -96,13 +96,13 @@ export class QueryEditor extends PureComponent<Props> {
         children?: React.ReactNode;
       }>
   ) {
-    this.props.query.queryType = 'query';
+    let queryType: 'query' | 'alert' = 'query';
     if (this.props.app && this.props.app === CoreApp.UnifiedAlerting) {
-      this.props.query.queryType = 'alert';
+      queryType = 'alert';
     }
 
     const { onChange, query } = this.props;
-    onChange({ ...query, queryType: props.query.queryType });
+    onChange({ ...query, queryType });
 
     if ((
       props.query.keyspace &&

@@ -9,7 +9,30 @@ type Props = DataSourcePluginOptionsEditorProps<CassandraDataSourceOptions, Reco
 
 interface State {}
 
+const consistencyOptions = [
+  { label: 'ONE', value: 'ONE' },
+  { label: 'TWO', value: 'TWO' },
+  { label: 'THREE', value: 'THREE' },
+  { label: 'QUORUM', value: 'QUORUM' },
+  { label: 'ALL', value: 'ALL' },
+  { label: 'LOCAL_QUORUM', value: 'LOCAL_QUORUM' },
+  { label: 'EACH_QUORUM', value: 'EACH_QUORUM' },
+  { label: 'LOCAL_ONE', value: 'LOCAL_ONE' },
+];
 export class ConfigEditor extends PureComponent<Props, State> {
+  componentDidMount() {
+    const { onOptionsChange, options } = this.props;
+    const { jsonData } = options;
+
+    if (!jsonData.consistency || jsonData.consistency === '') {
+      const updatedJsonData = {
+        ...jsonData,
+        consistency: consistencyOptions[0].value,
+      };
+      onOptionsChange({ ...options, jsonData: updatedJsonData });
+    }
+  }
+
   onHostChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.value === '') {
       event.target.setCustomValidity('Cannot be empty');
@@ -79,7 +102,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
     };
     onOptionsChange({ ...options, jsonData });
   };
-
 
   onCertContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const { onOptionsChange, options } = this.props;
@@ -160,21 +182,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const { onOptionsChange, options } = this.props;
     const { jsonData } = options;
 
-    const consistencyOptions = [
-      { label: 'ONE', value: 'ONE' },
-      { label: 'TWO', value: 'TWO' },
-      { label: 'THREE', value: 'THREE' },
-      { label: 'QUORUM', value: 'QUORUM' },
-      { label: 'ALL', value: 'ALL' },
-      { label: 'LOCAL_QUORUM', value: 'LOCAL_QUORUM' },
-      { label: 'EACH_QUORUM', value: 'EACH_QUORUM' },
-      { label: 'LOCAL_ONE', value: 'LOCAL_ONE' },
-    ];
-
-    if (!this.props.options.jsonData.consistency || this.props.options.jsonData.consistency === '') {
-      this.props.options.jsonData.consistency = consistencyOptions[0].value;
-    }
-
     return (
       <>
         <FieldSet label="Connection settings">
@@ -214,8 +221,11 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 isSearchable={true}
                 value={options.jsonData.consistency || consistencyOptions[0]}
                 onChange={(value) => {
-                  jsonData.consistency = value.value!;
-                  onOptionsChange({ ...options, jsonData });
+                  const updatedJsonData = {
+                    ...jsonData,
+                    consistency: value.value!,
+                  };
+                  onOptionsChange({ ...options, jsonData: updatedJsonData });
                 }}
                 width={60}
               />
@@ -296,15 +306,9 @@ export class ConfigEditor extends PureComponent<Props, State> {
                   labelWidth={30}
                   tooltip="Choose whether to use file paths or paste certificate content directly"
                 >
-                  <InlineSwitch
-                    value={options.jsonData.useCertContent}
-                    onChange={this.onUseCertContentChange}
-                  />
+                  <InlineSwitch value={options.jsonData.useCertContent} onChange={this.onUseCertContentChange} />
                 </InlineField>
-                <InlineField
-                  label={options.jsonData.useCertContent ? "Use content" : "Use file paths"}
-                  labelWidth={15}
-                >
+                <InlineField label={options.jsonData.useCertContent ? 'Use content' : 'Use file paths'} labelWidth={15}>
                   <span />
                 </InlineField>
               </InlineFieldRow>
@@ -313,11 +317,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
           {options.jsonData.useCustomTLS && !options.jsonData.useCertContent && (
             <>
               <InlineFieldRow>
-                <InlineField
-                  label="Public Key Path"
-                  labelWidth={30}
-                  tooltip="Path to public key file"
-                >
+                <InlineField label="Public Key Path" labelWidth={30} tooltip="Path to public key file">
                   <Input
                     value={options.jsonData.certPath}
                     placeholder="public key path"
@@ -333,11 +333,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 </InlineField>
               </InlineFieldRow>
               <InlineFieldRow>
-                <InlineField
-                  label="Private Key Path"
-                  labelWidth={30}
-                  tooltip="Path to private key file"
-                >
+                <InlineField label="Private Key Path" labelWidth={30} tooltip="Path to private key file">
                   <Input
                     value={options.jsonData.rootPath}
                     placeholder="Path to private key"
@@ -377,11 +373,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
           {options.jsonData.useCustomTLS && options.jsonData.useCertContent && (
             <>
               <InlineFieldRow>
-                <InlineField
-                  label="Public Key Content"
-                  labelWidth={30}
-                  tooltip="Paste public key directly"
-                >
+                <InlineField label="Public Key Content" labelWidth={30} tooltip="Paste public key directly">
                   <TextArea
                     value={(options.secureJsonData?.certContent as string) || ''}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
@@ -392,11 +384,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 </InlineField>
               </InlineFieldRow>
               <InlineFieldRow>
-                <InlineField
-                  label="Private Key Content"
-                  labelWidth={30}
-                  tooltip="Paste private key directly"
-                >
+                <InlineField label="Private Key Content" labelWidth={30} tooltip="Paste private key directly">
                   <TextArea
                     value={(options.secureJsonData?.rootContent as string) || ''}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"

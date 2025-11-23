@@ -10,6 +10,9 @@ coverage
 .idea
 .vscode
 .eslintcache
+.yarn
+
+.kilocode/mcp.json
 
 # OS generated files
 .DS_Store
