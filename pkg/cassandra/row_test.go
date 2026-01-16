@@ -2,6 +2,7 @@ package cassandra
 
 import (
 	"fmt"
+	"math/big"
 	"net"
 	"testing"
 	"time"
@@ -86,12 +87,36 @@ func TestRow_normalize(t *testing.T) {
 		{
 			name: "normal row with conversion",
 			input: &Row{
-				Columns: []string{"field1", "id", "field2", "time", "field3", "value"},
-				Fields:  map[string]interface{}{"field1": gocql.UUID{}, "id": "id", "field2": net.ParseIP("127.0.0.1"), "time": time.UnixMilli(1257894000000).UTC(), "field3": []byte("some string"), "value": 0.1},
+				Columns: []string{"field1", "id", "field2", "time", "field3", "value", "field4"},
+				Fields:  map[string]interface{}{"field1": gocql.UUID{}, "id": "id", "field2": net.ParseIP("127.0.0.1"), "time": time.UnixMilli(1257894000000).UTC(), "field3": []byte("some string"), "value": 0.1, "field4": big.NewInt(12345)},
 			},
 			want: &Row{
-				Columns: []string{"field1", "id", "field2", "time", "field3", "value"},
-				Fields:  map[string]interface{}{"field1": "00000000-0000-0000-0000-000000000000", "id": "id", "field2": "127.0.0.1", "time": time.UnixMilli(1257894000000).UTC(), "field3": "some string", "value": 0.1},
+				Columns: []string{"field1", "id", "field2", "time", "field3", "value", "field4"},
+				Fields:  map[string]interface{}{"field1": "00000000-0000-0000-0000-000000000000", "id": "id", "field2": "127.0.0.1", "time": time.UnixMilli(1257894000000).UTC(), "field3": "some string", "value": 0.1, "field4": "12345"},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "row with large varint that overflows int64",
+			input: &Row{
+				Columns: []string{"id", "large_number"},
+				Fields:  map[string]interface{}{"id": "test", "large_number": new(big.Int).SetBytes([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})},
+			},
+			want: &Row{
+				Columns: []string{"id", "large_number"},
+				Fields:  map[string]interface{}{"id": "test", "large_number": "4722366482869645213695"},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "row with nil big.Int",
+			input: &Row{
+				Columns: []string{"id", "varint_field"},
+				Fields:  map[string]interface{}{"id": "test", "varint_field": (*big.Int)(nil)},
+			},
+			want: &Row{
+				Columns: []string{"id", "varint_field"},
+				Fields:  map[string]interface{}{"id": "test", "varint_field": ""},
 			},
 			wantErr: nil,
 		},
