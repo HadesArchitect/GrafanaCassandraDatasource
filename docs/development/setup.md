@@ -5,6 +5,52 @@
 - Docker and Docker Compose installed
 - Make (optional, build can be done directly)
 
+## Installing Dependencies
+
+Before building the plugin, you need to install the required dependencies for both frontend and backend.
+
+### Install All Dependencies
+
+**Using Makefile (recommended):**
+```bash
+make install
+```
+
+This installs both frontend and backend dependencies using Docker, so no local Node.js or Go installation is required.
+
+### Frontend Dependencies Only
+
+**Using Makefile:**
+```bash
+make fe-deps
+```
+
+This runs `yarn install` inside a [`node:22-alpine`](https://hub.docker.com/_/node) Docker container.
+
+**Using yarn directly (requires local Node.js and yarn):**
+```bash
+yarn install
+```
+
+### Backend Dependencies Only
+
+**Using Makefile:**
+```bash
+make be-tidy
+make be-deps
+```
+
+This installs and manages backend dependencies:
+- [`be-tidy`](../../Makefile): Runs `go mod tidy` to clean up dependencies
+- [`be-deps`](../../Makefile): Runs `go mod vendor` to vendor dependencies
+
+Both operations use a [`golang:1.24.3-alpine`](https://hub.docker.com/_/golang) Docker container.
+
+**Using Go directly (requires local Go installation):**
+```bash
+cd pkg && go mod tidy && go mod vendor
+```
+
 ## Build
 
 ### Frontend
