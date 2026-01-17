@@ -144,6 +144,16 @@ yarn dev
 
 This watches for file changes and rebuilds automatically. Refresh your browser to see changes.
 
+### Viewing Plugin Logs
+
+To see only the plugin-specific logs while Grafana is running:
+
+```bash
+docker-compose logs -f grafana | grep "logger=plugin.hadesarchitect"
+```
+
+This filters the Grafana logs to show only entries from the plugin. **Note:** If the plugin can't be started because of a major issue, this log will be empty, remove `grep`.
+
 ## Stopping the Environment
 
 ```bash
