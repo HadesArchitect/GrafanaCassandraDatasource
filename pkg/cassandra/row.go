@@ -2,6 +2,7 @@ package cassandra
 
 import (
 	"fmt"
+	"math/big"
 	"net"
 	"time"
 
@@ -34,6 +35,12 @@ func (r *Row) normalize() error {
 			r.Fields[colName] = v.String()
 		case gocql.UUID:
 			r.Fields[colName] = v.String()
+		case *big.Int:
+			if v != nil {
+				r.Fields[colName] = v.String()
+			} else {
+				r.Fields[colName] = ""
+			}
 		default:
 			return fmt.Errorf("field %s has unsupported type %T", colName, v)
 		}
