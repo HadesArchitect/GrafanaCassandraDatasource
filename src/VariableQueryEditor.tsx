@@ -24,6 +24,8 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
     <>
         <label className="small">Specify a query that returns variable values and, optionally, their labels. Only strings are allowed here, so use CAST(column as text) if needed. First returned column interpreted as a value and second as a label. Labels should be used in cases when there is an intention to hide exact variable values behind human-readable names in the Grafana UI.</label>
         <br />
+        <a href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md" target="_blank" rel="noopener noreferrer" className="small">Learn more about variables</a>
+        <br />
         <TextArea
           name="query"
           className="gf-form-input"

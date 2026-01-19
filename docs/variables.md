@@ -1,6 +1,25 @@
-<img width="858" alt="image" src="https://github.com/user-attachments/assets/1e23f66e-e20f-4125-a900-561e03044ba1" />
-<img width="519" alt="image" src="https://github.com/user-attachments/assets/35c6a3eb-018c-4187-b355-8d7fa6481c93" />
-<img width="954" alt="image" src="https://github.com/user-attachments/assets/dba5ee52-e752-4166-bcad-deab641cb81e" />
-<img width="954" alt="image" src="https://github.com/user-attachments/assets/dba5ee52-e752-4166-bcad-deab641cb81e" />
+# Variables
 
-![image](https://github.com/user-attachments/assets/7ed650d6-1bd0-44c5-afee-0b4d269a0c8c)
+Variables allow you to create dynamic filters for your dashboards. They can be used to query values from your Cassandra database and reference them in your queries.
+
+## Basic Variables
+
+Define variables in dashboard Settings > Variables. Each variable executes a CQL query to fetch available values:
+
+![Variables example](assets/variables.png)
+
+Use variables in your queries by referencing them with `$variable_name` syntax.
+
+## Chained Variables
+
+Variables can reference other variables in their queries, creating a chain of dependent values:
+
+![Chained variables example](assets/chained-variables.png)
+
+In this example, the `location` variable depends on the `zone` variable using `$zone` in its query.
+
+**Important:** Variable order matters. Variables can only reference variables defined **above** them in the list. Lower variables can depend on higher variables, but not vice versa.
+
+## Demo Data
+
+The [`demo/sample_data.sh`](../demo/sample_data.sh) script creates example tables including `test.zones_locations` which demonstrates the chained variables feature with zone and location hierarchies.

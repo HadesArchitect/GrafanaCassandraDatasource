@@ -41,8 +41,16 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   // backend returns some compatible type to be correctly used in dashboard variables context.
   // https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/datasource.ts#L595
   async metricFindQuery(query: CassandraVariableQuery, options?: any) {
-    const response = await this.getResource('variables', {query: query.query});
-    return response;
+    const scopedVars = options?.scopedVars;
+    const interpolatedQuery = getTemplateSrv().replace(query.query, scopedVars, 'csv');
+    
+    try {
+      const response = await this.getResource('variables', {query: interpolatedQuery});
+      return response;
+    } catch (error) {
+      console.warn('Failed to execute variable query:', interpolatedQuery, error);
+      return [];
+    }
   }
 
   isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {
