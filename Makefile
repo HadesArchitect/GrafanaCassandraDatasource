@@ -6,7 +6,7 @@ help: ## This help
 	@echo "\033[1;34mConfigurable Variables:\033[0m"
 	@echo "\033[36mOS\033[0m                            Target operating system (default: linux)"
 	@echo "\033[36mARCH\033[0m                          Target architecture (default: amd64)"
-	@echo "\033[36mGOLANG\033[0m                        Golang version for build (default: 1.24.3)"
+	@echo "\033[36mGOLANG\033[0m                        Golang version for build (default: 1.25)"
 	@echo "\033[36mNODE\033[0m                          Node version for build (default: 22)"
 	@echo ""
 	@echo "\033[1;34mUsage Examples:\033[0m"
@@ -22,7 +22,7 @@ help: ## This help
 # Usage: make build OS=darwin ARCH=arm64
 OS=linux
 ARCH=amd64
-GOLANG=1.24.3
+GOLANG=1.25
 NODE=22
 
 install: fe-deps be-deps ## install datasource dependencies (front and back)
