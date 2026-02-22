@@ -24,7 +24,7 @@ make test
 ### 4. Test manually with newest Grafana
 
 - Build and test the plugin with the latest supported Grafana version
-- See [Building](build.md) for detailed instructions
+- See [Building](setup.md) for detailed instructions
 
 ### 5. Test manually with oldest supported Grafana
 

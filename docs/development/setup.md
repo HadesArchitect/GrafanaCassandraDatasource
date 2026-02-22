@@ -12,6 +12,7 @@ Before building the plugin, you need to install the required dependencies for bo
 ### Install All Dependencies
 
 **Using Makefile (recommended):**
+
 ```bash
 make install
 ```
@@ -21,6 +22,7 @@ This installs both frontend and backend dependencies using Docker, so no local N
 ### Frontend Dependencies Only
 
 **Using Makefile:**
+
 ```bash
 make fe-deps
 ```
@@ -28,6 +30,7 @@ make fe-deps
 This runs `yarn install` inside a [`node:22-alpine`](https://hub.docker.com/_/node) Docker container.
 
 **Using yarn directly (requires local Node.js and yarn):**
+
 ```bash
 yarn install
 ```
@@ -35,18 +38,21 @@ yarn install
 ### Backend Dependencies Only
 
 **Using Makefile:**
+
 ```bash
 make be-tidy
 make be-deps
 ```
 
 This installs and manages backend dependencies:
+
 - [`be-tidy`](../../Makefile): Runs `go mod tidy` to clean up dependencies
 - [`be-deps`](../../Makefile): Runs `go mod vendor` to vendor dependencies
 
 Both operations use a [`golang:1.24.3-alpine`](https://hub.docker.com/_/golang) Docker container.
 
 **Using Go directly (requires local Go installation):**
+
 ```bash
 cd pkg && go mod tidy && go mod vendor
 ```
@@ -58,11 +64,13 @@ cd pkg && go mod tidy && go mod vendor
 The frontend is built using webpack and can be built in two ways:
 
 **Using Makefile (recommended, no local Node.js required):**
+
 ```bash
 make frontend
 ```
 
 **Using yarn (requires node, yarn):**
+
 ```bash
 yarn install
 yarn build
@@ -75,11 +83,13 @@ The frontend build outputs to the [`dist/`](../../dist) directory.
 The backend is built using Go and can be built in two ways:
 
 **Using Docker (recommended):**
+
 ```bash
 make backend
 ```
 
 **Using golang (requires local golang and [Mage](https://magefile.org/)):**
+
 ```bash
 cd pkg && go mod tidy
 go mod vendor
@@ -88,17 +98,19 @@ cd .. && mage
 
 The backend binary is output to [`dist/`](../../dist)
 
-##  Start Grafana with the plugin
+## Start Grafana with the plugin
 
 ```bash
 docker compose up
 ```
+
 This starts:
+
 - Grafana with the plugin loaded
 - Cassandra 4 database
 - Sample data loader
 
-Grafana will be available at http://localhost:3000 Notice that Cassandra startup can take a few minutes, you can check its status via `docker compose logs cassandra`
+Grafana will be available at <http://localhost:3000> Notice that Cassandra startup can take a few minutes, you can check its status via `docker compose logs cassandra`
 
 ### Testing with Specific Grafana Version
 
