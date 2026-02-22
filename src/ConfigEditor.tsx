@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, Select, InlineSwitch, TextArea } from '@grafana/ui';
+import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, LinkButton, Select, InlineSwitch, TextArea } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { CassandraDataSourceOptions } from './models';
 
@@ -412,6 +412,28 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </>
           )}
         </FieldSet>
+        <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+          <LinkButton
+            href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/index.md"
+            target="_blank"
+            rel="noreferrer"
+            variant="secondary"
+            size="sm"
+            icon="book"
+          >
+            Plugin Documentation
+          </LinkButton>
+          <LinkButton
+            href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions"
+            target="_blank"
+            rel="noreferrer"
+            variant="secondary"
+            size="sm"
+            icon="comment-alt"
+          >
+            GitHub Discussions
+          </LinkButton>
+        </div>
       </>
     );
   }

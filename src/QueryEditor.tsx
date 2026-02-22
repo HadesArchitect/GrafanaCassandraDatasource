@@ -1,5 +1,5 @@
 import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
-import { Button, InlineField, InlineFieldRow, Input, InlineSwitch, Select, TextArea } from '@grafana/ui';
+import { InlineField, InlineFieldRow, Input, InlineSwitch, LinkButton, RadioButtonGroup, Select, TextArea } from '@grafana/ui';
 import { CoreApp, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource } from './datasource';
 import { CassandraQuery, CassandraDataSourceOptions } from './models';
@@ -123,12 +123,6 @@ export class QueryEditor extends PureComponent<Props> {
     }
   }
 
-
-  onChangeQueryType = () => {
-    const { onChange, query } = this.props;
-    onChange({ ...query, rawQuery: !query.rawQuery });
-  };
-
   onQueryTextChange = (e: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { onChange, query } = this.props;
     const { value } = e.target as HTMLInputElement | HTMLTextAreaElement;
@@ -227,7 +221,43 @@ export class QueryEditor extends PureComponent<Props> {
 
     return (
       <>
-      <Button icon="pen" variant="secondary" onClick={this.onChangeQueryType} style={{ margin: '10px 0' }}>Toggle editor mode</Button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 0' }}>
+        <RadioButtonGroup
+          options={[
+            { label: 'Configurator', value: false, icon: 'list-ul' },
+            { label: 'Query Editor',  value: true,  icon: 'pen'    },
+          ]}
+          value={options.query.rawQuery ?? false}
+          onChange={(val) => {
+            const { onChange, query } = this.props;
+            onChange({ ...query, rawQuery: val });
+          }}
+        />
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <LinkButton
+            href={options.query.rawQuery
+              ? 'https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/editor.md'
+              : 'https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/configurator.md'}
+            target="_blank"
+            rel="noreferrer"
+            variant="secondary"
+            size="sm"
+            icon="book"
+          >
+            Docs
+          </LinkButton>
+          <LinkButton
+            href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/discussions"
+            target="_blank"
+            rel="noreferrer"
+            variant="secondary"
+            size="sm"
+            icon="comment-alt"
+          >
+            Discussions
+          </LinkButton>
+        </div>
+      </div>
       <div>
         {options.query.rawQuery && (
           <>
