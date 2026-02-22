@@ -20,6 +20,8 @@ In this example, the `location` variable depends on the `zone` variable using `$
 
 **Important:** Variable order matters. Variables can only reference variables defined **above** them in the list. Lower variables can depend on higher variables, but not vice versa.
 
+<https://github.com/user-attachments/assets/7793578b-1bb8-46be-ac23-dcc1a0c5ce41>
+
 ## Multi-Value Variables
 
 When a variable is configured to allow **multiple values** or the **"All"** option, you must use the `:singlequote` formatter so Grafana wraps each selected value in single quotes — as required by CQL's `IN` clause.

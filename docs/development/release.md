@@ -37,13 +37,15 @@ make test
 make changeset-version
 ```
 
+Make sure to commit the updated CHANGELOG.md
+
 ### 7. Update version
 
-Set proper version in `package.json`
+Check version in `package.json` (should be auto-set in step 6.)
 
 ### 8. Check src/plugin.json version and date
 
-- `node scripts/update-versions.js`
+- `make update-versions`
 - Verify the `version` number and `updated` date are correct
 
 ### 9. Create and push git tag
