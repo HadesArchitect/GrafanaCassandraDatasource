@@ -4,59 +4,70 @@ This document describes the manual release process for the Grafana Cassandra Dat
 
 ## Steps
 
-1. **Merge PRs into main**
-   - Ensure all pull requests are reviewed and merged into the main branch
+### 1. Merge PRs into main
 
-2. **Pull to local**
-   ```bash
-   git checkout main
-   git pull origin main
-   ```
+Ensure all pull requests are reviewed and merged into the main branch
 
-3. **Test with automated tests**
-   ```bash
-   make test
-   ```
+### 2. Pull to local
 
-4. **Test manually with newest Grafana**
-   - Build and test the plugin with the latest supported Grafana version
-   - See [Building](build.md) for detailed instructions
+```bash
+git checkout main
+git pull origin main
+```
 
-5. **Test manually with oldest supported Grafana**
-   - Test the plugin with Grafana 7.4 (minimum supported version for plugin v3)
-   - See [Testing with Grafana](build.md#testing-with-specific-grafana-version) for instructions
+### 3. Test with automated tests
 
-6. **Update changelog**
-   ```bash
-   yarn changeset:version
-   ```
+```bash
+make test
+```
 
-7. **Update version**
-   - set proper version in `package.json`
+### 4. Test manually with newest Grafana
 
-7. **Check src/plugin.json version and date**
-   - `node scripts/update-versions.js`
-   - Verify the `version` number and `updated` date are correct
+- Build and test the plugin with the latest supported Grafana version
+- See [Building](build.md) for detailed instructions
 
-8. **Create and push git tag**
-   ```bash
-   git tag x.x.x  # Use version from plugin.json
-   git push && git push --tags
-   ```
+### 5. Test manually with oldest supported Grafana
 
-9. **Create GitHub release**
-   - Navigate to https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases
-   - Click "Create a new release"
-   - Select the git tag created in step 8 (e.g., `3.0.1`)
-   - Set release title to match the version (e.g., `3.0.1`)
-   - Copy the relevant section from `CHANGELOG.md` as the release description
-   - Mark as "Latest release" if this is the newest version
-   - Click "Publish release"
-   - This will automatically trigger the GitHub workflow to build and attach release artifacts
+- Test the plugin with Grafana 7.4 (minimum supported version for plugin v3)
+- See [Testing with Grafana](build.md#testing-with-specific-grafana-version) for instructions
 
-10. **Submit the new zip package to the Grafana Plugins Repository**
-   - Wait for the release build to finish building the package and zip file
-   - https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin#publish-your-plugin (For now has to be done by @HadesArchitect)
+### 6. Update changelog
+
+```bash
+yarn changeset:version
+```
+
+### 7. Update version
+
+Set proper version in `package.json`
+
+### 8. Check src/plugin.json version and date
+
+- `node scripts/update-versions.js`
+- Verify the `version` number and `updated` date are correct
+
+### 9. Create and push git tag
+
+```bash
+git tag vx.x.x  # Use version from plugin.json (notice the "v")
+git push && git push --tags
+```
+
+### 10. Create GitHub release
+
+- Navigate to <https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases>
+- Click "Create a new release"
+- Select the git tag created in step 8 (e.g., `3.0.1`)
+- Set release title to match the version (e.g., `3.0.1`)
+- Copy the relevant section from `CHANGELOG.md` as the release description
+- Mark as "Latest release" if this is the newest version
+- Click "Publish release"
+- This will automatically trigger the GitHub workflow to build and attach release artifacts
+
+### 11. Submit the new zip package to the Grafana Plugins Repository
+
+- Wait for the release build to finish building the package and zip file
+- <https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin#publish-your-plugin> (For now has to be done by @HadesArchitect)
 
 ## Notes
 
@@ -67,4 +78,4 @@ This document describes the manual release process for the Grafana Cassandra Dat
 - The workflow will generate `cassandra-datasource-VERSION.zip` and corresponding `.md5` files
 - Verify that the workflow completes successfully and artifacts are attached to the release
 - Plugin must be signed (done by Github CI)
-- And submitted (https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin)
+- And submitted (<https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin>)
