@@ -9,7 +9,31 @@ on:
 permissions: read-all
 
 jobs:
+  test:
+    name: Build, lint and unit tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Check types
+        run: yarn typecheck
+      - name: Lint
+        run: yarn lint
+      - name: Unit tests
+        run: yarn test:ci
+
   release:
+    needs: test
     permissions:
       contents: write
       id-token: write
