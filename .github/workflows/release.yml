@@ -28,5 +28,6 @@ jobs:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
           attestation: true
           node-version: 22
+          go-version: 1.24
           # Usage of GRAFANA_API_KEY is deprecated, prefer `policy_token` option above
           #grafana_token: $
