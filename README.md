@@ -8,9 +8,9 @@ See the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasourc
 
 ## Compatibility
 
-* Grafana 
-    * 7.4 - 12.x are fully supported (plugin version 3.x)
-    * 5.x, 6.x, 7.0-7.3 are deprecated (works with plugin versions 1.x/2.x, but we recommend upgrading)
+* Grafana
+  * 7.4 - 12.x are fully supported (plugin version 3.x)
+  * 5.x, 6.x, 7.0-7.3 are deprecated (works with plugin versions 1.x/2.x, but we recommend upgrading)
 * Cassandra 3.x, 4.x, 5.x
 * DataStax Enterprise 6.x
 * DataStax Astra ([docs](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/connections/astra.md))
@@ -44,7 +44,7 @@ For a quick setup with Grafana automatic provisioning, see [docs/provisioning.md
 
 ## Usage
 
-There are **two ways** to query data from Cassandra/DSE, **Query Configurator** and **Query Editor**. Configurator is easier to use but has limited capabilities, Editor is more powerful but requires understanding of [CQL](https://cassandra.apache.org/doc/latest/cassandra/developing/cql/index.html). 
+There are **two ways** to query data from Cassandra/DSE, **Query Configurator** and **Query Editor**. Configurator is easier to use but has limited capabilities, Editor is more powerful but requires understanding of [CQL](https://cassandra.apache.org/doc/latest/cassandra/developing/cql/index.html).
 
 ### Query Configurator
 
@@ -52,7 +52,7 @@ There are **two ways** to query data from Cassandra/DSE, **Query Configurator** 
 
 Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically.
 
-* **Time Column** - the column storing the timestamp value, it's used to answer "when" question. 
+* **Time Column** - the column storing the timestamp value, it's used to answer "when" question.
 * **Value Column** - the column storing the value you'd like to show. It can be the `value`, `temperature` or whatever property you need.
 * **ID Column** - the column to uniquely identify the source of the data, e.g. `sensor_id`, `shop_id` or whatever allows you to identify the origin of data.
 
@@ -66,11 +66,12 @@ Query Editor unlocks all possibilities of CQL including Used-Defined Functions, 
 
 Example (using the sample table from the Query Configurator case):
 
-```
+```cql
 SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1, 99051fe9-6a9c-46c2-b949-38ef78858dd0) AND registered_at > $__timeFrom and registered_at < $__timeTo
 ```
 
-1. Order of fields in the SELECT expression doesn't matter except `ID` field. This field used to distinguish different time series, so it is important to keep it or any other column with low cardinality on the first position.
+Order of fields in the SELECT expression doesn't matter except `ID` field. This field used to distinguish different time series, so it is important to keep it or any other column with low cardinality on the first position.
+
 * **Identifier** - the first property in the SELECT expression should be the ID, something that uniquely identifies the data (e.g. `sensor_id`)
 * **Value** - There should be at least one numeric value among returned fields, if query result will be used to draw graph.
 * **Timestamp** - There should be one timestamp value, if query result will be used to draw graph.
@@ -88,13 +89,16 @@ There are two ways to plot not a whole timeseries but only last(most rescent) va
 More information on [Table Mode](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/table.md).
 
 ### Variables
-- [Configuring variables in Cassandra Datasource](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md)
-- [Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
+
+* [Configuring variables in Cassandra Datasource](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md)
+* [Grafana Variables documentation](https://grafana.com/docs/grafana/latest/dashboards/variables/)
 
 ### Aliases
+
 Using aliases explained in [documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Aliases)
 
 ### Annotations
+
 [Grafana Annotations documentation](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
 
 ### Alerting
@@ -103,7 +107,7 @@ Alerting is supported, however it has some limitations. Grafana does not support
 
 Basically, this query (using example table) will produce two wide series for alerting
 
-```
+```cql
 SELECT sensor_id, temperature, registered_at, location
 FROM test.test
 WHERE sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd0, 99051fe9-6a9c-46c2-b949-38ef78858dd0)
@@ -113,15 +117,15 @@ AND registered_at > $__timeFrom AND registered_at < $__timeTo
 99051fe9-6a9c-46c2-b949-38ef78858dd1 {location="bedroom", sensor_id="99051fe9-6a9c-46c2-b949-38ef78858dd1"}
 ```
 
-- More information on series types in [grafana developers documentation](https://grafana.com/developers/plugin-tools/introduction/data-frames#data-frames-as-time-series).
-- [Grafana Alerting documentation](https://grafana.com/docs/grafana/latest/alerting/alerting-rules/create-grafana-managed-rule/)
+* More information on series types in [grafana developers documentation](https://grafana.com/developers/plugin-tools/introduction/data-frames#data-frames-as-time-series).
+* [Grafana Alerting documentation](https://grafana.com/docs/grafana/latest/alerting/alerting-rules/create-grafana-managed-rule/)
 
 ### Tips and tricks
 
-- [Unix epoch time format](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/unix-epoch.md)
-- [Cassandra fat partitions](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/partitions.md)
+* [Unix epoch time format](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/unix-epoch.md)
+* [Cassandra fat partitions](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/partitions.md)
 
 ## Development
 
-- [Developer documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Developer-Guide)
-- [Release Process](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/development/release.md)
+* [Developer documentation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/wiki/Developer-Guide) (migrates to [the docs folder](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/development) for better accessibility for agents)
+* [Release Process](https://github.com/HadesArchitect/GrafanaCassandraDatasource/tree/main/docs/development/release.md)

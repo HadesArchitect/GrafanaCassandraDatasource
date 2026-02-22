@@ -4,7 +4,7 @@
 
 Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically.
 
-* **Time Column** - the column storing the timestamp value, it's used to answer "when" question. 
+* **Time Column** - the column storing the timestamp value, it's used to answer "when" question.
 * **Value Column** - the column storing the value you'd like to show. It can be the `value`, `temperature` or whatever property you need.
 * **ID Column** - the column to uniquely identify the source of the data, e.g. `sensor_id`, `shop_id` or whatever allows you to identify the origin of data.
 
@@ -12,7 +12,7 @@ After that, you have to specify the `ID Value`, the particular ID of the data or
 
 **Example** Imagine you want to visualise reports of a temperature sensor installed in your smart home. Given the sensor reports its ID, time, location and temperature every minute, we create a table to store the data and put some values there:
 
-```
+```cql
 CREATE TABLE IF NOT EXISTS temperature (
     sensor_id uuid,
     registered_at timestamp,
@@ -37,3 +37,9 @@ In this case, we have to fill the configurator fields the following way to get t
 * **ALLOW FILTERING** - FALSE *(not required, so we are happy to avoid)*
 
 In case of a few origins (multiple sensors) you will need to add more rows. If your case is as simple as that, query configurator will be a good choice, otherwise  please proceed to the [Query Editor](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/editor.md).
+
+## Variables
+
+Use `$variable_name` in the **ID Value** field to make the configurator respond to dashboard variables, including multi-value and **"All"** selections.
+
+* [Configuring variables in Cassandra Datasource](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md)

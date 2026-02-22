@@ -1,5 +1,19 @@
 # Local Build
 
+## TL;DR
+
+Install dependencies, build, and run the plugin with Grafana using [Make](../../Makefile):
+
+```bash
+make install build start
+```
+
+You might need to specify your OS and architecture: `make install build start OS=darwin ARCH=arm64`
+
+Grafana will be available at <http://localhost:3000>.
+
+---
+
 ## Prerequisites
 
 - Docker and Docker Compose installed
