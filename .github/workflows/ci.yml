@@ -29,19 +29,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'yarn'
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --immutable
 
       - name: Check types
-        run: npm run typecheck
+        run: yarn typecheck
       - name: Lint
-        run: npm run lint
+        run: yarn lint
       - name: Unit tests
-        run: npm run test:ci
+        run: yarn test:ci
       - name: Build frontend
-        run: npm run build
+        run: yarn build
 
       - name: Check for backend
         id: check-for-backend
@@ -80,7 +80,7 @@ jobs:
           fi
 
       - name: Sign plugin
-        run: npm run sign
+        run: yarn sign
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       - name: Get plugin metadata
@@ -173,10 +173,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'yarn'
 
       - name: Install dev dependencies
-        run: npm ci
+        run: yarn install --immutable
 
       - name: Start Grafana
         run: |
@@ -189,11 +189,11 @@ jobs:
           url: http://localhost:3000/login
 
       - name: Install Playwright Browsers
-        run: npm exec playwright install chromium --with-deps
+        run: yarn playwright install chromium --with-deps
 
       - name: Run Playwright tests
         id: run-tests
-        run: npm run e2e
+        run: yarn e2e
 
       - name: Upload e2e test summary
         uses: grafana/plugin-actions/playwright-gh-pages/upload-report-artifacts@main # zizmor: ignore[unpinned-uses] provided by grafana
