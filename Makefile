@@ -45,19 +45,19 @@ stop: ## Stops dev environment
 	docker-compose stop
 
 fe-deps: ## Install frontend dependencies
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && yarn install"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "yarn install"
 
 fe-build: ## Build frontend
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && yarn build"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "yarn build"
 
 fe-watch: ## Watch frontend
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && yarn dev"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "yarn dev"
 
 fe-test: ## Test frontend
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && yarn test:ci"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "yarn test:ci"
 
 changeset-version: ## Apply changeset and update package versions
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "apk add --no-cache git && corepack enable && yarn changeset:version"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "apk add --no-cache git && yarn changeset:version"
 
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg golang:${GOLANG}-alpine go mod vendor
@@ -74,7 +74,7 @@ be-test: ## Run backend unit tests
 # docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg golang:1-alpine go test -buildvcs=false -v -vet=off ./...
 
 update-versions: ## Update version in plugin.json to match package.json
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && node scripts/update-versions.js"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "node scripts/update-versions.js"
 
 sign: ## Sign the plugin before release
-	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${TOKEN} node:${NODE}-alpine sh -c "corepack enable && yarn sign"
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds -e GRAFANA_ACCESS_POLICY_TOKEN=${TOKEN} node:${NODE}-alpine sh -c "yarn sign"
