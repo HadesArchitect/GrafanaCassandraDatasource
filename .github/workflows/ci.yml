@@ -18,7 +18,6 @@ jobs:
       plugin-id: ${{ steps.metadata.outputs.plugin-id }}
       plugin-version: ${{ steps.metadata.outputs.plugin-version }}
       has-e2e: ${{ steps.check-for-e2e.outputs.has-e2e }}
-      has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
@@ -36,36 +35,28 @@ jobs:
 
       - name: Check types
         run: yarn typecheck
+
       - name: Lint
         run: yarn lint
+
       - name: Unit tests
         run: yarn test:ci
+
       - name: Build frontend
         run: yarn build
 
-      - name: Check for backend
-        id: check-for-backend
-        run: |
-          if [ -f "Magefile.go" ]
-          then
-            echo "has-backend=true" >> $GITHUB_OUTPUT
-          fi
-
       - name: Setup Go environment
-        if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
       - name: Test backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3.1.0
         with:
           version: latest
           args: coverage
 
       - name: Build backend
-        if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3.1.0
         with:
           version: latest
@@ -165,7 +156,6 @@ jobs:
           name: ${{ needs.build.outputs.plugin-id }}-${{ needs.build.outputs.plugin-version }}
 
       - name: Execute permissions on binary
-        if: needs.build.outputs.has-backend == 'true'
         run: |
           chmod +x ./dist/gpx_*
 
