@@ -56,6 +56,9 @@ fe-watch: ## Watch frontend
 fe-test: ## Test frontend
 	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "corepack enable && yarn test:ci"
 
+changeset-version: ## Apply changeset and update package versions
+	docker run --rm -v ${PWD}:/opt/gcds -w /opt/gcds node:${NODE}-alpine sh -c "apk add --no-cache git && corepack enable && yarn changeset:version"
+
 be-deps: ## Install backend dependencies
 	docker run --rm -v ${PWD}:/go/src/github.com/ha/gcp -w /go/src/github.com/ha/gcp/pkg golang:${GOLANG}-alpine go mod vendor
 

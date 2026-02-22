@@ -34,7 +34,7 @@ make test
 ### 6. Update changelog
 
 ```bash
-yarn changeset:version
+make changeset-version
 ```
 
 ### 7. Update version
