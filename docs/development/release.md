@@ -64,7 +64,7 @@ git push && git push --tags
 - Copy the relevant section from `CHANGELOG.md` as the release description
 - Mark as "Latest release" if this is the newest version
 - Click "Publish release"
-- This will automatically trigger the GitHub workflow to build and attach release artifacts
+- This will automatically trigger the GitHub workflow to build and attach release artifacts - see Actions <https://github.com/HadesArchitect/GrafanaCassandraDatasource/actions>
 
 ### 11. Submit the new zip package to the Grafana Plugins Repository
 
