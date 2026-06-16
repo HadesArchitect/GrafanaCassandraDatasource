@@ -6,7 +6,7 @@ used by this plugin (gocql) only accepts a fixed allow-list of server-side
 authenticator class names, and refuses to connect to anything else with an error
 like:
 
-```
+```text
 Failed to create Cassandra connection
 cluster.CreateSession: gocql: unable to create session: unable to discover protocol version:
 unexpected authenticator "org.apache.cassandra.auth.LDAPAuthenticator"
