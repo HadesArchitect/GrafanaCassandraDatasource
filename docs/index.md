@@ -7,6 +7,7 @@
 | [Installation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/installation.md) | GUI, CLI, and manual plugin install |
 | [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/quick-demo.md) | Run the full stack locally with Docker Compose |
 | [Provisioning](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/provisioning.md) | Auto-configure the datasource via YAML (basic & TLS) |
+| [Custom Authenticators](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/authenticators.md) | Allow non-default authenticators such as LDAPAuthenticator |
 
 ## Querying
 

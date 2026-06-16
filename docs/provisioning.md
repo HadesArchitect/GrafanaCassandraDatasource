@@ -48,6 +48,10 @@ datasources:
       password: cassandra
 ```
 
+> Connecting to a cluster that uses a non-default authenticator (e.g.
+> `org.apache.cassandra.auth.LDAPAuthenticator`)? Set the `allowedAuthenticators`
+> key under `jsonData` — see [Custom Authenticators](authenticators.md).
+
 ### TLS Configuration with File Paths
 
 ```datasource/cassandra-tls-files.yaml

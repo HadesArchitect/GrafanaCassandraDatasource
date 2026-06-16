@@ -46,13 +46,14 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	}
 
 	sessionSettings := cassandra.Settings{
-		Hosts:       strings.Split(settings.URL, ";"),
-		Keyspace:    dss.Keyspace,
-		User:        dss.User,
-		Password:    settings.DecryptedSecureJSONData["password"],
-		Consistency: dss.Consistency,
-		Timeout:     dss.Timeout,
-		TLSConfig:   tlsConfig,
+		Hosts:                 strings.Split(settings.URL, ";"),
+		Keyspace:              dss.Keyspace,
+		User:                  dss.User,
+		Password:              settings.DecryptedSecureJSONData["password"],
+		Consistency:           dss.Consistency,
+		Timeout:               dss.Timeout,
+		TLSConfig:             tlsConfig,
+		AllowedAuthenticators: parseAllowedAuthenticators(dss.AllowedAuthenticators),
 	}
 
 	session, err := cassandra.New(sessionSettings)
