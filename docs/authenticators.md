@@ -29,13 +29,12 @@ cluster's authenticator class name and the connection will succeed.
   cluster can negotiate more than one authenticator, include each one you want to
   allow.
 
-
 ## Configuring in the UI
 
 Open the data source settings and, under **Connection settings**, fill in
 **Allowed authenticators**, e.g.:
 
-```
+```text
 org.apache.cassandra.auth.PasswordAuthenticator;org.apache.cassandra.auth.LDAPAuthenticator
 ```
 
@@ -66,7 +65,7 @@ datasources:
 When **Allowed authenticators** is left empty, the driver accepts the following
 authenticators (its built-in defaults):
 
-```
+```text
 org.apache.cassandra.auth.PasswordAuthenticator
 com.instaclustr.cassandra.auth.SharedSecretAuthenticator
 com.datastax.bdp.cassandra.auth.DseAuthenticator
