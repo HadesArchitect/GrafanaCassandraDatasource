@@ -32,7 +32,7 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
   useCustomTLS: boolean;
   timeout: number;
   allowInsecureTLS: boolean;
-  allowedAuthenticators: string;
+  allowedAuthenticators?: string;
 }
 
 type CassandraQueryType = 'query' | 'alert';
