@@ -25,7 +25,8 @@ Full build process includes: install dependencies for frontend and backend, buil
 Key targets:
 
 | Target | Description |
-| - | - |
+| --- | --- |
+| `make build` | Build the full plugin (frontend + backend) |
 | `make build` | Build the full plugin (frontend + backend) |
 | `make frontend` | Install frontend deps and build frontend |
 | `make backend` | Install backend deps and build backend |

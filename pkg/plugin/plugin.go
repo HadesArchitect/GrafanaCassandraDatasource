@@ -57,7 +57,7 @@ func (p *Plugin) ExecQuery(ctx context.Context, q *Query) (data.Frames, error) {
 	return dataFrames, nil
 }
 
-// execRawMetricQuery executes repository ExecRawQuery method and transforms reposonse to data.Frames.
+// execRawMetricQuery executes repository ExecRawQuery method and transforms response to data.Frames.
 func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
 	rows, err := p.repo.Select(ctx, q.Target)
 	if err != nil {
@@ -197,7 +197,7 @@ func makeDataFrameFromRows(id string, alias string, rows []cassandra.Row) *data.
 	return frame
 }
 
-// formatAlias performs legend alies interpolation.
+// formatAlias performs legend alias interpolation.
 func formatAlias(alias string, values map[string]interface{}) string {
 	formattedAlias := aliasFormatRegexp.ReplaceAllFunc([]byte(alias), func(in []byte) []byte {
 		fieldName := strings.Replace(string(in), "{{", "", 1)

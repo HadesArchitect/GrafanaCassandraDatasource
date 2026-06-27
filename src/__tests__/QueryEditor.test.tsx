@@ -119,15 +119,15 @@ describe('QueryEditor', () => {
     expect(mockDatasource.getKeyspaces).toHaveBeenCalledTimes(1);
   });
 
-  it('should toggle query type when button is clicked', async () => {
+  it('should toggle query type when radio button is clicked', async () => {
     const mockOnChange = jest.fn();
     const propsWithMockOnChange = { ...mockProps, onChange: mockOnChange };
 
     await renderComponent({ ...propsWithMockOnChange });
 
-    // Find and click the toggle button
-    const toggleButton = screen.getByRole('button', { name: /toggle editor mode/i });
-    fireEvent.click(toggleButton);
+    // Find and click the "Query Editor" radio option to switch to raw query mode
+    const queryEditorRadio = screen.getByRole('radio', { name: /query editor/i });
+    fireEvent.click(queryEditorRadio);
 
     // Verify onChange was called with toggled rawQuery
     expect(mockOnChange).toHaveBeenCalledWith({ ...mockQuery, rawQuery: !mockQuery.rawQuery });

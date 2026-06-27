@@ -215,7 +215,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
           <InlineFieldRow>
             <InlineField label="Consistency" labelWidth={20}>
               <Select
-                placeholder="choose consistensy"
+                placeholder="choose consistency"
                 options={consistencyOptions}
                 isClearable={false}
                 isSearchable={true}
