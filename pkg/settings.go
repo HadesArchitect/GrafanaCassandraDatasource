@@ -6,22 +6,43 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 // dataSourceSettings is a convenient presentation of a
 // backend.DataSourceInstanceSettings JSON data.
 type dataSourceSettings struct {
-	Keyspace         string `json:"keyspace"`
-	User             string `json:"user"`
-	Password         string `json:"password"`
-	Consistency      string `json:"consistency"`
-	CertPath         string `json:"certPath"`
-	RootPath         string `json:"rootPath"`
-	CaPath           string `json:"caPath"`
-	UseCertContent   bool   `json:"useCertContent"`
-	Timeout          *int   `json:"timeout"`
-	UseCustomTLS     bool   `json:"UseCustomTLS"`
-	AllowInsecureTLS bool   `json:"allowInsecureTLS"`
+	Keyspace              string `json:"keyspace"`
+	User                  string `json:"user"`
+	Password              string `json:"password"`
+	Consistency           string `json:"consistency"`
+	CertPath              string `json:"certPath"`
+	RootPath              string `json:"rootPath"`
+	CaPath                string `json:"caPath"`
+	UseCertContent        bool   `json:"useCertContent"`
+	Timeout               *int   `json:"timeout"`
+	UseCustomTLS          bool   `json:"UseCustomTLS"`
+	AllowInsecureTLS      bool   `json:"allowInsecureTLS"`
+	AllowedAuthenticators string `json:"allowedAuthenticators"`
+}
+
+// parseAllowedAuthenticators splits the semicolon-separated allowedAuthenticators
+// setting into a slice, trimming whitespace and dropping empty entries. It
+// returns nil when no authenticators are configured so that gocql falls back to
+// its built-in default list.
+func parseAllowedAuthenticators(raw string) []string {
+	parts := strings.Split(raw, ";")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
 }
 
 // prepareTLSCfgFromPaths creates a tls.Config using certificate file paths.
