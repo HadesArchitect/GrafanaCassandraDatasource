@@ -12,13 +12,14 @@ import (
 
 // Settings is a set of Cassandra session settings.
 type Settings struct {
-	Hosts       []string
-	Keyspace    string
-	User        string
-	Password    string
-	Consistency string
-	Timeout     *int
-	TLSConfig   *tls.Config
+	Hosts                 []string
+	Keyspace              string
+	User                  string
+	Password              string
+	Consistency           string
+	Timeout               *int
+	TLSConfig             *tls.Config
+	AllowedAuthenticators []string
 }
 
 // Session is a convenience wrapper for the gocql.Session.
@@ -32,9 +33,14 @@ func New(cfg Settings) (*Session, error) {
 	cluster.DisableInitialHostLookup = true // required, AWS specific
 	cluster.Keyspace = cfg.Keyspace
 
+	// AllowedAuthenticators is left unset when empty so that gocql applies its
+	// built-in default allow-list, keeping backwards compatibility. When provided
+	// (e.g. to permit org.apache.cassandra.auth.LDAPAuthenticator) it overrides
+	// the default list.
 	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: cfg.User,
-		Password: cfg.Password,
+		Username:              cfg.User,
+		Password:              cfg.Password,
+		AllowedAuthenticators: cfg.AllowedAuthenticators,
 	}
 
 	consistencyLevel, err := gocql.ParseConsistencyWrapper(cfg.Consistency)

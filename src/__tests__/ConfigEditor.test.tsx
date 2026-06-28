@@ -37,6 +37,7 @@ describe('ConfigEditor', () => {
           useCustomTLS: false,
           timeout: 0,
           allowInsecureTLS: false,
+          allowedAuthenticators: '',
         }),
         secureJsonData: {},
         secureJsonFields: {},

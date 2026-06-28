@@ -85,6 +85,15 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
+  onAllowedAuthenticatorsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      allowedAuthenticators: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
   onUseCustomTLSChange = (event: React.FormEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     const jsonData = {
@@ -188,7 +197,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
           <InlineFieldRow>
             <InlineField
               label="Host"
-              labelWidth={20}
+              labelWidth={25}
               tooltip="Specify host and port like `192.168.12.134:9042`. You can specify multiple contact points using semicolon, f.e. `host1:9042;host2:9042;host3:9042`"
             >
               <Input
@@ -198,11 +207,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
                 width={60}
+                required
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Keyspace" labelWidth={20}>
+            <InlineField label="Keyspace" labelWidth={25} tooltip="Optional, defines default keyspace">
               <Input
                 name="keyspace"
                 value={options.jsonData.keyspace}
@@ -213,7 +223,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Consistency" labelWidth={20}>
+            <InlineField label="Consistency" labelWidth={25}>
               <Select
                 placeholder="choose consistency"
                 options={consistencyOptions}
@@ -235,7 +245,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField
               label="Credentials"
               tooltip="We strongly recommend to create a custom Cassandra user for Grafana with strictly read-only permissions!"
-              labelWidth={20}
+              labelWidth={25}
             >
               <Input
                 name="user"
@@ -257,7 +267,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Timeout" labelWidth={20} tooltip="Timeout in seconds. Keep empty for the default value">
+            <InlineField label="Timeout" labelWidth={25} tooltip="Timeout in seconds. Keep empty for the default value">
               <Input
                 name="timeout"
                 placeholder=""
@@ -265,6 +275,21 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 step={1}
                 value={options.jsonData.timeout}
                 onChange={this.onTimeoutChange}
+                width={60}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField
+              label="Allowed authenticators"
+              labelWidth={25}
+              tooltip='Leave empty unless gocql rejects your cluster with an "unexpected authenticator" error. If it does, add the authenticator class name(s) your cluster announces (e.g. org.apache.cassandra.auth.LDAPAuthenticator), semicolon-separated. Replaces (does not extend) the built-in defaults.'
+            >
+              <Input
+                name="allowedAuthenticators"
+                value={options.jsonData.allowedAuthenticators ?? ''}
+                placeholder="org.apache.cassandra.auth.PasswordAuthenticator;org.apache.cassandra.auth.LDAPAuthenticator;etc"
+                onChange={this.onAllowedAuthenticatorsChange}
                 width={60}
               />
             </InlineField>

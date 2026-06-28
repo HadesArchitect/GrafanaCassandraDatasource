@@ -1,0 +1,96 @@
+language: en-US
+early_access: true
+enable_free_tier: true
+inheritance: false
+reviews:
+  profile: chill
+  base_branches: [main]
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  review_details: true
+  commit_status: true
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  suggested_reviewers: true
+  in_progress_fortune: true
+  enable_prompt_for_ai_agents: true
+  path_filters: []
+  abort_on_close: true
+  slop_detection:
+    enabled: true
+  path_instructions:
+    - path: "pkg/**"
+      instructions: "Go backend using the Grafana backend plugin SDK and the gocql driver. Check for Cassandra query safety, connection/session lifecycle, and TLS handling."
+    - path: "src/**"
+      instructions: "TypeScript/React frontend using @grafana/data and @grafana/ui. Ensure compatibility with Grafana's DataSourcePlugin APIs and avoid direct DOM manipulation."
+  auto_review:
+    enabled: true
+    auto_incremental_review: false
+    drafts: false
+    base_branches: []
+    ignore_usernames: []
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    custom: []
+  pre_merge_checks:
+    docstrings:
+      mode: off
+    title:
+      mode: warning
+      requirements: ''
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks: []
+chat:
+  art: true
+  allow_non_org_members: false
+  auto_reply: true
+  integrations:
+    jira:
+      usage: disabled
+    linear:
+      usage: disabled
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    filePatterns: []
+  learnings:
+    scope: local
+    # Source: defaults
+    approval_delay: 0
+  issues:
+    scope: local
+  jira:
+    usage: disabled
+  linear:
+    usage: disabled
+  pull_requests:
+    scope: local
+  mcp:
+    usage: disabled
+    disabled_servers: []
+  automatic_repository_linking: false
+  linked_repositories: []
+issue_enrichment:
+  auto_enrich:
+    enabled: true
+  planning:
+    enabled: true
+    auto_planning:
+      enabled: true
+      labels: ["plan-me"]

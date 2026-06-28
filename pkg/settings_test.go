@@ -7,6 +7,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_parseAllowedAuthenticators(t *testing.T) {
+	testCases := []struct {
+		name string
+		raw  string
+		want []string
+	}{
+		{
+			name: "empty string returns nil (gocql default)",
+			raw:  "",
+			want: nil,
+		},
+		{
+			name: "whitespace only returns nil",
+			raw:  "   ;  ; ",
+			want: nil,
+		},
+		{
+			name: "single value",
+			raw:  "org.apache.cassandra.auth.LDAPAuthenticator",
+			want: []string{"org.apache.cassandra.auth.LDAPAuthenticator"},
+		},
+		{
+			name: "multiple values are trimmed",
+			raw:  " org.apache.cassandra.auth.PasswordAuthenticator ; org.apache.cassandra.auth.LDAPAuthenticator ",
+			want: []string{
+				"org.apache.cassandra.auth.PasswordAuthenticator",
+				"org.apache.cassandra.auth.LDAPAuthenticator",
+			},
+		},
+		{
+			name: "empty entries are dropped",
+			raw:  "a;;b;",
+			want: []string{"a", "b"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, parseAllowedAuthenticators(tc.raw))
+		})
+	}
+}
+
 func Test_prepareTLSCfgFromPaths(t *testing.T) {
 	testCases := []struct {
 		name            string
