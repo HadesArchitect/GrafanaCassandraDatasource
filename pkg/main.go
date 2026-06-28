@@ -45,6 +45,11 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		}
 	}
 
+	allowedAuthenticators := parseAllowedAuthenticators(dss.AllowedAuthenticators)
+	if len(allowedAuthenticators) > 0 {
+		backend.Logger.Debug("Using custom authenticator", "authenticators", strings.Join(allowedAuthenticators, ";"))
+	}
+
 	sessionSettings := cassandra.Settings{
 		Hosts:                 strings.Split(settings.URL, ";"),
 		Keyspace:              dss.Keyspace,
@@ -53,7 +58,7 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		Consistency:           dss.Consistency,
 		Timeout:               dss.Timeout,
 		TLSConfig:             tlsConfig,
-		AllowedAuthenticators: parseAllowedAuthenticators(dss.AllowedAuthenticators),
+		AllowedAuthenticators: allowedAuthenticators,
 	}
 
 	session, err := cassandra.New(sessionSettings)
