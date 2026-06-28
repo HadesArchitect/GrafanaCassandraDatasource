@@ -1,47 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_APACHE_CASSANDRA",
-      "label": "Apache Cassandra",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "hadesarchitect-cassandra-datasource",
-      "pluginName": "Apache Cassandra"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "10.1.1"
-    },
-    {
-      "type": "panel",
-      "id": "graph",
-      "name": "Graph (old)",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "hadesarchitect-cassandra-datasource",
-      "name": "Apache Cassandra",
-      "version": "2.3.0"
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -68,7 +25,7 @@
     {
       "datasource": {
         "type": "hadesarchitect-cassandra-datasource",
-        "uid": "${DS_APACHE_CASSANDRA}"
+        "uid": "cassandra-datasource"
       },
       "description": "This panel demonstrates the powerful Query Editor of Apache Cassandra Datasource for Grafana",
       "fieldConfig": {
@@ -152,7 +109,7 @@
           "columnValue": " ",
           "datasource": {
             "type": "hadesarchitect-cassandra-datasource",
-            "uid": "${DS_APACHE_CASSANDRA}"
+            "uid": "cassandra-datasource"
           },
           "datasourceId": 1,
           "queryType": "query",
@@ -173,7 +130,7 @@
       "dashes": false,
       "datasource": {
         "type": "hadesarchitect-cassandra-datasource",
-        "uid": "${DS_APACHE_CASSANDRA}"
+        "uid": "cassandra-datasource"
       },
       "description": "This panel is configured using Apache Cassandra Datasource and Query Configurator",
       "fill": 1,
@@ -218,7 +175,7 @@
           "columnValue": "temperature",
           "datasource": {
             "type": "hadesarchitect-cassandra-datasource",
-            "uid": "${DS_APACHE_CASSANDRA}"
+            "uid": "cassandra-datasource"
           },
           "datasourceId": 1,
           "instant": false,
@@ -264,7 +221,7 @@
     {
       "datasource": {
         "type": "hadesarchitect-cassandra-datasource",
-        "uid": "${DS_APACHE_CASSANDRA}"
+        "uid": "cassandra-datasource"
       },
       "description": "This panel demonstrates the powerful Query Editor of Apache Cassandra Datasource for Grafana",
       "fieldConfig": {
@@ -348,7 +305,7 @@
           "columnValue": " ",
           "datasource": {
             "type": "hadesarchitect-cassandra-datasource",
-            "uid": "${DS_APACHE_CASSANDRA}"
+            "uid": "cassandra-datasource"
           },
           "datasourceId": 1,
           "queryType": "query",
@@ -365,7 +322,7 @@
     {
       "datasource": {
         "type": "hadesarchitect-cassandra-datasource",
-        "uid": "${DS_APACHE_CASSANDRA}"
+        "uid": "cassandra-datasource"
       },
       "description": "This panel demonstrates the table mode of Apache Cassandra Datasource for Grafana",
       "fieldConfig": {
@@ -455,7 +412,7 @@
           "columnValue": " ",
           "datasource": {
             "type": "hadesarchitect-cassandra-datasource",
-            "uid": "${DS_APACHE_CASSANDRA}"
+            "uid": "cassandra-datasource"
           },
           "datasourceId": 1,
           "queryType": "query",
@@ -475,7 +432,6 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "99051fe9-6a9c-46c2-b949-38ef78858dd1": false,
               "registered_at": true,
               "time": true
             },
@@ -486,11 +442,7 @@
               "temperature": 1
             },
             "renameByName": {
-              "99051fe9-6a9c-46c2-b949-38ef78858dd1": "Temperature",
-              "floor_number": "Floor №",
-              "id": "Sensor ID",
               "location": "Location",
-              "room_name": "Room Name",
               "sensor_id": "Sensor ID",
               "temperature": "Temperature"
             }
@@ -513,7 +465,7 @@
     {
       "datasource": {
         "type": "hadesarchitect-cassandra-datasource",
-        "uid": "${DS_APACHE_CASSANDRA}"
+        "uid": "cassandra-datasource"
       },
       "description": "This panel demonstrates the table mode of Apache Cassandra Datasource for Grafana",
       "fieldConfig": {
@@ -602,7 +554,7 @@
           "columnValue": "temperature",
           "datasource": {
             "type": "hadesarchitect-cassandra-datasource",
-            "uid": "${DS_APACHE_CASSANDRA}"
+            "uid": "cassandra-datasource"
           },
           "datasourceId": 1,
           "hide": false,
@@ -624,22 +576,17 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "99051fe9-6a9c-46c2-b949-38ef78858dd1": false,
               "registered_at": true,
               "time": true
             },
             "indexByName": {
-              "floor_number": 2,
-              "registered_at": 4,
-              "room_name": 1,
+              "location": 2,
+              "registered_at": 3,
               "sensor_id": 0,
-              "temperature": 3
+              "temperature": 1
             },
             "renameByName": {
-              "99051fe9-6a9c-46c2-b949-38ef78858dd1": "Temperature",
-              "floor_number": "Floor №",
-              "id": "Sensor ID",
-              "room_name": "Room Name",
+              "location": "Location",
               "sensor_id": "Sensor ID",
               "temperature": "Temperature"
             }
@@ -670,7 +617,7 @@
         "current": {},
         "datasource": {
           "type": "hadesarchitect-cassandra-datasource",
-          "uid": "${DS_APACHE_CASSANDRA}"
+          "uid": "cassandra-datasource"
         },
         "definition": "select location from test.sensors_locations where bucket = 'default'",
         "hide": 0,
@@ -697,7 +644,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Cassandra Datasource Demo",
-  "uid": "g-XtNls7z",
-  "version": 21,
+  "uid": "cassandra-datasource-demo",
+  "version": 1,
   "weekStart": ""
 }

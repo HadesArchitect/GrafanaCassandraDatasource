@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: Apache Cassandra
+    uid: cassandra-datasource
+    type: hadesarchitect-cassandra-datasource
+    access: proxy
+    url: cassandra:9042
+    editable: true
+    jsonData:
+      keyspace: test
+      consistency: ONE
