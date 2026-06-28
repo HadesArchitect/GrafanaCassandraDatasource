@@ -21,17 +21,27 @@ git pull origin main
 make test
 ```
 
-### 4. Test manually with newest Grafana
+### 4. Run pre-release check
+
+Trigger the **Pre-release Check** workflow manually before creating the tag. It mirrors the release pipeline (build, sign, package, osv-scanner vulnerability scan) without creating a release.
+
+- Navigate to <https://github.com/HadesArchitect/GrafanaCassandraDatasource/actions/workflows/pre-release-check.yml>
+- Click **Run workflow** → **Run workflow**
+- Wait for both jobs (`Lint and unit tests` and `Build and validate plugin`) to pass
+
+Fix any errors reported before proceeding. Warnings can be reviewed but do not block the release.
+
+### 5. Test manually with newest Grafana
 
 - Build and test the plugin with the latest supported Grafana version
 - See [Building](setup.md) for detailed instructions
 
-### 5. Test manually with oldest supported Grafana
+### 6. Test manually with oldest supported Grafana
 
 - Test the plugin with Grafana 7.4 (minimum supported version for plugin v3)
 - See [Testing with Grafana](setup.md#testing-with-specific-grafana-version) for instructions
 
-### 6. Update changelog
+### 7. Update changelog
 
 ```bash
 make changeset-version
@@ -39,34 +49,34 @@ make changeset-version
 
 Make sure to commit the updated CHANGELOG.md
 
-### 7. Update version
+### 8. Update version
 
-Check version in `package.json` (should be auto-set in step 6.)
+Check version in `package.json` (should be auto-set in step 7.)
 
-### 8. Check src/plugin.json version and date
+### 9. Check src/plugin.json version and date
 
 - `make update-versions`
 - Verify the `version` number and `updated` date are correct
 
-### 9. Create and push git tag
+### 10. Create and push git tag
 
 ```bash
 git tag vx.x.x  # Use version from plugin.json (notice the "v")
 git push && git push --tags
 ```
 
-### 10. Create GitHub release
+### 11. Create GitHub release
 
 - Navigate to <https://github.com/HadesArchitect/GrafanaCassandraDatasource/releases>
 - Click "Create a new release"
-- Select the git tag created in step 8 (e.g., `3.0.1`)
+- Select the git tag created in step 10 (e.g., `3.0.1`)
 - Set release title to match the version (e.g., `3.0.1`)
 - Copy the relevant section from `CHANGELOG.md` as the release description
 - Mark as "Latest release" if this is the newest version
 - Click "Publish release"
 - This will automatically trigger the GitHub workflow to build and attach release artifacts - see Actions <https://github.com/HadesArchitect/GrafanaCassandraDatasource/actions>
 
-### 11. Submit the new zip package to the Grafana Plugins Repository
+### 12. Submit the new zip package to the Grafana Plugins Repository
 
 - Wait for the release build to finish building the package and zip file
 - <https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin#publish-your-plugin> (For now has to be done by @HadesArchitect)
