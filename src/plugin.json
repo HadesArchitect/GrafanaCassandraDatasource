@@ -35,8 +35,8 @@
         "url": "https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/LICENSE"
       }
     ],
-    "version": "3.2.0",
-    "updated": "2026-02-22",
+    "version": "3.3.0",
+    "updated": "2026-06-28",
     "screenshots": [
       {
         "name": "Query Configurator",
