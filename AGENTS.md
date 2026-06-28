@@ -35,3 +35,5 @@ Key targets:
 | `make stop` | Stop the dev environment |
 
 Build can be customised with `OS`, `ARCH`, `GOLANG`, and `NODE` variables (e.g. `make build OS=darwin ARCH=arm64`).
+
+Building locally, prefer yarn over npm.
