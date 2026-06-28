@@ -207,11 +207,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 invalid={options.url === ''}
                 onChange={this.onHostChange}
                 width={60}
+                required
               />
             </InlineField>
           </InlineFieldRow>
           <InlineFieldRow>
-            <InlineField label="Keyspace" labelWidth={25}>
+            <InlineField label="Keyspace" labelWidth={25} tooltip="Optional, defines default keyspace">
               <Input
                 name="keyspace"
                 value={options.jsonData.keyspace}
@@ -282,7 +283,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <InlineField
               label="Allowed authenticators"
               labelWidth={25}
-              tooltip="Semicolon-separated list of server-side authenticator class names the driver may authenticate against. Add your cluster's authenticator (e.g. org.apache.cassandra.auth.LDAPAuthenticator) here. Leave empty to use the gocql driver defaults."
+              tooltip='Leave empty unless gocql rejects your cluster with an "unexpected authenticator" error. If it does, add the authenticator class name(s) your cluster announces (e.g. org.apache.cassandra.auth.LDAPAuthenticator), semicolon-separated. Replaces (does not extend) the built-in defaults.'
             >
               <Input
                 name="allowedAuthenticators"
