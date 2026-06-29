@@ -311,7 +311,7 @@
           "queryType": "query",
           "rawQuery": true,
           "refId": "A",
-          "target": "SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE location = '${loc}' AND registered_at > $__timeFrom and registered_at < $__timeTo",
+          "target": "SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE location = '${loc}' AND registered_at > $__timeFrom and registered_at < $__timeTo ALLOW FILTERING",
           "type": "timeserie"
         }
       ],
@@ -627,7 +627,7 @@
         "name": "loc",
         "options": [],
         "query": {
-          "rawQuery": "select location from test.sensors_locations where bucket = 'default'"
+          "query": "select location from test.sensors_locations where bucket = 'default'"
         },
         "refresh": 1,
         "regex": "",

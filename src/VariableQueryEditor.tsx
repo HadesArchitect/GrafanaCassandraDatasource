@@ -30,7 +30,7 @@ export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => 
           onBlur={saveQuery}
           onChange={handleChange}
           value={state.query}
-          placeholder={'SELECT sensor_id, location FROM sensors.sensors_locations'}
+          placeholder={'SELECT location FROM sensors.sensors_locations'}
         />
         <br />
         <LinkButton href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md" target="_blank" rel="noopener noreferrer" variant="secondary" size="sm" icon="external-link-alt">Learn more about variables</LinkButton>
