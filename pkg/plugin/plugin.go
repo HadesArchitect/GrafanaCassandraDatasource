@@ -225,6 +225,17 @@ func formatAlias(alias string, values map[string]interface{}) string {
 	return string(formattedAlias)
 }
 
+// renderField renders the value behind one {{ field }} placeholder of a legend
+// alias. Strings are passed through as they are so that quoting is preserved.
+func renderField(values map[string]interface{}, name string) string {
+	val := values[name]
+	if s, ok := val.(string); ok {
+		return s
+	}
+
+	return fmt.Sprintf("%v", val)
+}
+
 // narrowFrameToWideFrame performs rudimentary frames conversion from narrow to wide format.
 // It puts non-TS fields to labels and removes from fields list. Conflicting labels are replaced.
 // Any other field is ignored and could cause grafana alerting error during alert query execution.
