@@ -151,6 +151,15 @@ func splitIDs(s string) []string {
 	return ids
 }
 
+// cloneIDs returns a copy of the id list, so a caller can reorder or filter it
+// without disturbing the values already bound to the prepared statement.
+func cloneIDs(ids []string) []string {
+	out := make([]string, len(ids))
+	copy(out, ids)
+
+	return out
+}
+
 func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 	var frames data.Frames
 	for id, points := range rows {
