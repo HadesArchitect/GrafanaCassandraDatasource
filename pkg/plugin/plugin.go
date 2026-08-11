@@ -301,6 +301,15 @@ type Variable struct {
 	Label string `json:"text"`
 }
 
+// trimVariables strips the whitespace that source systems tend to leave around
+// text values, so that dashboard dropdown entries line up with each other.
+func trimVariables(vars []Variable) {
+	for _, v := range vars {
+		v.Label = strings.TrimSpace(v.Label)
+		v.Value = strings.TrimSpace(v.Value)
+	}
+}
+
 func makeVariableFromRow(row cassandra.Row) Variable {
 	var v Variable
 	v.Value = fmt.Sprintf("%v", row.Fields[row.Columns[0]])
