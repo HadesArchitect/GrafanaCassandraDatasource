@@ -24,7 +24,8 @@ type Query struct {
 	IsAlertQuery   bool
 }
 
-// Reports whether the panel asks for a single instant rather than a range.
+// Reports whether the panel asks for a single instant
+// rather than a range.
 func (q *Query) IsPointInTime() bool {
 	return q.TimeFrom.Equal(q.TimeTo)
 }
