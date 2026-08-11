@@ -96,7 +96,7 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		}
 
 		row := Row{
-			Columns: columnNames(iter.Columns()),
+			Columns: copyColumns(columnNames(iter.Columns())),
 			Fields:  rowValues,
 		}
 		if err := row.normalize(); err != nil {
