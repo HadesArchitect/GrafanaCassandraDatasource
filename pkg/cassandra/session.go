@@ -80,8 +80,10 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 	}()
 
 	rows = make(map[string][]Row)
+	// the column set is fixed for the whole result set, so the scan
+	// destination is allocated once instead of once per row.
+	rowValues := make(map[string]interface{}, len(iter.Columns()))
 	for {
-		rowValues := make(map[string]interface{}, len(iter.Columns()))
 		if !iter.MapScan(rowValues) {
 			break
 		}
