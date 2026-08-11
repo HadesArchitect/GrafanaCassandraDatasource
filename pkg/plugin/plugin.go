@@ -69,7 +69,15 @@ func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames,
 
 // execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
 func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
-	rows, err := p.repo.Select(ctx, q.BuildStatement(), splitIDs(q.ValueID), q.TimeFrom, q.TimeTo)
+	ids := splitIDs(q.ValueID)
+	if q.Instant && len(ids) > 1 {
+		// an instant panel renders a single series, so there is no point in
+		// asking the cluster for the other partitions.
+		ids := ids[:1]
+		backend.Logger.Debug("Instant query, narrowing to one partition", "id", ids[0])
+	}
+
+	rows, err := p.repo.Select(ctx, q.BuildStatement(), ids, q.TimeFrom, q.TimeTo)
 	if err != nil {
 		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
 	}
