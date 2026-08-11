@@ -225,6 +225,17 @@ func formatAlias(alias string, values map[string]interface{}) string {
 	return string(formattedAlias)
 }
 
+// truncateLabel shortens a legend label to at most max characters, so that a
+// long text value cannot push the rest of the panel legend off screen.
+func truncateLabel(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+
+	return string(runes[:max]) + "…"
+}
+
 // narrowFrameToWideFrame performs rudimentary frames conversion from narrow to wide format.
 // It puts non-TS fields to labels and removes from fields list. Conflicting labels are replaced.
 // Any other field is ignored and could cause grafana alerting error during alert query execution.
