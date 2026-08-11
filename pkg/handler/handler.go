@@ -61,23 +61,33 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 	}
 
 	responses := backend.Responses{}
+	done := make(chan struct{}, len(req.Queries))
 	for _, q := range req.Queries {
-		backend.Logger.Debug("Process metrics request", "Request", q.JSON)
-		cassQuery, err := parseDataQuery(&q)
-		if err != nil {
-			backend.Logger.Error("Failed to parse query", "Message", err)
-			responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("json.Unmarshal: %w", err)}
-			continue
-		}
+		go func(q backend.DataQuery) {
+			defer func() { done <- struct{}{} }()
 
-		dataFrames, err := p.ExecQuery(ctx, cassQuery)
-		if err != nil {
-			backend.Logger.Error("Failed to execute query", "Message", err)
-			responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("p.ExecQuery: %w", err)}
-			continue
-		}
+			backend.Logger.Debug("Process metrics request", "Request", q.JSON)
+			cassQuery, err := parseDataQuery(&q)
+			if err != nil {
+				backend.Logger.Error("Failed to parse query", "Message", err)
+				responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("json.Unmarshal: %w", err)}
+				return
+			}
 
-		responses[q.RefID] = backend.DataResponse{Frames: dataFrames}
+			dataFrames, err := p.ExecQuery(ctx, cassQuery)
+			if err != nil {
+				backend.Logger.Error("Failed to execute query", "Message", err)
+				responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("p.ExecQuery: %w", err)}
+				return
+			}
+
+			responses[q.RefID] = backend.DataResponse{Frames: dataFrames}
+		}(q)
+	}
+
+	// wait for every query to report back before returning
+	for range req.Queries {
+		<-done
 	}
 
 	return &backend.QueryDataResponse{Responses: responses}, nil
