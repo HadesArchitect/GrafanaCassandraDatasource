@@ -71,6 +71,35 @@ func parseDataQuery(q *backend.DataQuery) (*plugin.Query, error) {
 	}, nil
 }
 
+// validate reports the first problem that would make a query unbuildable.
+// Catching it here keeps a half filled in panel from producing a statement
+// with empty identifiers, which cassandra rejects with a syntax error that
+// is impossible to map back to the form field that caused it.
+func (dq *dataQuery) validate() error {
+	if dq.RawQuery {
+		if dq.Target == "" {
+			return fmt.Errorf("query text is empty")
+		}
+
+		return nil
+	}
+
+	switch {
+	case dq.Keyspace == "":
+		return fmt.Errorf("keyspace is not set")
+	case dq.Table == "":
+		return fmt.Errorf("table is not set")
+	case dq.ColumnID == "":
+		return fmt.Errorf("columnId is not set")
+	case dq.ColumnValue == "":
+		return fmt.Errorf("columnValue is not set")
+	case dq.ColumnTime == "":
+		return fmt.Errorf("columnTime is not set")
+	}
+
+	return nil
+}
+
 func (dq *dataQuery) applyTimeRange(from time.Time, to time.Time) {
 	query := []byte(dq.Target)
 	query = timeFromRegexp.ReplaceAll(query, []byte(fmt.Sprintf("%d", from.UnixMilli())))
