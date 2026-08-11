@@ -190,6 +190,12 @@ func isSelect(query string) bool {
 	return true
 }
 
+// stripKeyspace removes the keyspace qualifier from a fully qualified table
+// name, so that "metrics.temperature" becomes "temperature".
+func stripKeyspace(qualified, keyspace string) string {
+	return strings.TrimLeft(qualified, keyspace+".")
+}
+
 func toString(val interface{}) (string, error) {
 	var str string
 	switch v := val.(type) {
