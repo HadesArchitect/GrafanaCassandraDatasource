@@ -151,6 +151,22 @@ func splitIDs(s string) []string {
 	return ids
 }
 
+// resolveTimeout returns the query timeout to apply: the one configured on the
+// datasource when it is set and parses, otherwise the supplied default.
+func resolveTimeout(raw string, def time.Duration) time.Duration {
+	timeout := def
+	if raw != "" {
+		timeout, err := time.ParseDuration(raw)
+		if err != nil {
+			backend.Logger.Warn("Invalid timeout, falling back to default", "value", raw)
+		} else {
+			backend.Logger.Debug("Using configured query timeout", "timeout", timeout)
+		}
+	}
+
+	return timeout
+}
+
 func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 	var frames data.Frames
 	for id, points := range rows {
