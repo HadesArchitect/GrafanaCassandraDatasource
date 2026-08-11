@@ -160,6 +160,11 @@ func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 			frame = narrowFrameToWideFrame(frame)
 		}
 		frames = append(frames, frame)
+
+		if q.Instant {
+			// an instant panel renders a single value, so one series is enough
+			break
+		}
 	}
 
 	return frames
