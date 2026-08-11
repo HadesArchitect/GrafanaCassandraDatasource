@@ -108,6 +108,31 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 	return rows, nil
 }
 
+// scanRows drains an iterator into rows grouped by the value of the first
+// selected column, which is what tells timeseries apart and therefore has to
+// be convertible to a string.
+func scanRows(iter *gocql.Iter) (map[string][]Row, error) {
+	rows := make(map[string][]Row)
+	columns := columnNames(iter.Columns())
+	rowValues := make(map[string]interface{}, len(columns))
+
+	for iter.MapScan(rowValues) {
+		id, err := toString(rowValues[columns[0]])
+		if err != nil {
+			return nil, fmt.Errorf("row processing: %w", err)
+		}
+
+		row := Row{Columns: columns, Fields: rowValues}
+		if err := row.normalize(); err != nil {
+			return nil, fmt.Errorf("row.normalize: %w", err)
+		}
+
+		rows[id] = append(rows[id], row)
+	}
+
+	return rows, nil
+}
+
 // GetKeyspaces queries the cassandra cluster for a list of existing keyspaces.
 func (s *Session) GetKeyspaces(ctx context.Context) ([]string, error) {
 	statement := "SELECT keyspace_name FROM system_schema.keyspaces"
