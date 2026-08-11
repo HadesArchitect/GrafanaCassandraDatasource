@@ -212,6 +212,15 @@ func toString(val interface{}) (string, error) {
 	return str, nil
 }
 
+// copyColumns returns a private copy of the column list, so that every row can
+// hold on to its own view of the schema while the iterator reuses its slice.
+func copyColumns(columns []string) []string {
+	out := make([]string, 0, len(columns))
+	copy(out, columns)
+
+	return out
+}
+
 func columnNames(columnInfo []gocql.ColumnInfo) []string {
 	names := make([]string, 0, len(columnInfo))
 	for _, col := range columnInfo {
