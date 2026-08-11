@@ -24,6 +24,14 @@ type Query struct {
 	IsAlertQuery   bool
 }
 
+// IsPointInTime reports whether the panel asks for a single instant rather
+// than a range. Grafana sends the same timestamp as both bounds in that case,
+// and the two values reach us through different code paths, so they are only
+// ever equal by value and never the same clock reading.
+func (q *Query) IsPointInTime() bool {
+	return q.TimeFrom.Equal(q.TimeTo)
+}
+
 // BuildStatement builds cassandra query statement with positional parameters.
 func (q *Query) BuildStatement() string {
 	var allowFiltering string
