@@ -151,6 +151,18 @@ func splitIDs(s string) []string {
 	return ids
 }
 
+// defaultTimeColumn returns the column the query editor preselects as the time
+// field, given the table's columns keyed by name with their CQL type.
+func defaultTimeColumn(columns map[string]string) string {
+	for name, typ := range columns {
+		if typ == "timestamp" {
+			return name
+		}
+	}
+
+	return ""
+}
+
 func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 	var frames data.Frames
 	for id, points := range rows {
