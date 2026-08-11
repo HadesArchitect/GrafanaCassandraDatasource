@@ -118,10 +118,19 @@ func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, er
 	}
 
 	vars := make([]Variable, 0, len(idRows))
+	done := make(chan struct{}, len(idRows))
 	for _, rows := range idRows {
-		for _, row := range rows {
-			vars = append(vars, makeVariableFromRow(row))
-		}
+		go func(rows []cassandra.Row) {
+			defer func() { done <- struct{}{} }()
+
+			for _, row := range rows {
+				vars = append(vars, makeVariableFromRow(row))
+			}
+		}(rows)
+	}
+
+	for range idRows {
+		<-done
 	}
 
 	return vars, nil
