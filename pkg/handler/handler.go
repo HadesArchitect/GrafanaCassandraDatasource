@@ -229,12 +229,10 @@ func writeHTTPResult(rw http.ResponseWriter, val any) {
 		return
 	}
 
+	rw.Header().Set("Content-Type", "application/json")
+
 	_, err = rw.Write(jsonBytes)
 	if err != nil {
 		backend.Logger.Error("Failed to write response", "Message", err)
-		rw.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
-	rw.WriteHeader(http.StatusOK)
 }
