@@ -24,10 +24,7 @@ type Query struct {
 	IsAlertQuery   bool
 }
 
-// IsPointInTime reports whether the panel asks for a single instant rather
-// than a range. Grafana sends the same timestamp as both bounds in that case,
-// and the two values reach us through different code paths, so they are only
-// ever equal by value and never the same clock reading.
+// Reports whether the panel asks for a single instant rather than a range.
 func (q *Query) IsPointInTime() bool {
 	return q.TimeFrom.Equal(q.TimeTo)
 }
