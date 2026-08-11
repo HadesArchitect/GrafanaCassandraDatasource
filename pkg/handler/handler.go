@@ -83,6 +83,41 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 	return &backend.QueryDataResponse{Responses: responses}, nil
 }
 
+// execQueriesConcurrently runs every query of a request in its own goroutine
+// and collects the results. Panel latency becomes the slowest query instead of
+// the sum of all of them, which matters for dashboards carrying a dozen
+// queries per panel.
+func execQueriesConcurrently(ctx context.Context, p ds, queries []backend.DataQuery) backend.Responses {
+	responses := backend.Responses{}
+	done := make(chan struct{}, len(queries))
+
+	for _, q := range queries {
+		go func(q backend.DataQuery) {
+			defer func() { done <- struct{}{} }()
+
+			cassQuery, err := parseDataQuery(&q)
+			if err != nil {
+				responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("json.Unmarshal: %w", err)}
+				return
+			}
+
+			frames, err := p.ExecQuery(ctx, cassQuery)
+			if err != nil {
+				responses[q.RefID] = backend.DataResponse{Error: fmt.Errorf("p.ExecQuery: %w", err)}
+				return
+			}
+
+			responses[q.RefID] = backend.DataResponse{Frames: frames}
+		}(q)
+	}
+
+	for range queries {
+		<-done
+	}
+
+	return responses
+}
+
 // getKeyspaces is a handle to fetch keyspaces list.
 func (h *handler) getKeyspaces(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'keyspaces' request")
