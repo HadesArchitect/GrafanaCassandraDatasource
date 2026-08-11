@@ -45,6 +45,25 @@ func parseAllowedAuthenticators(raw string) []string {
 	return result
 }
 
+// consistencyLevels are the levels the driver understands. Anything else is
+// rejected when the config is saved rather than on the first query.
+var consistencyLevels = []string{
+	"ANY", "ONE", "TWO", "THREE", "QUORUM", "ALL",
+	"LOCAL_QUORUM", "EACH_QUORUM", "LOCAL_ONE",
+}
+
+// validateConsistency reports whether the configured consistency level is one
+// the driver accepts.
+func validateConsistency(level string) error {
+	for _, known := range consistencyLevels {
+		if strings.EqualFold(level, known) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("unknown consistency level %q, expected one of: %s", level, strings.Join(consistencyLevels, ", "))
+}
+
 // prepareTLSCfgFromPaths creates a tls.Config using certificate file paths.
 func prepareTLSCfgFromPaths(certPath, rootPath, caPath string, allowInsecureTLS bool) (*tls.Config, error) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: allowInsecureTLS}

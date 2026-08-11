@@ -23,6 +23,11 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		return nil, fmt.Errorf("Failed to parse connection parameters: %w", err)
 	}
 
+	if err := validateConsistency(dss.Consistency); err != nil {
+		backend.Logger.Error("Invalid consistency level", "Message", err)
+		return nil, err
+	}
+
 	var tlsConfig *tls.Config
 	if dss.UseCustomTLS {
 		backend.Logger.Debug("Setting TLS Configuration...")
