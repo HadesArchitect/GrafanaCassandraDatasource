@@ -143,9 +143,12 @@ func (p *Plugin) Dispose() {
 }
 
 func splitIDs(s string) []string {
-	var ids []string
-	for _, id := range strings.Split(s, ",") {
-		ids = append(ids, strings.TrimSpace(id))
+	parts := strings.Split(s, ",")
+	ids := make([]string, 0, len(parts))
+	for _, id := range parts {
+		if trimmed := strings.TrimSpace(id); trimmed != "" {
+			ids = append(ids, trimmed)
+		}
 	}
 
 	return ids
