@@ -181,6 +181,22 @@ func (s *Session) Close() {
 	s.session.Close()
 }
 
+// firstResponsiveHost returns whichever contact point answers first, so that
+// opening a session is not held up by a replica that is slow or down.
+func firstResponsiveHost(hosts []string, ping func(string) error) string {
+	winner := make(chan string)
+
+	for _, h := range hosts {
+		go func(h string) {
+			if err := ping(h); err == nil {
+				winner <- h
+			}
+		}(h)
+	}
+
+	return <-winner
+}
+
 func isSelect(query string) bool {
 	stmt := strings.TrimSpace(query)
 	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
