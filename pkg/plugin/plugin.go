@@ -203,23 +203,16 @@ func formatAlias(alias string, values map[string]interface{}) string {
 		fieldName := strings.Replace(string(in), "{{", "", 1)
 		fieldName = strings.Replace(fieldName, "}}", "", 1)
 		fieldName = strings.TrimSpace(fieldName)
-		if val, exists := values[fieldName]; exists {
-			switch v := val.(type) {
-			case string:
-				return []byte(v)
-			case int8, int32, int64, int:
-				return []byte(fmt.Sprintf("%d", v))
-			case float32, float64:
-				return []byte(fmt.Sprintf("%f", v))
-			case bool:
-				return []byte(fmt.Sprintf("%t", v))
-			case time.Time:
-				return []byte(v.String())
-			default:
-				return []byte{}
-			}
+
+		val := values[fieldName]
+		switch v := val.(type) {
+		case string:
+			return []byte(v)
+		case time.Time:
+			return []byte(v.String())
 		}
-		return []byte{}
+
+		return []byte(fmt.Sprintf("%v", val))
 	})
 
 	return string(formattedAlias)
