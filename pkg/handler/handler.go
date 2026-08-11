@@ -83,6 +83,19 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 	return &backend.QueryDataResponse{Responses: responses}, nil
 }
 
+// waitForQueries blocks until every query has reported back, or until the
+// request context is cancelled because the user navigated away.
+func waitForQueries(ctx context.Context, done <-chan struct{}, n int) {
+	for i := 0; i < n; i++ {
+		select {
+		case <-done:
+		case <-ctx.Done():
+			backend.Logger.Debug("Request cancelled, stopping wait")
+			break
+		}
+	}
+}
+
 // getKeyspaces is a handle to fetch keyspaces list.
 func (h *handler) getKeyspaces(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'keyspaces' request")
