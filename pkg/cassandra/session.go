@@ -166,6 +166,29 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 	return columns, nil
 }
 
+// tableColumns returns the columns of a table grouped by their CQL type. The
+// query editor asks for one type at a time while the user fills in the form,
+// and every one of those calls currently pays for a full metadata lookup.
+func (s *Session) tableColumns(keyspace, table string) (map[string][]string, error) {
+	keyspaceMetadata, err := s.session.KeyspaceMetadata(keyspace)
+	if err != nil {
+		return nil, fmt.Errorf("session.KeyspaceMetadata: %w", err)
+	}
+
+	tableMetadata, ok := keyspaceMetadata.Tables[table]
+	if !ok {
+		return nil, fmt.Errorf("no such table: '%s'", table)
+	}
+
+	columns := make(map[string][]string, len(tableMetadata.Columns))
+	for name, column := range tableMetadata.Columns {
+		typeName := column.Type.Type().String()
+		columns[typeName] = append(columns[typeName], name)
+	}
+
+	return columns, nil
+}
+
 // Ping executes a simple query to check the connection status.
 func (s *Session) Ping(ctx context.Context) error {
 	err := s.session.Query("SELECT key FROM system.local").WithContext(ctx).Exec()
