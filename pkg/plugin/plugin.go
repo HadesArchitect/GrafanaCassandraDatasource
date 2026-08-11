@@ -303,6 +303,10 @@ type Variable struct {
 
 func makeVariableFromRow(row cassandra.Row) Variable {
 	var v Variable
+	if len(row.Columns) == 0 {
+		return v
+	}
+
 	v.Value = fmt.Sprintf("%v", row.Fields[row.Columns[0]])
 	v.Label = v.Value
 	if len(row.Columns) > 1 {
