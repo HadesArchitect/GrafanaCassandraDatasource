@@ -151,6 +151,16 @@ func splitIDs(s string) []string {
 	return ids
 }
 
+// downsampleStep returns how many points to skip so that a panel never
+// receives more than maxPoints values, however wide the selected range is.
+func downsampleStep(total, maxPoints int) int {
+	if maxPoints <= 0 || total <= maxPoints {
+		return 1
+	}
+
+	return (total + maxPoints - 1) / maxPoints
+}
+
 func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 	var frames data.Frames
 	for id, points := range rows {
