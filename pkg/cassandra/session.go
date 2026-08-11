@@ -182,12 +182,12 @@ func (s *Session) Close() {
 }
 
 func isSelect(query string) bool {
-	stmt := strings.TrimSpace(query)
-	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
+	fields := strings.Fields(query)
+	if len(fields) == 0 {
 		return false
 	}
 
-	return true
+	return strings.EqualFold(fields[0], "SELECT")
 }
 
 func toString(val interface{}) (string, error) {
