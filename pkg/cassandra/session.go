@@ -190,6 +190,18 @@ func isSelect(query string) bool {
 	return true
 }
 
+// keyspaceOf returns the keyspace part of a fully qualified name such as
+// "metrics.temperature". It returns an empty string when the name carries no
+// keyspace qualifier.
+func keyspaceOf(qualified string) string {
+	i := strings.LastIndex(qualified, ".")
+	if i < 0 {
+		return ""
+	}
+
+	return qualified[i+1:]
+}
+
 func toString(val interface{}) (string, error) {
 	var str string
 	switch v := val.(type) {
