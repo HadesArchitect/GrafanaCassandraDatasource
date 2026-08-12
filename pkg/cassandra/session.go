@@ -190,6 +190,19 @@ func isSelect(query string) bool {
 	return true
 }
 
+// lastN returns the last n entries of s, or everything when s is shorter than
+// that. The order of the entries is preserved.
+func lastN(s []string, n int) []string {
+	if n <= 0 {
+		return nil
+	}
+	if len(s) <= n {
+		return s
+	}
+
+	return s[len(s)-n-1:]
+}
+
 func toString(val interface{}) (string, error) {
 	var str string
 	switch v := val.(type) {
