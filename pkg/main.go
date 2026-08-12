@@ -51,7 +51,7 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	}
 
 	sessionSettings := cassandra.Settings{
-		Hosts:                 strings.Split(settings.URL, ";"),
+		Hosts:                 contactPoints(settings.URL),
 		Keyspace:              dss.Keyspace,
 		User:                  dss.User,
 		Password:              settings.DecryptedSecureJSONData["password"],
