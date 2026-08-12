@@ -151,6 +151,19 @@ func splitIDs(s string) []string {
 	return ids
 }
 
+// withoutEmpty returns the ids that are not blank. The slice passed in is left
+// as it was, so the caller can keep using it afterwards.
+func withoutEmpty(ids []string) []string {
+	kept := ids[:0]
+	for _, id := range ids {
+		if id != "" {
+			kept = append(kept, id)
+		}
+	}
+
+	return kept
+}
+
 func makeDataFrames(q *Query, rows map[string][]cassandra.Row) data.Frames {
 	var frames data.Frames
 	for id, points := range rows {
