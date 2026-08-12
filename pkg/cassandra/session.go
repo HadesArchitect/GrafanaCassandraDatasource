@@ -74,7 +74,14 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 
 	iter := s.session.Query(query, values...).WithContext(ctx).Iter()
 	defer func() {
-		if iterErr := iter.Close(); iterErr != nil {
+		iterErr := iter.Close()
+		if iterErr == nil {
+			return
+		}
+
+		// a row that failed to convert is the more useful error of the two,
+		// so it wins over whatever the iterator reports on the way out.
+		if err == nil {
 			err = fmt.Errorf("select query processing: %w", iterErr)
 		}
 	}()
