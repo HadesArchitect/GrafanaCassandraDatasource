@@ -45,6 +45,19 @@ func parseAllowedAuthenticators(raw string) []string {
 	return result
 }
 
+// contactPoints splits the semicolon separated list of hosts taken from the
+// datasource URL, dropping any empty entries left by a trailing separator.
+func contactPoints(url string) []string {
+	hosts := make([]string, 0)
+	for _, h := range strings.Split(url, ",") {
+		if trimmed := strings.TrimSpace(h); trimmed != "" {
+			hosts = append(hosts, trimmed)
+		}
+	}
+
+	return hosts
+}
+
 // prepareTLSCfgFromPaths creates a tls.Config using certificate file paths.
 func prepareTLSCfgFromPaths(certPath, rootPath, caPath string, allowInsecureTLS bool) (*tls.Config, error) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: allowInsecureTLS}
