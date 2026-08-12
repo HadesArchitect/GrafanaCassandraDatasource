@@ -158,7 +158,7 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 
 	columns := make([]string, 0, len(tableMetadata.Columns))
 	for name, column := range tableMetadata.Columns {
-		if column.Type.Type().String() == needType {
+		if equalIgnoreCase(column.Type.Type().String(), needType) {
 			columns = append(columns, name)
 		}
 	}
