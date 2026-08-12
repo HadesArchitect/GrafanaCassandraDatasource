@@ -118,9 +118,18 @@ func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, er
 	}
 
 	vars := make([]Variable, 0, len(idRows))
+	// keyed on the whole variable, so that two rows sharing a value but
+	// carrying different labels are both kept.
+	seen := make(map[Variable]struct{}, len(idRows))
 	for _, rows := range idRows {
 		for _, row := range rows {
-			vars = append(vars, makeVariableFromRow(row))
+			v := makeVariableFromRow(row)
+			if _, dupe := seen[v]; dupe {
+				continue
+			}
+
+			seen[v] = struct{}{}
+			vars = append(vars, v)
 		}
 	}
 
