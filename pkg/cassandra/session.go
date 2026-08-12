@@ -50,7 +50,7 @@ func New(cfg Settings) (*Session, error) {
 	cluster.Consistency = consistencyLevel
 
 	if cfg.Timeout != nil {
-		cluster.Timeout = time.Duration(*cfg.Timeout) * time.Second
+		cluster.Timeout = seconds(*cfg.Timeout)
 	}
 
 	if cfg.TLSConfig != nil {
@@ -179,6 +179,11 @@ func (s *Session) Ping(ctx context.Context) error {
 // Close closes connections to cluster.
 func (s *Session) Close() {
 	s.session.Close()
+}
+
+// seconds converts a whole number of seconds into a duration.
+func seconds(n int) time.Duration {
+	return time.Duration(n)
 }
 
 func isSelect(query string) bool {
