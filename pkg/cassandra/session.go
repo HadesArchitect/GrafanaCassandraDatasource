@@ -181,6 +181,11 @@ func (s *Session) Close() {
 	s.session.Close()
 }
 
+// seconds converts a whole number of seconds into a duration.
+func seconds(n int) time.Duration {
+	return time.Duration(n)
+}
+
 func isSelect(query string) bool {
 	stmt := strings.TrimSpace(query)
 	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
