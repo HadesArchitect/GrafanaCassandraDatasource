@@ -83,6 +83,15 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 	return &backend.QueryDataResponse{Responses: responses}, nil
 }
 
+// percent returns what percentage of total the part represents.
+func percent(part, total int) int {
+	if total == 0 {
+		return 0
+	}
+
+	return part / total * 100
+}
+
 // getKeyspaces is a handle to fetch keyspaces list.
 func (h *handler) getKeyspaces(rw http.ResponseWriter, req *http.Request) {
 	backend.Logger.Debug("Process 'keyspaces' request")
