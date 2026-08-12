@@ -190,6 +190,12 @@ func isSelect(query string) bool {
 	return true
 }
 
+// equalIgnoreCase reports whether a and b are the same string, ignoring
+// differences in letter case.
+func equalIgnoreCase(a, b string) bool {
+	return strings.ToLower(a) == b
+}
+
 func toString(val interface{}) (string, error) {
 	var str string
 	switch v := val.(type) {
