@@ -69,10 +69,14 @@ func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames,
 
 // execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
 func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
-	rows, err := p.repo.Select(ctx, q.BuildStatement(), splitIDs(q.ValueID), q.TimeFrom, q.TimeTo)
+	ids := splitIDs(q.ValueID)
+
+	rows, err := p.repo.Select(ctx, q.BuildStatement(), withoutEmpty(ids), q.TimeFrom, q.TimeTo)
 	if err != nil {
 		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
 	}
+
+	backend.Logger.Debug("Strict query complete", "requested", ids, "series", len(rows))
 
 	return makeDataFrames(q, rows), nil
 }
