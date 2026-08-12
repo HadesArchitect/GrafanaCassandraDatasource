@@ -158,7 +158,7 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 
 	columns := make([]string, 0, len(tableMetadata.Columns))
 	for name, column := range tableMetadata.Columns {
-		if column.Type.Type().String() == needType {
+		if equalIgnoreCase(column.Type.Type().String(), needType) {
 			columns = append(columns, name)
 		}
 	}
@@ -188,6 +188,12 @@ func isSelect(query string) bool {
 	}
 
 	return true
+}
+
+// equalIgnoreCase reports whether a and b are the same string, ignoring
+// differences in letter case.
+func equalIgnoreCase(a, b string) bool {
+	return strings.ToLower(a) == b
 }
 
 func toString(val interface{}) (string, error) {
