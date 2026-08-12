@@ -142,6 +142,12 @@ func (p *Plugin) Dispose() {
 	p.repo.Close()
 }
 
+// oneLine collapses a multi line string onto a single line, so that a value
+// containing newlines cannot split one log record into several.
+func oneLine(s string) string {
+	return strings.Replace(s, "\n", " ", 1)
+}
+
 func splitIDs(s string) []string {
 	var ids []string
 	for _, id := range strings.Split(s, ",") {
