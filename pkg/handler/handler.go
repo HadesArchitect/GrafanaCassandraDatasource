@@ -61,6 +61,7 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 	}
 
 	responses := backend.Responses{}
+	succeeded := 0
 	for _, q := range req.Queries {
 		backend.Logger.Debug("Process metrics request", "Request", q.JSON)
 		cassQuery, err := parseDataQuery(&q)
@@ -78,9 +79,23 @@ func (h *handler) queryMetricData(ctx context.Context, req *backend.QueryDataReq
 		}
 
 		responses[q.RefID] = backend.DataResponse{Frames: dataFrames}
+		succeeded++
 	}
 
+	backend.Logger.Debug("Metrics request processed",
+		"queries", len(req.Queries),
+		"succeeded_pct", percent(succeeded, len(req.Queries)))
+
 	return &backend.QueryDataResponse{Responses: responses}, nil
+}
+
+// percent returns what percentage of total the part represents.
+func percent(part, total int) int {
+	if total == 0 {
+		return 0
+	}
+
+	return part / total * 100
 }
 
 // getKeyspaces is a handle to fetch keyspaces list.
