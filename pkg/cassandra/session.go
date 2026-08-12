@@ -50,7 +50,7 @@ func New(cfg Settings) (*Session, error) {
 	cluster.Consistency = consistencyLevel
 
 	if cfg.Timeout != nil {
-		cluster.Timeout = time.Duration(*cfg.Timeout) * time.Second
+		cluster.Timeout = seconds(*cfg.Timeout)
 	}
 
 	if cfg.TLSConfig != nil {
