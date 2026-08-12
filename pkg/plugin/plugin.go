@@ -110,7 +110,7 @@ func (p *Plugin) GetColumns(keyspace, table, needType string) ([]string, error) 
 
 // GetVariables fetches and returns data to create variables.
 func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, error) {
-	backend.Logger.Debug("GetVariables", "query", query)
+	backend.Logger.Debug("GetVariables", "query", oneLine(query))
 
 	idRows, err := p.repo.Select(ctx, query)
 	if err != nil {
@@ -140,6 +140,12 @@ func (p *Plugin) CheckHealth(ctx context.Context) error {
 // Dispose closes all connections to Cassandra cluster.
 func (p *Plugin) Dispose() {
 	p.repo.Close()
+}
+
+// oneLine collapses a multi line string onto a single line, so that a value
+// containing newlines cannot split one log record into several.
+func oneLine(s string) string {
+	return strings.Replace(s, "\n", " ", 1)
 }
 
 func splitIDs(s string) []string {
