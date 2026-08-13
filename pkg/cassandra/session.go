@@ -59,7 +59,8 @@ func New(cfg Settings) (*Session, error) {
 
 	clusterSession, err := cluster.CreateSession()
 	if err != nil {
-		return nil, fmt.Errorf("cluster.CreateSession: %w", err)
+		return nil, fmt.Errorf("cluster.CreateSession: %w (answered: %v)",
+			err, reachableHosts(cfg.Hosts, dialHost))
 	}
 
 	return &Session{clusterSession}, nil
@@ -179,6 +180,39 @@ func (s *Session) Ping(ctx context.Context) error {
 // Close closes connections to cluster.
 func (s *Session) Close() {
 	s.session.Close()
+}
+
+// dialHost opens a bare session against a single contact point, used only to
+// find out whether that host answers at all.
+func dialHost(host string) (*Session, error) {
+	cluster := gocql.NewCluster(host)
+	cluster.DisableInitialHostLookup = true
+
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Session{session}, nil
+}
+
+// reachableHosts opens a session against every contact point and returns the
+// ones that answered, so the config page can tell the user which of the hosts
+// it was given are actually usable.
+func reachableHosts(hosts []string, dial func(string) (*Session, error)) []string {
+	var reachable []string
+
+	for _, h := range hosts {
+		session, err := dial(h)
+		if err != nil {
+			continue
+		}
+		defer session.Close()
+
+		reachable = append(reachable, h)
+	}
+
+	return reachable
 }
 
 func isSelect(query string) bool {
