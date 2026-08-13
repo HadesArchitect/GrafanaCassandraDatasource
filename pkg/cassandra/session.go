@@ -181,6 +181,25 @@ func (s *Session) Close() {
 	s.session.Close()
 }
 
+// reachableHosts opens a session against every contact point and returns the
+// ones that answered, so the config page can tell the user which of the hosts
+// it was given are actually usable.
+func reachableHosts(hosts []string, dial func(string) (*Session, error)) []string {
+	var reachable []string
+
+	for _, h := range hosts {
+		session, err := dial(h)
+		if err != nil {
+			continue
+		}
+		defer session.Close()
+
+		reachable = append(reachable, h)
+	}
+
+	return reachable
+}
+
 func isSelect(query string) bool {
 	stmt := strings.TrimSpace(query)
 	if !strings.HasPrefix(strings.ToUpper(stmt), "SELECT ") {
