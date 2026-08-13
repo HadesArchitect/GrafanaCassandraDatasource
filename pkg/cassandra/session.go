@@ -92,7 +92,8 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		idFieldName := iter.Columns()[0].Name
 		id, err := toString(rowValues[idFieldName])
 		if err != nil {
-			return nil, fmt.Errorf("row processing: %w", err)
+			return nil, fmt.Errorf("row processing: %w (id column %s held %s)",
+				err, idFieldName, describe(rowValues[idFieldName]))
 		}
 
 		row := Row{
