@@ -92,7 +92,8 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		idFieldName := iter.Columns()[0].Name
 		id, err := toString(rowValues[idFieldName])
 		if err != nil {
-			return nil, fmt.Errorf("row processing: %w", err)
+			return nil, fmt.Errorf("row processing: %w (id column %s held %s)",
+				err, idFieldName, describe(rowValues[idFieldName]))
 		}
 
 		row := Row{
@@ -210,6 +211,23 @@ func toString(val interface{}) (string, error) {
 	}
 
 	return str, nil
+}
+
+// describe renders a scanned value for an error message. Timestamps get an
+// unambiguous layout, everything else falls back to its own formatting.
+func describe(val interface{}) string {
+	switch v := val.(type) {
+	case nil:
+		return "<null>"
+	case fmt.Stringer:
+		return v.String()
+	case time.Time:
+		return v.Format(time.RFC3339)
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 func columnNames(columnInfo []gocql.ColumnInfo) []string {
