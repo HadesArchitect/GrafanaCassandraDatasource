@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -197,8 +198,12 @@ func toString(val interface{}) (string, error) {
 		str = v
 	case gocql.UUID:
 		str = v.String()
-	case int8, int32, int64, int:
+	case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, uint:
 		str = fmt.Sprintf("%d", v)
+	case []byte: // blob
+		str = string(v)
+	case net.IP: // inet
+		str = v.String()
 	case float32, float64:
 		str = fmt.Sprintf("%f", v)
 	case time.Time:
