@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -139,6 +140,10 @@ func (s *Session) GetTables(keyspace string) ([]string, error) {
 	for tableName := range keyspaceMetadata.Tables {
 		tables = append(tables, tableName)
 	}
+
+	// the metadata is a map, so without this the dropdown is in a different
+	// order every time the editor asks for it
+	sort.Strings(tables)
 
 	return tables, nil
 }
