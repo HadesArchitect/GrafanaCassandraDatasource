@@ -79,9 +79,14 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		}
 	}()
 
+	columns := iter.Columns()
+	if len(columns) == 0 {
+		return nil, fmt.Errorf("query returned no columns: %s", query)
+	}
+
 	rows = make(map[string][]Row)
 	for {
-		rowValues := make(map[string]interface{}, len(iter.Columns()))
+		rowValues := make(map[string]interface{}, len(columns))
 		if !iter.MapScan(rowValues) {
 			break
 		}
@@ -89,7 +94,7 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		// first field is considered an id and used to distinguish different timeseries,
 		// so it must have string type. We are trying to convert id field value to
 		// a string or exit early in case when such conversion is not supported.
-		idFieldName := iter.Columns()[0].Name
+		idFieldName := columns[0].Name
 		id, err := toString(rowValues[idFieldName])
 		if err != nil {
 			return nil, fmt.Errorf("row processing: %w", err)
