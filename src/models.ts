@@ -33,6 +33,7 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
   timeout: number;
   allowInsecureTLS: boolean;
   allowedAuthenticators?: string;
+  enableSecureSocksProxy?: boolean;
 }
 
 type CassandraQueryType = 'query' | 'alert';

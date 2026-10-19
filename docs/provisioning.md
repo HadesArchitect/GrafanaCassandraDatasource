@@ -52,6 +52,10 @@ datasources:
 > `org.apache.cassandra.auth.LDAPAuthenticator`)? Set the `allowedAuthenticators`
 > key under `jsonData` — see [Custom Authenticators](authenticators.md).
 
+> Reaching a cluster in a private network from Grafana Cloud? Set
+> `enableSecureSocksProxy: true` under `jsonData` — see
+> [Private Data Source Connect](pdc.md).
+
 ### TLS Configuration with File Paths
 
 ```datasource/cassandra-tls-files.yaml

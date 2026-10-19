@@ -27,6 +27,7 @@ See the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasourc
 * Annotations
 * Alerting
 * Provisioning
+* Private Data Source Connect (PDC) / secure socks proxy
 
 ## Contacts
 

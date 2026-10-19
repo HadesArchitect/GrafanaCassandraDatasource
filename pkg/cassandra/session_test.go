@@ -1,7 +1,10 @@
 package cassandra
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/gocql/gocql"
@@ -125,4 +128,29 @@ func Test_isSelect(t *testing.T) {
 			assert.Equal(t, tc.want, result)
 		})
 	}
+}
+
+// recordingDialer is a Dialer that records the addresses it was asked to dial
+// and always fails, so that New returns before a real cluster is needed.
+type recordingDialer struct {
+	addrs []string
+}
+
+func (d *recordingDialer) DialContext(_ context.Context, _, addr string) (net.Conn, error) {
+	d.addrs = append(d.addrs, addr)
+	return nil, errors.New("dial refused by test dialer")
+}
+
+func Test_New_usesProvidedDialer(t *testing.T) {
+	dialer := &recordingDialer{}
+
+	session, err := New(Settings{
+		Hosts:       []string{"127.0.0.1:19042"},
+		Consistency: "ONE",
+		Dialer:      dialer,
+	})
+
+	assert.Error(t, err)
+	assert.Nil(t, session)
+	assert.Contains(t, dialer.addrs, "127.0.0.1:19042")
 }

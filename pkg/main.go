@@ -50,6 +50,19 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		backend.Logger.Debug("Using custom authenticator", "authenticators", strings.Join(allowedAuthenticators, ";"))
 	}
 
+	dialer, err := secureSocksDialer(ctx, settings)
+	if err != nil {
+		backend.Logger.Error("Failed to set up the secure socks proxy", "Message", err)
+		return nil, fmt.Errorf("Failed to set up the secure socks proxy: %w", err)
+	}
+
+	switch {
+	case dialer != nil:
+		backend.Logger.Debug("Connecting to Cassandra through the secure socks proxy")
+	case dss.EnableSecureSocksProxy:
+		backend.Logger.Warn("Secure socks proxy is enabled for this datasource but not configured on this Grafana instance, connecting to Cassandra directly")
+	}
+
 	sessionSettings := cassandra.Settings{
 		Hosts:                 strings.Split(settings.URL, ";"),
 		Keyspace:              dss.Keyspace,
@@ -59,6 +72,7 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		Timeout:               dss.Timeout,
 		TLSConfig:             tlsConfig,
 		AllowedAuthenticators: allowedAuthenticators,
+		Dialer:                dialer,
 	}
 
 	session, err := cassandra.New(sessionSettings)
