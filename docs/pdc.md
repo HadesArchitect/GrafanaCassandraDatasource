@@ -23,7 +23,9 @@ PDC agent*, then **Save & test**.
 
 ## Configuring via provisioning
 
-Set the `enableSecureSocksProxy` key under `jsonData`:
+Set `enableSecureSocksProxy` under `jsonData`, and on Grafana Cloud also
+`secureSocksProxyUsername` — the proxy identifies which PDC network to route
+through by that username, so it has to be the network's ID:
 
 ```yaml
 apiVersion: 1
@@ -37,9 +39,24 @@ datasources:
       consistency: ONE
       user: cassandra
       enableSecureSocksProxy: true
+      secureSocksProxyUsername: "<your-pdc-network-id>"
     secureJsonData:
       password: cassandra
 ```
+
+Find the network ID on the **Connections → Private data source connect** page
+of your Grafana Cloud stack, by selecting the network you want to reach.
+
+Leaving `secureSocksProxyUsername` out does not fail loudly: the plugin SDK
+falls back to sending the data source's UID as the SOCKS username, the proxy
+cannot match that to a network, and the connection simply never reaches the
+agent. Configuring PDC through the Grafana Cloud UI instead of provisioning
+sets the field for you.
+
+On a self-managed instance the username is ordinary SOCKS5 authentication
+rather than a network selector, so omit it unless your proxy requires
+credentials — in which case pair it with `secureSocksProxyPassword` under
+`secureJsonData`.
 
 ## Use IP addresses as contact points
 
