@@ -2,7 +2,7 @@
 
 ![Query Configurator](https://user-images.githubusercontent.com/1742301/148654262-b9cb7253-4086-4367-8aae-35ea458fcbb6.png)
 
-Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically.
+Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically. Keyspaces, tables and columns are listed in alphabetical order (ignoring case, with numbers in numeric order, so `table2` comes before `table10`). System keyspaces are listed too.
 
 The query runs once all of **Keyspace**, **Table**, **Time Column**, **Value Column**, **ID Column** and **ID Value** are filled. Until then it is simply not run: a new panel shows no error while you fill in the fields, and other queries of the same panel run as usual.
 

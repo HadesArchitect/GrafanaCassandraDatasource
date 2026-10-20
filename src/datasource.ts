@@ -19,6 +19,25 @@ import { Observable } from 'rxjs';
 // Default target text of queries created by the old Angular query editor.
 const PLACEHOLDER_TARGET = 'select metric';
 
+/**
+ * Sorts keyspace, table or column names for the editor dropdowns. The backend returns them in
+ * Cassandra's (map) order, which is effectively random. Case-insensitive, with numbers compared by
+ * value (`t2` before `t10`); names differing only in case keep a stable order.
+ */
+export function sortNames(names: string[] | null | undefined): string[] {
+  if (!Array.isArray(names)) {
+    return [];
+  }
+
+  return [...names].sort((a, b) => {
+    const order = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    if (order !== 0) {
+      return order;
+    }
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+}
+
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
   private keyspaces: string[] = [];
   private tables: Map<string, string[]> = new Map();
@@ -77,7 +96,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
 
     try {
-      this.keyspaces = await this.getResource('keyspaces');
+      this.keyspaces = sortNames(await this.getResource('keyspaces'));
       return this.keyspaces;
     } catch (error) {
       console.warn('Failed to fetch keyspaces:', error);
@@ -91,7 +110,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
 
     try {
-      const tables = await this.getResource('tables', { keyspace: keyspace });
+      const tables = sortNames(await this.getResource('tables', { keyspace: keyspace }));
       this.tables.set(keyspace, tables);
       return tables;
     } catch (error) {
@@ -108,11 +127,13 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
 
     try {
-      const columns = await this.getResource('columns', {
-        keyspace: keyspace,
-        table: table,
-        needType: needType,
-      });
+      const columns = sortNames(
+        await this.getResource('columns', {
+          keyspace: keyspace,
+          table: table,
+          needType: needType,
+        })
+      );
       this.columns.set(cacheKey, columns);
       return columns;
     } catch (error) {

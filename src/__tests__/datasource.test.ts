@@ -1,7 +1,7 @@
 import { DataQueryRequest, DataSourceInstanceSettings, dateTime } from '@grafana/data';
 import { BackendSrv, setBackendSrv } from '@grafana/runtime';
 import { lastValueFrom, of } from 'rxjs';
-import { CassandraDatasource } from '../datasource';
+import { CassandraDatasource, sortNames } from '../datasource';
 import { CassandraDataSourceOptions, CassandraQuery } from '../models';
 
 jest.mock('@grafana/runtime', () => ({
@@ -126,5 +126,68 @@ describe('CassandraDatasource.query', () => {
     expect(request.targets).toBe(targets);
     expect(request.targets).toHaveLength(2);
     expect(request.targets[0].valueId).toBe('$sensor');
+  });
+});
+
+describe('sortNames', () => {
+  it('sorts case-insensitively and numbers by value', () => {
+    expect(sortNames(['table10', 'Beta', 'table2', 'alpha', 'system_auth', 'Table1'])).toEqual([
+      'alpha',
+      'Beta',
+      'system_auth',
+      'Table1',
+      'table2',
+      'table10',
+    ]);
+  });
+
+  it('orders names that differ only in case the same way every time', () => {
+    expect(sortNames(['b', 'a', 'B', 'A'])).toEqual(sortNames(['A', 'B', 'a', 'b']));
+  });
+
+  it('copies rather than sorts in place, and tolerates a missing list', () => {
+    const names = ['b', 'a'];
+    expect(sortNames(names)).toEqual(['a', 'b']);
+    expect(names).toEqual(['b', 'a']);
+    expect(sortNames(null)).toEqual([]);
+  });
+});
+
+describe('CassandraDatasource dropdown options', () => {
+  it('sorts keyspaces, keeps the system ones, and caches the sorted list', async () => {
+    const ds = makeDatasource();
+    const getResource = jest
+      .spyOn(ds, 'getResource')
+      .mockResolvedValue(['system_schema', 'Sensors', 'analytics', 'system', 'system_auth']);
+    const sorted = ['analytics', 'Sensors', 'system', 'system_auth', 'system_schema'];
+
+    expect(await ds.getKeyspaces()).toEqual(sorted);
+    expect(await ds.getKeyspaces()).toEqual(sorted);
+    expect(getResource).toHaveBeenCalledTimes(1);
+  });
+
+  it('sorts tables per keyspace', async () => {
+    const ds = makeDatasource();
+    const getResource = jest.spyOn(ds, 'getResource').mockResolvedValue(['t10', 'T1', 't2']);
+
+    expect(await ds.getTables('ks')).toEqual(['T1', 't2', 't10']);
+    expect(await ds.getTables('ks')).toEqual(['T1', 't2', 't10']);
+    expect(getResource).toHaveBeenCalledTimes(1);
+    expect(getResource).toHaveBeenCalledWith('tables', { keyspace: 'ks' });
+  });
+
+  it('sorts columns per keyspace, table and type', async () => {
+    const ds = makeDatasource();
+    const getResource = jest.spyOn(ds, 'getResource').mockResolvedValue(['updated_at', 'Created_at', 'at']);
+
+    expect(await ds.getColumns('ks', 't', 'timestamp')).toEqual(['at', 'Created_at', 'updated_at']);
+    expect(getResource).toHaveBeenCalledWith('columns', { keyspace: 'ks', table: 't', needType: 'timestamp' });
+  });
+
+  it('returns an empty list when the backend returns none', async () => {
+    const ds = makeDatasource();
+    jest.spyOn(ds, 'getResource').mockResolvedValue(null);
+
+    expect(await ds.getTables('empty')).toEqual([]);
   });
 });
