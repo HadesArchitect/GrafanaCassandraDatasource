@@ -16,6 +16,24 @@ export interface CassandraQuery extends DataQuery {
   instant?: boolean;
 }
 
+/**
+ * Tells whether a query has everything it needs to be sent to the backend.
+ *
+ * - Query Editor mode (`rawQuery`): a non-blank CQL statement.
+ * - Query Configurator mode: keyspace, table, the time, value and ID columns, and the ID value.
+ *
+ * Incomplete queries are normal while a query is being written, so callers skip them rather than fail.
+ */
+export function isQueryComplete(query: CassandraQuery): boolean {
+  if (query.rawQuery) {
+    return Boolean(query.target?.trim());
+  }
+
+  return Boolean(
+    query.keyspace && query.table && query.columnTime && query.columnValue && query.columnId && query.valueId
+  );
+}
+
 export interface CassandraVariableQuery extends DataQuery {
   query: string;
 }

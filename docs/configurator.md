@@ -4,6 +4,8 @@
 
 Query Configurator is the easiest way to query data. At first, enter the keyspace and table name, then pick proper columns. If keyspace and table names are given correctly, the datasource will suggest the column names automatically.
 
+The query runs once all of **Keyspace**, **Table**, **Time Column**, **Value Column**, **ID Column** and **ID Value** are filled. Until then it is simply not run: a new panel shows no error while you fill in the fields, and other queries of the same panel run as usual.
+
 * **Time Column** - the column storing the timestamp value, it's used to answer "when" question.
 * **Value Column** - the column storing the value you'd like to show. It can be the `value`, `temperature` or whatever property you need.
 * **ID Column** - the column to uniquely identify the source of the data, e.g. `sensor_id`, `shop_id` or whatever allows you to identify the origin of data.

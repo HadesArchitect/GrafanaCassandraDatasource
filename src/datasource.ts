@@ -6,9 +6,18 @@ import {
   LegacyMetricFindQueryOptions,
   MetricFindValue,
 } from '@grafana/data';
-import { CassandraQuery, CassandraVariableQuery, CassandraDataSourceOptions, normalizeVariableQuery } from './models';
+import {
+  CassandraQuery,
+  CassandraVariableQuery,
+  CassandraDataSourceOptions,
+  isQueryComplete,
+  normalizeVariableQuery,
+} from './models';
 import { CassandraVariableSupport } from './variables';
 import { Observable } from 'rxjs';
+
+// Default target text of queries created by the old Angular query editor.
+const PLACEHOLDER_TARGET = 'select metric';
 
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
   private keyspaces: string[] = [];
@@ -26,17 +35,22 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   }
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
-    if (this.isEditorMode(options)) {
-      if (!this.isEditorCompleted(options)) {
-        throw new Error('Skipping query execution while not all editor fields are filled');
-      }
-    } else {
-      if (!this.isConfiguratorCompleted(options)) {
-        throw new Error('Skipping query execution while not all configurator fields are filled');
-      }
+    // DataSourceWithBackend.query drops every target filterQuery rejects, and answers with
+    // no data, rather than an error, when none is left.
+    return super.query(this.buildQueryParameters(options));
+  }
+
+  /**
+   * Decides, for each target on its own, whether it is sent to the backend. Hidden targets,
+   * leftover placeholders and queries that are still being written are skipped silently, so a
+   * new panel shows no error and one incomplete query does not block the others in the panel.
+   */
+  filterQuery(query: CassandraQuery): boolean {
+    if (query.hide || query.target === PLACEHOLDER_TARGET) {
+      return false;
     }
 
-    return super.query(this.buildQueryParameters(options));
+    return isQueryComplete(query);
   }
 
   // Runs a variable query through the backend `variables` resource. The backend
@@ -55,25 +69,6 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
       console.warn('Failed to execute variable query:', interpolatedQuery, error);
       return [];
     }
-  }
-
-  isEditorMode(options: DataQueryRequest<CassandraQuery>): boolean {
-    return !options.targets[0].rawQuery;
-  }
-
-  isEditorCompleted(options: DataQueryRequest<CassandraQuery>): boolean {
-    return Boolean(
-      options.targets[0].keyspace &&
-      options.targets[0].table &&
-      options.targets[0].columnTime &&
-      options.targets[0].columnValue &&
-      options.targets[0].columnId &&
-      options.targets[0].valueId
-    );
-  }
-
-  isConfiguratorCompleted(options: DataQueryRequest<CassandraQuery>): boolean {
-    return Boolean(options.targets[0].target);
   }
 
   async getKeyspaces(): Promise<string[]> {
@@ -107,7 +102,7 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
 
   async getColumns(keyspace: string, table: string, needType: string): Promise<string[]> {
     const cacheKey = `${keyspace}.${table}.${needType}`;
-    
+
     if (this.columns.has(cacheKey)) {
       return this.columns.get(cacheKey)!;
     }
@@ -126,12 +121,9 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     }
   }
 
+  // Interpolates dashboard variables and keeps only the fields the backend reads. Returns a new
+  // request: the one Grafana passes in is left untouched.
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
-    //remove placeholder targets
-    options.targets = options.targets.filter((target) => {
-      return target.target !== 'select metric';
-    });
-
     const targets: CassandraQuery[] = options.targets.map((target) => {
       return {
         queryType: target.queryType,
@@ -146,14 +138,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
         columnTime: target.columnTime,
         columnValue: target.columnValue,
         columnId: target.columnId,
-        valueId:  getTemplateSrv().replace(target.valueId, options.scopedVars, 'csv'),
+        valueId: getTemplateSrv().replace(target.valueId, options.scopedVars, 'csv'),
         alias: target.alias,
         instant: target.instant,
       };
     });
 
-    options.targets = targets;
-
-    return options;
+    return { ...options, targets };
   }
 }
