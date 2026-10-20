@@ -37,6 +37,9 @@ func Test_newDataSource_settingsErrors(t *testing.T) {
 		"negative timeout": {
 			url: "127.0.0.1:9042", jsonData: `{"consistency":"ONE","timeout":-5}`, want: health.InvalidTimeout,
 		},
+		"negative max rows": {
+			url: "127.0.0.1:9042", jsonData: `{"consistency":"ONE","maxRows":-1}`, want: health.InvalidMaxRows,
+		},
 		"unparsable client certificate content": {
 			url:      "127.0.0.1:9042",
 			jsonData: `{"consistency":"ONE","UseCustomTLS":true,"useCertContent":true}`,

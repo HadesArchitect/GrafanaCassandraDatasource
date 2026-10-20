@@ -36,6 +36,11 @@ func newPlugin(ctx context.Context, settings backend.DataSourceInstanceSettings)
 		return nil, health.Wrap(health.InvalidSettings, fmt.Errorf("failed to parse connection parameters: %w", err))
 	}
 
+	maxRows, err := resolveMaxRows(dss.MaxRows)
+	if err != nil {
+		return nil, err
+	}
+
 	var tlsConfig *tls.Config
 	if dss.UseCustomTLS {
 		backend.Logger.Debug("Setting TLS Configuration...")
@@ -96,6 +101,7 @@ func newPlugin(ctx context.Context, settings backend.DataSourceInstanceSettings)
 		Keyspace:                    dss.Keyspace,
 		SecureSocksProxy:            dialer != nil,
 		SecureSocksProxyUnavailable: proxyUnavailable,
+		MaxRows:                     maxRows,
 	}), nil
 }
 

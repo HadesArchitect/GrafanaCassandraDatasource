@@ -15,7 +15,7 @@ import (
 var aliasFormatRegexp = regexp.MustCompile(`\{\{\s*(.+?)\s*\}\}`)
 
 type repository interface {
-	Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error)
+	Select(ctx context.Context, maxRows int, query string, values ...interface{}) (cassandra.SelectResult, error)
 	GetKeyspaces(ctx context.Context) ([]string, error)
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
@@ -37,6 +37,9 @@ type Options struct {
 	// secure socks proxy but the Grafana instance has none configured, so
 	// connections are made directly.
 	SecureSocksProxyUnavailable bool
+	// MaxRows is the largest number of rows a query may return, across all
+	// its series. Rows beyond it are not read. Zero means no limit.
+	MaxRows int
 }
 
 // Plugin represents grafana datasource plugin.
@@ -54,45 +57,90 @@ func New(repo repository, opts Options) *Plugin {
 }
 
 // ExecQuery executes metric query based on provided query type.
+//
+// The frames carry the executed CQL and query statistics for Grafana's query
+// inspector, and a warning notice when the result was truncated to MaxRows.
 func (p *Plugin) ExecQuery(ctx context.Context, q *Query) (data.Frames, error) {
-	var (
-		dataFrames data.Frames
-		err        error
-	)
-
 	backend.Logger.Debug("ExecQuery", "query", q)
-	switch q.RawQuery {
-	case true:
-		dataFrames, err = p.execRawMetricQuery(ctx, q)
-	case false:
-		dataFrames, err = p.execStrictMetricQuery(ctx, q)
+
+	var (
+		statement string
+		values    []interface{}
+		executed  string
+	)
+	if q.RawQuery {
+		// The time range macros are already replaced, see handler.parseDataQuery.
+		statement = q.Target
+		executed = q.Target
+	} else {
+		statement = q.BuildStatement()
+		values = []interface{}{splitIDs(q.ValueID), q.TimeFrom, q.TimeTo}
+		executed = q.describeStatement(statement)
 	}
 
+	start := time.Now()
+	result, err := p.repo.Select(ctx, p.opts.MaxRows, statement, values...)
 	if err != nil {
-		return nil, fmt.Errorf("query processing: %w", err)
+		return nil, fmt.Errorf("query processing: repo.Select: %w", err)
+	}
+	elapsed := time.Since(start)
+
+	if result.Truncated {
+		backend.Logger.Warn("Query result truncated to the Max rows setting", "maxRows", p.opts.MaxRows)
 	}
 
-	return dataFrames, nil
+	frames := makeDataFrames(q, result.Rows)
+	if len(frames) == 0 && !q.IsAlertQuery {
+		// An empty frame still shows the executed query and the statistics
+		// in the query inspector, which helps most when nothing came back.
+		// Alert queries keep returning no frames, which alerting reads as no data.
+		frames = data.Frames{data.NewFrame("")}
+	}
+	setFrameMeta(frames, executed, result, p.opts.MaxRows, elapsed)
+
+	return frames, nil
 }
 
-// execRawMetricQuery executes repository ExecRawQuery method and transforms response to data.Frames.
-func (p *Plugin) execRawMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
-	rows, err := p.repo.Select(ctx, q.Target)
-	if err != nil {
-		return nil, fmt.Errorf("repo.Select: %w", err)
+// truncatedNotice is the warning shown on a panel whose query returned more
+// rows than the Max rows setting allows.
+func truncatedNotice(maxRows int) data.Notice {
+	return data.Notice{
+		Severity: data.NoticeSeverityWarning,
+		Text: fmt.Sprintf("Result truncated to %d rows (Max rows setting). "+
+			"Narrow the time range or the query, or raise Max rows in the data source settings.", maxRows),
 	}
-
-	return makeDataFrames(q, rows), nil
 }
 
-// execStrictMetricQuery executes repository ExecStrictQuery method and transforms reposonse to data.Frames.
-func (p *Plugin) execStrictMetricQuery(ctx context.Context, q *Query) (data.Frames, error) {
-	rows, err := p.repo.Select(ctx, q.BuildStatement(), splitIDs(q.ValueID), q.TimeFrom, q.TimeTo)
-	if err != nil {
-		return nil, fmt.Errorf("repo.ExecStrictQuery: %w", err)
-	}
+// setFrameMeta attaches the executed query, a notice when the result was
+// truncated, and the query statistics to frames.
+//
+// Grafana's query inspector lists the statistics of every frame one after
+// the other, so they are only set on the first frame; the executed query and
+// the notice, which Grafana deduplicates, are set on every frame so that they
+// survive transformations that drop frames.
+func setFrameMeta(frames data.Frames, executed string, result cassandra.SelectResult, maxRows int, elapsed time.Duration) {
+	for i, frame := range frames {
+		if frame == nil {
+			continue
+		}
+		if frame.Meta == nil {
+			frame.Meta = &data.FrameMeta{}
+		}
 
-	return makeDataFrames(q, rows), nil
+		frame.Meta.ExecutedQueryString = executed
+		if result.Truncated {
+			frame.Meta.Notices = append(frame.Meta.Notices, truncatedNotice(maxRows))
+		}
+		if i == 0 {
+			frame.Meta.Stats = append(frame.Meta.Stats,
+				data.QueryStat{FieldConfig: data.FieldConfig{DisplayName: "Rows returned"}, Value: float64(result.RowCount)},
+				data.QueryStat{
+					FieldConfig: data.FieldConfig{DisplayName: "Execution time", Unit: "ms"},
+					Value:       float64(elapsed.Microseconds()) / 1000,
+				},
+			)
+		}
+	}
 }
 
 // GetKeyspaces fetches and returns Cassandra's list of keyspaces.
@@ -130,13 +178,16 @@ func (p *Plugin) GetColumns(keyspace, table, needType string) ([]string, error) 
 func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, error) {
 	backend.Logger.Debug("GetVariables", "query", query)
 
-	idRows, err := p.repo.Select(ctx, query)
+	result, err := p.repo.Select(ctx, p.opts.MaxRows, query)
 	if err != nil {
 		return nil, fmt.Errorf("repo.Select: %w", err)
 	}
+	if result.Truncated {
+		backend.Logger.Warn("Variable query result truncated to the Max rows setting", "maxRows", p.opts.MaxRows)
+	}
 
-	vars := make([]Variable, 0, len(idRows))
-	for _, rows := range idRows {
+	vars := make([]Variable, 0, result.RowCount)
+	for _, rows := range result.Rows {
 		for _, row := range rows {
 			vars = append(vars, makeVariableFromRow(row))
 		}

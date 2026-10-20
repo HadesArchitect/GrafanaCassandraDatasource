@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -72,4 +73,18 @@ func TestQuery_BuildStatement(t *testing.T) {
 			assert.Equal(t, tc.want, queryString, tc.name)
 		})
 	}
+}
+
+func TestQuery_describeStatement(t *testing.T) {
+	q := &Query{
+		Keyspace: "ks", Table: "t", ColumnID: "id", ColumnValue: "v", ColumnTime: "ts",
+		ValueID:  "a,b , c",
+		TimeFrom: time.Date(2024, 3, 1, 10, 0, 0, 0, time.FixedZone("CET", 3600)),
+		TimeTo:   time.Date(2024, 3, 1, 10, 30, 0, 123e6, time.UTC),
+	}
+
+	assert.Equal(t,
+		"SELECT id, v, ts FROM ks.t WHERE id IN ? AND ts >= ? AND ts <= ?\n"+
+			"-- bound values: id IN (a, b, c), ts >= 2024-03-01T09:00:00.000Z, ts <= 2024-03-01T10:30:00.123Z",
+		q.describeStatement(q.BuildStatement()))
 }

@@ -69,6 +69,10 @@ var expectedProblems = map[Category]Problem{
 		"The timeout must not be negative.",
 		"Set the Timeout field to a positive number of seconds, or leave it empty to use the default of 11 seconds.",
 	},
+	InvalidMaxRows: {
+		"Max rows must not be negative.",
+		"Set the Max rows field to the largest number of rows a query may return, 0 for no limit, or leave it empty to use the default of 100000. For a provisioned data source, set jsonData.maxRows.",
+	},
 	InvalidTLSClientCert: {
 		"The TLS client certificate or private key could not be loaded.",
 		"The public key (certificate) and private key must be a matching PEM-encoded pair. When using file paths, both files must exist on the Grafana server and be readable by it.",
@@ -189,6 +193,7 @@ func classifyCases(t *testing.T) map[string]struct {
 		"settings: no hosts from driver": {fmt.Errorf("cluster.CreateSession: %w", gocql.ErrNoHosts), InvalidContactPoints},
 		"settings: consistency":          {Wrap(InvalidConsistency, errors.New(`invalid consistency "QORUM"`)), InvalidConsistency},
 		"settings: timeout":              {Wrap(InvalidTimeout, errors.New("negative timeout: -1")), InvalidTimeout},
+		"settings: max rows":             {Wrap(InvalidMaxRows, errors.New("negative maxRows: -1")), InvalidMaxRows},
 		"settings: client cert":          {Wrap(InvalidTLSClientCert, errors.New("tls: failed to find any PEM data")), InvalidTLSClientCert},
 		"settings: CA":                   {Wrap(InvalidTLSCA, errors.New("failed to parse CA certificate content")), InvalidTLSCA},
 		"public error keeps category": {

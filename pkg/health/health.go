@@ -29,6 +29,7 @@ const (
 	InvalidContactPoints
 	InvalidConsistency
 	InvalidTimeout
+	InvalidMaxRows
 	InvalidTLSClientCert
 	InvalidTLSCA
 
@@ -90,6 +91,11 @@ var problems = map[Category]Problem{
 		Message: "The timeout must not be negative.",
 		Hint: "Set the Timeout field to a positive number of seconds, " +
 			"or leave it empty to use the default of 11 seconds.",
+	},
+	InvalidMaxRows: {
+		Message: "Max rows must not be negative.",
+		Hint: "Set the Max rows field to the largest number of rows a query may return, 0 for no limit, " +
+			"or leave it empty to use the default of 100000. For a provisioned data source, set jsonData.maxRows.",
 	},
 	InvalidTLSClientCert: {
 		Message: "The TLS client certificate or private key could not be loaded.",

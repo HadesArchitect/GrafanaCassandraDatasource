@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -53,4 +54,19 @@ func (q *Query) BuildStatement() string {
 	backend.Logger.Debug("Built strict statement", "statement", statement)
 
 	return statement
+}
+
+// describeStatement returns the statement built by BuildStatement followed by
+// a CQL comment listing the values bound to its placeholders, as shown in
+// Grafana's query inspector. The values are the ID values and the time range
+// of the query: nothing that is not already part of the query or the panel.
+func (q *Query) describeStatement(statement string) string {
+	const timeFormat = "2006-01-02T15:04:05.000Z07:00"
+
+	return fmt.Sprintf("%s\n-- bound values: %s IN (%s), %s >= %s, %s <= %s",
+		statement,
+		q.ColumnID, strings.Join(splitIDs(q.ValueID), ", "),
+		q.ColumnTime, q.TimeFrom.UTC().Format(timeFormat),
+		q.ColumnTime, q.TimeTo.UTC().Format(timeFormat),
+	)
 }
