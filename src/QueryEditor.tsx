@@ -1,8 +1,9 @@
-import React, { ChangeEvent, PureComponent, FormEvent } from 'react';
-import { InlineField, InlineFieldRow, Input, InlineSwitch, LinkButton, RadioButtonGroup, Select, TextArea } from '@grafana/ui';
+import React, { ChangeEvent, PureComponent } from 'react';
+import { Field, InlineField, InlineFieldRow, Input, InlineSwitch, LinkButton, RadioButtonGroup, Select } from '@grafana/ui';
 import { CoreApp, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource } from './datasource';
-import { CassandraQuery, CassandraDataSourceOptions } from './models';
+import { CassandraQuery, CassandraDataSourceOptions, isQueryComplete } from './models';
+import { CqlEditor } from './CqlEditor';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
 
@@ -83,43 +84,28 @@ export class QueryEditor extends PureComponent<Props> {
     }
   }
 
-  onRunQuery(
-    props: Readonly<Props> &
-      Readonly<{
-        children?: React.ReactNode;
-      }>
-  ) {
-    let queryType: 'query' | 'alert' = 'query';
-    if (this.props.app && this.props.app === CoreApp.UnifiedAlerting) {
-      queryType = 'alert';
-    }
+  /**
+   * Commits `query` (by default the current one) and runs the panel queries once it is complete.
+   * Incomplete queries are only saved: the data source would skip them anyway.
+   */
+  runQuery = (query: CassandraQuery = this.props.query) => {
+    const { app, onChange, onRunQuery } = this.props;
+    const queryType: CassandraQuery['queryType'] = app === CoreApp.UnifiedAlerting ? 'alert' : 'query';
 
-    const { onChange, query } = this.props;
     onChange({ ...query, queryType });
 
-    if ((
-      props.query.keyspace &&
-      props.query.keyspace !== '' &&
-      props.query.table &&
-      props.query.table !== '' &&
-      props.query.columnTime &&
-      props.query.columnTime !== '' &&
-      props.query.columnValue &&
-      props.query.columnValue !== '' &&
-      props.query.columnId &&
-      props.query.columnId !== '' &&
-      props.query.valueId &&
-      props.query.valueId !== ''
-      ) || (props.query.target && props.query.target !== ''))
-    {
-      this.props.onRunQuery();
+    if (isQueryComplete(query)) {
+      onRunQuery();
     }
-  }
+  };
 
-  onQueryTextChange = (e: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { onChange, query } = this.props;
-    const { value } = e.target as HTMLInputElement | HTMLTextAreaElement;
-    onChange({ ...query, target: value });
+  // For onBlur handlers, which must not pass their event on as the query.
+  onBlur = () => {
+    this.runQuery();
+  };
+
+  onQueryTextCommit = (target: string) => {
+    this.runQuery({ ...this.props.query, target });
   };
 
   onKeyspaceChange = (event: SelectableValue<string>) => {
@@ -254,31 +240,23 @@ export class QueryEditor extends PureComponent<Props> {
       <div>
         {options.query.rawQuery && (
           <>
-            <InlineFieldRow>
-              <InlineField
-                label="Cassandra CQL Query"
-                labelWidth={30}
-                tooltip="Enter Cassandra CQL query. There are $__timeFrom/$__timeTo, $__unixEpochFrom/$__unixEpochTo and $__from/$__to variables to dynamically limit time range in queries. You should always use them to avoid excessive data fetching from DB."
-                grow
-              >
-                <TextArea
-                  placeholder={'Enter a CQL query'}
-                  onChange={this.onQueryTextChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
-                  value={this.props.query.target}
-                />
-              </InlineField>
-            </InlineFieldRow>
+            <Field
+              label="Cassandra CQL Query"
+              description="Limit the query to the dashboard time range with $__timeFrom/$__timeTo (milliseconds) or $__unixEpochFrom/$__unixEpochTo (seconds); $__from/$__to and dashboard variables work too. Type $ for suggestions. Ctrl/Cmd+Enter runs the query."
+            >
+              <CqlEditor
+                value={this.props.query.target ?? ''}
+                ariaLabel="Cassandra CQL Query"
+                onBlur={this.onQueryTextCommit}
+                onRunQuery={this.onQueryTextCommit}
+              />
+            </Field>
             <InlineFieldRow>
               <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input
                     name="alias"
                     onChange={this.onAliasChange}
-                    onBlur={() => {
-                      this.onRunQuery(this.props);
-                    }}
+                    onBlur={this.onBlur}
                     value={this.props.query.alias || ''}
                 />
               </InlineField>
@@ -295,9 +273,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="keyspace name"
                   onChange={this.onKeyspaceChange}
                   options={this.state.keyspaceOptions}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   width={90}
                 />
               </InlineField>
@@ -310,9 +286,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="table name"
                   onChange={this.onTableChange}
                   options={this.state.tableOptions}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   width={90}
                 />
               </InlineField>
@@ -328,9 +302,7 @@ export class QueryEditor extends PureComponent<Props> {
                   value={selectable(this.props.query.columnTime)}
                   placeholder="time column"
                   onChange={this.onTimeColumnChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   options={this.state.timeColumnOptions}
                   width={90}
                 />
@@ -348,9 +320,7 @@ export class QueryEditor extends PureComponent<Props> {
                   value={selectable(this.props.query.columnValue)}
                   options={this.state.valueColumnOptions}
                   onChange={this.onValueColumnChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   width={90}
                 />
               </InlineField>
@@ -366,9 +336,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="ID column"
                   value={selectable(this.props.query.columnId)}
                   onChange={this.onIDColumnChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   options={this.state.idColumnOptions}
                   width={90}
                 />
@@ -385,9 +353,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="123e4567-e89b-12d3-a456-426655440000"
                   value={this.props.query.valueId || ''}
                   onChange={this.onIDValueChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   width={90}
                   required
                 />
@@ -400,9 +366,7 @@ export class QueryEditor extends PureComponent<Props> {
                   placeholder="my alias"
                   value={this.props.query.alias || ''}
                   onChange={this.onAliasChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                   width={90}
                 />
               </InlineField>
@@ -416,9 +380,7 @@ export class QueryEditor extends PureComponent<Props> {
                 <InlineSwitch
                     value={this.props.query.instant}
                     onChange={this.onInstantChange}
-                    onBlur={() => {
-                      this.onRunQuery(this.props);
-                    }}
+                    onBlur={this.onBlur}
                 />
               </InlineField>
             </InlineFieldRow>
@@ -431,9 +393,7 @@ export class QueryEditor extends PureComponent<Props> {
                 <InlineSwitch
                   value={this.props.query.filtering}
                   onChange={this.onFilteringChange}
-                  onBlur={() => {
-                    this.onRunQuery(this.props);
-                  }}
+                  onBlur={this.onBlur}
                 />
               </InlineField>
             </InlineFieldRow>

@@ -11,6 +11,13 @@ import {
 } from 'models';
 import { CassandraVariableSupport } from 'variables';
 import { VariableQueryEditor } from 'VariableQueryEditor';
+import { lastCodeEditorProps } from '../testUtils/MockCodeEditor';
+
+// Monaco does not run in jsdom.
+jest.mock('@grafana/ui', () => ({
+  ...jest.requireActual('@grafana/ui'),
+  CodeEditor: jest.requireActual('../testUtils/MockCodeEditor').MockCodeEditor,
+}));
 
 const replace = jest.fn((text?: string, scopedVars?: ScopedVars, format?: string) => {
   const zone = scopedVars?.zone?.value;
@@ -19,7 +26,7 @@ const replace = jest.fn((text?: string, scopedVars?: ScopedVars, format?: string
 
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
-  getTemplateSrv: () => ({ replace }),
+  getTemplateSrv: () => ({ replace, getVariables: () => [] }),
 }));
 
 const makeDatasource = () =>
@@ -129,7 +136,7 @@ describe('VariableQueryEditor', () => {
         onRunQuery={jest.fn()}
       />
     );
-    return { onChange, textarea: screen.getByLabelText(/CQL query/) };
+    return { onChange, textarea: screen.getByRole('textbox', { name: 'CQL query' }) };
   };
 
   it.each([
@@ -167,5 +174,25 @@ describe('VariableQueryEditor', () => {
     fireEvent.blur(textarea);
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('saves the query on Ctrl+Enter', () => {
+    const { textarea, onChange } = renderEditor({ refId: 'A', query: '' });
+
+    fireEvent.change(textarea, { target: { value: 'SELECT id FROM ks.t' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith({ refId: 'A', query: 'SELECT id FROM ks.t' });
+  });
+
+  it('suggests $__from/$__to but not the data query time macros, which variable queries do not replace', () => {
+    renderEditor({ refId: 'A', query: '' });
+
+    const labels = lastCodeEditorProps!.getSuggestions!().map((item) => item.label);
+
+    expect(labels).toEqual(expect.arrayContaining(['$__from', '$__to']));
+    expect(labels).not.toContain('$__timeFrom');
+    expect(labels).not.toContain('$__unixEpochFrom');
   });
 });
