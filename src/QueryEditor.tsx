@@ -23,13 +23,6 @@ export class QueryEditor extends PureComponent<Props> {
     idColumnOptions: [] as Array<SelectableValue<string>>
   };
 
-  constructor(props: QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>) {
-    super(props);
-
-    const { onChange, query } = this.props;
-    onChange({ ...query, datasourceId: props.datasource.id });
-  }
-
   loadKeyspaceOptions = () => {
     this.props.datasource.getKeyspaces().then((keyspaces: string[]) => {
       const keyspaceOptions: Array<SelectableValue<string>> = [];

@@ -4,7 +4,7 @@ If you want to try the data source in action, please follow the easy steps of th
 
 * Apache Cassandra 4.0
 * [Sample Data](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/demo/sample_data.sh) (a simple bash script generating sample "temperature" data from some "sensors")
-* Grafana 10 with preinstalled Cassandra Datasource 
+* Grafana 10.4 with preinstalled Cassandra Datasource 
 
 # Prerequisites
 

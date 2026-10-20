@@ -38,7 +38,7 @@ Fix any errors reported before proceeding. Warnings can be reviewed but do not b
 
 ### 6. Test manually with oldest supported Grafana
 
-- Test the plugin with Grafana 10.0 (minimum supported version for plugin v4)
+- Test the plugin with Grafana 10.4 (minimum supported version for plugin v4)
 - See [Testing with Grafana](setup.md#testing-with-specific-grafana-version) for instructions
 
 ### 7. Update changelog

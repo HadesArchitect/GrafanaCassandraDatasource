@@ -1,12 +1,16 @@
-import _ from 'lodash';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
-import {DataQueryRequest, DataQueryResponse, DataSourceInstanceSettings} from '@grafana/data';
-import { CassandraQuery,CassandraVariableQuery, CassandraDataSourceOptions } from './models';
+import {
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceInstanceSettings,
+  LegacyMetricFindQueryOptions,
+  MetricFindValue,
+} from '@grafana/data';
+import { CassandraQuery, CassandraVariableQuery, CassandraDataSourceOptions, normalizeVariableQuery } from './models';
+import { CassandraVariableSupport } from './variables';
 import { Observable } from 'rxjs';
 
 export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, CassandraDataSourceOptions> {
-  headers: any;
-  id: number;
   private keyspaces: string[] = [];
   private tables: Map<string, string[]> = new Map();
   private columns: Map<string, string[]> = new Map();
@@ -14,13 +18,11 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
     super(instanceSettings);
 
-    this.headers = { 'Content-Type': 'application/json' };
-
-    this.id = instanceSettings.id;
-
-    // annotations default behaviour
-    // https://grafana.com/docs/grafana/latest/developers/plugins/create-a-grafana-plugin/extend-a-plugin/add-support-for-annotations/
+    // Annotations use the regular query editor and query path.
+    // https://grafana.com/developers/plugin-tools/how-to-guides/data-source-plugins/add-support-for-annotation-queries
     this.annotations = {};
+
+    this.variables = new CassandraVariableSupport(this);
   }
 
   query(options: DataQueryRequest<CassandraQuery>): Observable<DataQueryResponse> {
@@ -37,16 +39,18 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
     return super.query(this.buildQueryParameters(options));
   }
 
-  // metricFindQuery implicitly returns array of MetricFindValue objects. It assumed, that
-  // backend returns some compatible type to be correctly used in dashboard variables context.
-  // https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/datasource.ts#L595
-  async metricFindQuery(query: CassandraVariableQuery, options?: any) {
-    const scopedVars = options?.scopedVars;
-    const interpolatedQuery = getTemplateSrv().replace(query.query, scopedVars, 'csv');
-    
+  // Runs a variable query through the backend `variables` resource. The backend
+  // returns MetricFindValue-compatible objects: the first column of each row is the
+  // value and the optional second column its label (text).
+  // Grafana reaches this through CassandraVariableSupport.
+  async metricFindQuery(
+    query: CassandraVariableQuery | string,
+    options?: LegacyMetricFindQueryOptions
+  ): Promise<MetricFindValue[]> {
+    const interpolatedQuery = getTemplateSrv().replace(normalizeVariableQuery(query).query, options?.scopedVars, 'csv');
+
     try {
-      const response = await this.getResource('variables', {query: interpolatedQuery});
-      return response;
+      return await this.getResource('variables', { query: interpolatedQuery });
     } catch (error) {
       console.warn('Failed to execute variable query:', interpolatedQuery, error);
       return [];
@@ -124,13 +128,12 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
 
   buildQueryParameters(options: DataQueryRequest<CassandraQuery>): DataQueryRequest<CassandraQuery> {
     //remove placeholder targets
-    options.targets = _.filter(options.targets, (target) => {
+    options.targets = options.targets.filter((target) => {
       return target.target !== 'select metric';
     });
 
-    const targets: CassandraQuery[] = _.map(options.targets, (target) => {
+    const targets: CassandraQuery[] = options.targets.map((target) => {
       return {
-        datasourceId: target.datasourceId,
         queryType: target.queryType,
 
         target: getTemplateSrv().replace(target.target, options.scopedVars, 'csv'),

@@ -1,12 +1,23 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, LinkButton, Select, InlineSwitch, TextArea } from '@grafana/ui';
+import {
+  FieldSet,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  LinkButton,
+  Select,
+  InlineSwitch,
+  SecretInput,
+  SecretTextArea,
+} from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { config } from '@grafana/runtime';
 import { CassandraDataSourceOptions } from './models';
 
-const { SecretFormField } = LegacyForms;
-
 type Props = DataSourcePluginOptionsEditorProps<CassandraDataSourceOptions, Record<string, unknown>>;
+
+// Keys under secureJsonData, read by the backend from DecryptedSecureJSONData.
+type SecretKey = 'password' | 'certContent' | 'rootContent' | 'caContent';
 
 interface State {}
 
@@ -56,16 +67,6 @@ export class ConfigEditor extends PureComponent<Props, State> {
       keyspace: event.target.value,
     };
     onOptionsChange({ ...options, jsonData });
-  };
-
-  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonData: {
-        apiKey: event.target.value,
-      },
-    });
   };
 
   onUserChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -122,80 +123,39 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
-  onCertContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+  // Secrets are write-only: Grafana never sends them back, it only reports in
+  // secureJsonFields which of them are set. Typing stores the new value in
+  // secureJsonData; Reset clears both, so saving removes the stored secret.
+  onSecretChange =
+    (key: SecretKey) => (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { onOptionsChange, options } = this.props;
+      onOptionsChange({
+        ...options,
+        secureJsonData: {
+          ...options.secureJsonData,
+          [key]: event.currentTarget.value,
+        },
+      });
+    };
+
+  onSecretReset = (key: SecretKey) => () => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        certContent: true,
+        [key]: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        certContent: event.target.value,
+        [key]: '',
       },
     });
   };
 
-  onRootContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const { onOptionsChange, options } = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        rootContent: true,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        rootContent: event.target.value,
-      },
-    });
-  };
+  isSecretConfigured = (key: SecretKey): boolean => Boolean(this.props.options.secureJsonFields?.[key]);
 
-  onCaContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const { onOptionsChange, options } = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        caContent: true,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        caContent: event.target.value,
-      },
-    });
-  };
-
-  onPasswordReset = () => {
-    const { onOptionsChange, options } = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: '',
-      },
-    });
-  };
-
-  onPasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { onOptionsChange, options } = this.props;
-    onOptionsChange({
-      ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        password: true,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        password: event.target.value,
-      },
-    });
-  };
+  secretValue = (key: SecretKey): string => (this.props.options.secureJsonData?.[key] as string | undefined) ?? '';
 
   render() {
     const { onOptionsChange, options } = this.props;
@@ -266,13 +226,15 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 width={25}
               />
             </InlineField>
-            <InlineField>
-              <SecretFormField
-                isConfigured={false}
-                value={(options.secureJsonData?.password as string) || ''}
-                onReset={this.onPasswordReset}
-                onChange={this.onPasswordChange}
-                labelWidth={5}
+            <InlineField label="Password" labelWidth={12} htmlFor="cassandra-password">
+              <SecretInput
+                id="cassandra-password"
+                placeholder="password"
+                isConfigured={this.isSecretConfigured('password')}
+                value={this.secretValue('password')}
+                onReset={this.onSecretReset('password')}
+                onChange={this.onSecretChange('password')}
+                width={25}
               />
             </InlineField>
           </InlineFieldRow>
@@ -427,10 +389,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
             <>
               <InlineFieldRow>
                 <InlineField label="Public Key Content" labelWidth={30} tooltip="Paste public key directly">
-                  <TextArea
-                    value={(options.secureJsonData?.certContent as string) || ''}
+                  <SecretTextArea
+                    isConfigured={this.isSecretConfigured('certContent')}
+                    value={this.secretValue('certContent')}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                    onChange={this.onCertContentChange}
+                    onChange={this.onSecretChange('certContent')}
+                    onReset={this.onSecretReset('certContent')}
                     rows={6}
                     cols={60}
                   />
@@ -438,10 +402,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
               </InlineFieldRow>
               <InlineFieldRow>
                 <InlineField label="Private Key Content" labelWidth={30} tooltip="Paste private key directly">
-                  <TextArea
-                    value={(options.secureJsonData?.rootContent as string) || ''}
+                  <SecretTextArea
+                    isConfigured={this.isSecretConfigured('rootContent')}
+                    value={this.secretValue('rootContent')}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                    onChange={this.onRootContentChange}
+                    onChange={this.onSecretChange('rootContent')}
+                    onReset={this.onSecretReset('rootContent')}
                     rows={6}
                     cols={60}
                   />
@@ -453,10 +419,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
                   labelWidth={30}
                   tooltip="Paste RootCA certificate directly"
                 >
-                  <TextArea
-                    value={(options.secureJsonData?.caContent as string) || ''}
+                  <SecretTextArea
+                    isConfigured={this.isSecretConfigured('caContent')}
+                    value={this.secretValue('caContent')}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-                    onChange={this.onCaContentChange}
+                    onChange={this.onSecretChange('caContent')}
+                    onReset={this.onSecretReset('caContent')}
                     rows={6}
                     cols={60}
                   />

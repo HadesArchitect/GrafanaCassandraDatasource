@@ -6,7 +6,6 @@ export interface CassandraQuery extends DataQuery {
   queryType: CassandraQueryType;
   filtering?: boolean;
   keyspace?: string;
-  datasourceId?: number;
   table?: string;
   columnTime?: string;
   columnValue?: string;
@@ -17,8 +16,34 @@ export interface CassandraQuery extends DataQuery {
   instant?: boolean;
 }
 
-export interface CassandraVariableQuery {
+export interface CassandraVariableQuery extends DataQuery {
   query: string;
+}
+
+export const DEFAULT_VARIABLE_REF_ID = 'CassandraVariableQuery';
+
+/**
+ * Turns whatever a dashboard has stored as a query variable's query into a CassandraVariableQuery.
+ *
+ * Grafana stores what the variable editor handed to onChange, so the stored shape depends on the plugin
+ * version the variable was last saved with:
+ * - 4.x (CustomVariableSupport): `{ refId, query }`
+ * - 1.x-3.x (the deprecated setVariableQueryEditor): `{ query }`, without a refId
+ * - very old or hand-written dashboards: the bare CQL string
+ *
+ * All of them keep working without the dashboard being saved again.
+ */
+export function normalizeVariableQuery(stored: unknown, refId = DEFAULT_VARIABLE_REF_ID): CassandraVariableQuery {
+  if (typeof stored === 'string') {
+    return { refId, query: stored };
+  }
+
+  if (stored && typeof stored === 'object') {
+    const { query, ...rest } = stored as Partial<CassandraVariableQuery>;
+    return { ...rest, refId: rest.refId || refId, query: typeof query === 'string' ? query : '' };
+  }
+
+  return { refId, query: '' };
 }
 
 export interface CassandraDataSourceOptions extends DataSourceJsonData {

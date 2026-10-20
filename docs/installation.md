@@ -1,5 +1,11 @@
 # Data Source Installation
 
+## Requirements
+
+Plugin version 4.x requires **Grafana 10.4 or newer**. Grafana 7.4 - 10.3 are supported by plugin version 3.x: installations that already run it keep working, and version 3.3.0 stays published for them. To install it explicitly, pass the version to the console tool: `grafana-cli plugins install hadesarchitect-cassandra-datasource 3.3.0`.
+
+## Installation options
+
 - **GUI** Install the plugin via standard Grafana plugin management UI
 
 - **Cli** Install the plugin using grafana console tool: `grafana-cli plugins install hadesarchitect-cassandra-datasource`. The plugin will be installed into your grafana plugins directory; the default is `/var/lib/grafana/plugins`.
