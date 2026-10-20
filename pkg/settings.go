@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/health"
 )
 
 // dataSourceSettings is a convenient presentation of a
@@ -58,15 +60,15 @@ func prepareTLSCfgFromPaths(certPath, rootPath, caPath string, allowInsecureTLS 
 	if certPath != "" && rootPath != "" {
 		cert, err := filepath.Abs(certPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve certificate path: %w", err)
+			return nil, health.Wrap(health.InvalidTLSClientCert, fmt.Errorf("failed to resolve certificate path: %w", err))
 		}
 		key, err := filepath.Abs(rootPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve key path: %w", err)
+			return nil, health.Wrap(health.InvalidTLSClientCert, fmt.Errorf("failed to resolve key path: %w", err))
 		}
 		certificate, err := tls.LoadX509KeyPair(cert, key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load certificate from files: %w", err)
+			return nil, health.Wrap(health.InvalidTLSClientCert, fmt.Errorf("failed to load certificate from files: %w", err))
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
@@ -75,15 +77,15 @@ func prepareTLSCfgFromPaths(certPath, rootPath, caPath string, allowInsecureTLS 
 	if caPath != "" {
 		caCertPEMPath, err := filepath.Abs(caPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve CA certificate path: %w", err)
+			return nil, health.Wrap(health.InvalidTLSCA, fmt.Errorf("failed to resolve CA certificate path: %w", err))
 		}
 		caCertPEM, err := ioutil.ReadFile(caCertPEMPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read CA certificate file: %w", err)
+			return nil, health.Wrap(health.InvalidTLSCA, fmt.Errorf("failed to read CA certificate file: %w", err))
 		}
 		roots := x509.NewCertPool()
 		if ok := roots.AppendCertsFromPEM(caCertPEM); !ok {
-			return nil, fmt.Errorf("failed to parse CA certificate from file")
+			return nil, health.Wrap(health.InvalidTLSCA, fmt.Errorf("failed to parse CA certificate from file"))
 		}
 		tlsConfig.RootCAs = roots
 	}
@@ -99,7 +101,7 @@ func prepareTLSCfgFromContent(certContent, rootContent, caContent string, allowI
 	if certContent != "" && rootContent != "" {
 		certificate, err := tls.X509KeyPair([]byte(certContent), []byte(rootContent))
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse certificate content: %w", err)
+			return nil, health.Wrap(health.InvalidTLSClientCert, fmt.Errorf("failed to parse certificate content: %w", err))
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 	}
@@ -108,7 +110,7 @@ func prepareTLSCfgFromContent(certContent, rootContent, caContent string, allowI
 	if caContent != "" {
 		roots := x509.NewCertPool()
 		if ok := roots.AppendCertsFromPEM([]byte(caContent)); !ok {
-			return nil, fmt.Errorf("failed to parse CA certificate content")
+			return nil, health.Wrap(health.InvalidTLSCA, fmt.Errorf("failed to parse CA certificate content"))
 		}
 		tlsConfig.RootCAs = roots
 	}

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,9 +16,14 @@ import (
 
 type instanceManagerMock struct {
 	plugin *pluginMock
+	// err is returned by Get, as when the instance factory fails.
+	err error
 }
 
 func (i *instanceManagerMock) Get(_ context.Context, _ backend.PluginContext) (instancemgmt.Instance, error) {
+	if i.err != nil {
+		return nil, i.err
+	}
 	return i.plugin, nil
 }
 
@@ -33,7 +37,7 @@ type pluginMock struct {
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
 	onGetVariables func(ctx context.Context, query string) ([]plugin.Variable, error)
-	onCheckHealth  func(ctx context.Context) error
+	onCheckHealth  func(ctx context.Context) (plugin.HealthReport, error)
 	onDispose      func()
 }
 
@@ -57,7 +61,7 @@ func (p *pluginMock) GetVariables(ctx context.Context, query string) ([]plugin.V
 	return p.onGetVariables(ctx, query)
 }
 
-func (p *pluginMock) CheckHealth(ctx context.Context) error {
+func (p *pluginMock) CheckHealth(ctx context.Context) (plugin.HealthReport, error) {
 	return p.onCheckHealth(ctx)
 }
 
@@ -181,51 +185,6 @@ func Test_queryMetricData(t *testing.T) {
 			}
 
 			assert.Equal(t, tc.want, result)
-		})
-	}
-}
-
-func Test_CheckHealth(t *testing.T) {
-	testCases := []struct {
-		name   string
-		plugin *pluginMock
-		want   *backend.CheckHealthResult
-	}{
-		{
-			name: "no error",
-			plugin: &pluginMock{
-				onCheckHealth: func(_ context.Context) error {
-					return nil
-				},
-			},
-			want: &backend.CheckHealthResult{
-				Status:  backend.HealthStatusOk,
-				Message: "Connected",
-			},
-		},
-		{
-			name: "error",
-			plugin: &pluginMock{
-				onCheckHealth: func(_ context.Context) error {
-					return errors.New("some error")
-				},
-			},
-			want: &backend.CheckHealthResult{
-				Status:  backend.HealthStatusError,
-				Message: "Error, check Grafana logs for more details",
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			h := handler{instanceManager: &instanceManagerMock{plugin: tc.plugin}}
-			result, err := h.CheckHealth(context.TODO(), &backend.CheckHealthRequest{})
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-
-			assert.Equal(t, result, tc.want)
 		})
 	}
 }

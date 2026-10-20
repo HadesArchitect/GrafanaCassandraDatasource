@@ -16,6 +16,11 @@ type repositoryMock struct {
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
+
+	onPing              func(ctx context.Context) error
+	onClusterInfo       func(ctx context.Context) (cassandra.ClusterInfo, error)
+	onKeyspaceExists    func(ctx context.Context, keyspace string) (bool, error)
+	onCanReadSystemAuth func(ctx context.Context) (bool, error)
 }
 
 func (m *repositoryMock) Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error) {
@@ -34,7 +39,24 @@ func (m *repositoryMock) GetColumns(keyspace, table, needType string) ([]string,
 	return m.onGetColumns(keyspace, table, needType)
 }
 
-func (m *repositoryMock) Ping(_ context.Context) error { return nil }
+func (m *repositoryMock) Ping(ctx context.Context) error {
+	if m.onPing == nil {
+		return nil
+	}
+	return m.onPing(ctx)
+}
+
+func (m *repositoryMock) ClusterInfo(ctx context.Context) (cassandra.ClusterInfo, error) {
+	return m.onClusterInfo(ctx)
+}
+
+func (m *repositoryMock) KeyspaceExists(ctx context.Context, keyspace string) (bool, error) {
+	return m.onKeyspaceExists(ctx, keyspace)
+}
+
+func (m *repositoryMock) CanReadSystemAuth(ctx context.Context) (bool, error) {
+	return m.onCanReadSystemAuth(ctx)
+}
 
 func (m *repositoryMock) Close() {}
 

@@ -9,18 +9,31 @@ import (
 
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/cassandra"
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/handler"
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/health"
 	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 )
 
+// newDataSource is the instance factory. Its errors are shown to users, in
+// the health check and in panels, so the original error is only logged and
+// the returned one carries the curated message of its health.Category.
 func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	instance, err := newPlugin(ctx, settings)
+	if err != nil {
+		backend.Logger.Error("Failed to create the data source instance", "Message", err)
+		return nil, health.Public(err)
+	}
+
+	return instance, nil
+}
+
+func newPlugin(ctx context.Context, settings backend.DataSourceInstanceSettings) (*plugin.Plugin, error) {
 	var dss dataSourceSettings
 	err := json.Unmarshal(settings.JSONData, &dss)
 	if err != nil {
-		backend.Logger.Error("Failed to parse connection parameter", "Message", err)
-		return nil, fmt.Errorf("Failed to parse connection parameters: %w", err)
+		return nil, health.Wrap(health.InvalidSettings, fmt.Errorf("failed to parse connection parameters: %w", err))
 	}
 
 	var tlsConfig *tls.Config
@@ -40,8 +53,7 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		}
 
 		if err != nil {
-			backend.Logger.Error("Failed to create TLS config", "Message", err)
-			return nil, fmt.Errorf("Failed to create TLS config: %w", err)
+			return nil, fmt.Errorf("failed to create TLS config: %w", err)
 		}
 	}
 
@@ -52,14 +64,14 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 
 	dialer, err := secureSocksDialer(ctx, settings)
 	if err != nil {
-		backend.Logger.Error("Failed to set up the secure socks proxy", "Message", err)
-		return nil, fmt.Errorf("Failed to set up the secure socks proxy: %w", err)
+		return nil, health.Wrap(health.SecureSocksProxy, fmt.Errorf("failed to set up the secure socks proxy: %w", err))
 	}
 
+	proxyUnavailable := dialer == nil && dss.EnableSecureSocksProxy
 	switch {
 	case dialer != nil:
 		backend.Logger.Debug("Connecting to Cassandra through the secure socks proxy")
-	case dss.EnableSecureSocksProxy:
+	case proxyUnavailable:
 		backend.Logger.Warn("Secure socks proxy is enabled for this datasource but not configured on this Grafana instance, connecting to Cassandra directly")
 	}
 
@@ -77,11 +89,14 @@ func newDataSource(ctx context.Context, settings backend.DataSourceInstanceSetti
 
 	session, err := cassandra.New(sessionSettings)
 	if err != nil {
-		backend.Logger.Error("Failed to create Cassandra connection", "Message", err)
-		return nil, fmt.Errorf("Failed to create Cassandra connection, check Grafana logs for more details")
+		return nil, fmt.Errorf("failed to create Cassandra connection: %w", err)
 	}
 
-	return plugin.New(session), nil
+	return plugin.New(session, plugin.Options{
+		Keyspace:                    dss.Keyspace,
+		SecureSocksProxy:            dialer != nil,
+		SecureSocksProxyUnavailable: proxyUnavailable,
+	}), nil
 }
 
 func main() {
