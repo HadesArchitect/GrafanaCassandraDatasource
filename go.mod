@@ -3,7 +3,7 @@ module github.com/HadesArchitect/GrafanaCassandraDatasource
 go 1.25.7
 
 require (
-	github.com/gocql/gocql v1.7.0
+	github.com/apache/cassandra-gocql-driver/v2 v2.1.2
 	github.com/grafana/grafana-plugin-sdk-go v0.291.1
 	github.com/magefile/mage v1.16.1
 	github.com/stretchr/testify v1.11.1
@@ -27,7 +27,6 @@ require (
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -36,7 +35,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
-	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-plugin v1.7.0 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect

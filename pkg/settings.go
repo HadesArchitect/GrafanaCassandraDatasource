@@ -33,8 +33,8 @@ type dataSourceSettings struct {
 
 // parseAllowedAuthenticators splits the semicolon-separated allowedAuthenticators
 // setting into a slice, trimming whitespace and dropping empty entries. It
-// returns nil when no authenticators are configured so that gocql falls back to
-// its built-in default list.
+// returns nil when no authenticators are configured so that the cassandra package
+// falls back to its default allow-list.
 func parseAllowedAuthenticators(raw string) []string {
 	parts := strings.Split(raw, ";")
 	result := make([]string, 0, len(parts))

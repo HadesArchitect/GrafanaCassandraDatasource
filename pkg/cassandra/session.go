@@ -8,8 +8,29 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocql/gocql"
+	gocql "github.com/apache/cassandra-gocql-driver/v2"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+// defaultAllowedAuthenticators is the list of server-side authenticators the
+// driver may authenticate against when no list is configured explicitly.
+//
+// gocql v1 enforced this list itself; v2 accepts any authenticator the server
+// announces unless PasswordAuthenticator.AllowedAuthenticators is set. The list
+// is kept here, unchanged, so that upgrading the driver does not silently widen
+// the set of authenticators credentials are sent to.
+var defaultAllowedAuthenticators = []string{
+	"org.apache.cassandra.auth.PasswordAuthenticator",
+	"com.instaclustr.cassandra.auth.SharedSecretAuthenticator",
+	"com.datastax.bdp.cassandra.auth.DseAuthenticator",
+	"io.aiven.cassandra.auth.AivenAuthenticator",
+	"com.ericsson.bss.cassandra.ecaudit.auth.AuditPasswordAuthenticator",
+	"com.amazon.helenus.auth.HelenusAuthenticator",
+	"com.ericsson.bss.cassandra.ecaudit.auth.AuditAuthenticator",
+	"com.scylladb.auth.SaslauthdAuthenticator",
+	"com.scylladb.auth.TransitionalAuthenticator",
+	"com.instaclustr.cassandra.auth.InstaclustrPasswordAuthenticator",
+}
 
 // Dialer establishes the TCP connections to the cluster nodes. It matches
 // gocql.Dialer and is satisfied by the secure SOCKS proxy dialer provided by
@@ -38,18 +59,45 @@ type Session struct {
 
 // New creates a new cassandra cluster session using provided settings.
 func New(cfg Settings) (*Session, error) {
+	cluster, err := newClusterConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterSession, err := cluster.CreateSession()
+	if err != nil {
+		return nil, fmt.Errorf("cluster.CreateSession: %w", err)
+	}
+
+	return &Session{clusterSession}, nil
+}
+
+// newClusterConfig translates the plugin settings into a driver cluster config.
+func newClusterConfig(cfg Settings) (*gocql.ClusterConfig, error) {
 	cluster := gocql.NewCluster(cfg.Hosts...)
 	cluster.DisableInitialHostLookup = true // required, AWS specific
 	cluster.Keyspace = cfg.Keyspace
+	cluster.Logger = newDriverLogger(backend.Logger)
 
-	// AllowedAuthenticators is left unset when empty so that gocql applies its
-	// built-in default allow-list, keeping backwards compatibility. When provided
-	// (e.g. to permit org.apache.cassandra.auth.LDAPAuthenticator) it overrides
-	// the default list.
+	// By default gocql v2 loads and caches the schema of every keyspace when
+	// the session is created. The plugin only needs schema metadata to list
+	// tables and columns in the Query Configurator, so it is read on demand
+	// instead: session creation stays cheap, the lists always reflect the
+	// current schema, and a failure to read the schema tables is reported to
+	// the user instead of turning into "keyspace does not exist".
+	cluster.Metadata.CacheMode = gocql.Disabled
+
+	// The default allow-list is used when no authenticators are configured,
+	// keeping backwards compatibility. When provided (e.g. to permit
+	// org.apache.cassandra.auth.LDAPAuthenticator) the list replaces the default.
+	allowedAuthenticators := cfg.AllowedAuthenticators
+	if len(allowedAuthenticators) == 0 {
+		allowedAuthenticators = defaultAllowedAuthenticators
+	}
 	cluster.Authenticator = gocql.PasswordAuthenticator{
 		Username:              cfg.User,
 		Password:              cfg.Password,
-		AllowedAuthenticators: cfg.AllowedAuthenticators,
+		AllowedAuthenticators: allowedAuthenticators,
 	}
 
 	consistencyLevel, err := gocql.ParseConsistencyWrapper(cfg.Consistency)
@@ -66,18 +114,14 @@ func New(cfg Settings) (*Session, error) {
 		cluster.SslOpts = &gocql.SslOptions{Config: cfg.TLSConfig}
 	}
 
-	// gocql keeps applying SslOpts on top of a custom Dialer, so TLS and the
-	// secure SOCKS proxy can be used together.
+	// gocql keeps applying SslOpts on top of a custom Dialer (it only ignores
+	// them for a custom HostDialer), so TLS and the secure SOCKS proxy can be
+	// used together.
 	if cfg.Dialer != nil {
 		cluster.Dialer = cfg.Dialer
 	}
 
-	clusterSession, err := cluster.CreateSession()
-	if err != nil {
-		return nil, fmt.Errorf("cluster.CreateSession: %w", err)
-	}
-
-	return &Session{clusterSession}, nil
+	return cluster, nil
 }
 
 // Select queries the database with provided query string and returns result rows grouped by ID.
@@ -87,7 +131,7 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		return nil, fmt.Errorf("query is not a SELECT statement: %s", query)
 	}
 
-	iter := s.session.Query(query, values...).WithContext(ctx).Iter()
+	iter := s.session.Query(query, values...).IterContext(ctx)
 	defer func() {
 		if iterErr := iter.Close(); iterErr != nil {
 			err = fmt.Errorf("select query processing: %w", iterErr)
@@ -126,7 +170,7 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 // GetKeyspaces queries the cassandra cluster for a list of existing keyspaces.
 func (s *Session) GetKeyspaces(ctx context.Context) ([]string, error) {
 	statement := "SELECT keyspace_name FROM system_schema.keyspaces"
-	iter := s.session.Query(statement).WithContext(ctx).Iter()
+	iter := s.session.Query(statement).IterContext(ctx)
 
 	var (
 		keyspace  string
@@ -173,7 +217,7 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 
 	columns := make([]string, 0, len(tableMetadata.Columns))
 	for name, column := range tableMetadata.Columns {
-		if column.Type.Type().String() == needType {
+		if typeName(column.Type.Type()) == needType {
 			columns = append(columns, name)
 		}
 	}
@@ -183,7 +227,7 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 
 // Ping executes a simple query to check the connection status.
 func (s *Session) Ping(ctx context.Context) error {
-	err := s.session.Query("SELECT key FROM system.local").WithContext(ctx).Exec()
+	err := s.session.Query("SELECT key FROM system.local").ExecContext(ctx)
 	if err != nil {
 		return fmt.Errorf("session.Query: %w", err)
 	}
@@ -212,7 +256,7 @@ func toString(val interface{}) (string, error) {
 		str = v
 	case gocql.UUID:
 		str = v.String()
-	case int8, int32, int64, int:
+	case int8, int16, int32, int64, int:
 		str = fmt.Sprintf("%d", v)
 	case float32, float64:
 		str = fmt.Sprintf("%f", v)
@@ -220,6 +264,9 @@ func toString(val interface{}) (string, error) {
 		str = v.String()
 	case bool:
 		str = fmt.Sprintf("%t", v)
+	case net.IP:
+		// gocql v2 returns inet columns as net.IP (v1 returned a string).
+		str = ipString(v)
 	default:
 		return "", fmt.Errorf("unsupported type: %T", val)
 	}

@@ -14,7 +14,7 @@ func Test_parseAllowedAuthenticators(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "empty string returns nil (gocql default)",
+			name: "empty string returns nil (default allow-list)",
 			raw:  "",
 			want: nil,
 		},
