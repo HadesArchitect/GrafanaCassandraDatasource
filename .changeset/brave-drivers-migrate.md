@@ -8,7 +8,7 @@ Connecting with an empty **Allowed authenticators** field still only accepts the
 
 A few things behave slightly differently:
 
-- On Cassandra 4.0 and newer the connection now uses native protocol v5. Clusters that only speak protocol v1 or v2 (Cassandra 2.0 and older) are no longer supported; Cassandra 3.x and newer, DataStax Enterprise, Astra and AWS Keyspaces are unaffected.
+- On Cassandra 4.0 and newer the connection now uses native protocol v5. Clusters that only speak protocol v1 or v2 (Cassandra 1.2 and 2.0, DataStax Enterprise 4.6 and older) can no longer be reached. These versions were already below the plugin's supported baseline of Cassandra 3.0; Cassandra 2.1 and newer, DataStax Enterprise 4.7 and newer, Astra and AWS Keyspaces are unaffected.
 - The table and column lists in the Query Configurator are read from the cluster's schema tables each time they are requested instead of from a cache kept by the driver, so they always reflect the current schema.
 - A `smallint` column can now be used as the first (ID) column of a query, which used to fail with `unsupported type: int16`.
 - Driver warnings and errors, such as a node that cannot be reached, are now written to the Grafana server log as structured plugin log entries instead of raw standard-error output. Routine connection messages are logged at debug level only.
