@@ -20,7 +20,7 @@ type ds interface {
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
 	GetVariables(ctx context.Context, query string) ([]plugin.Variable, error)
-	CheckHealth(ctx context.Context) error
+	CheckHealth(ctx context.Context) (plugin.HealthReport, error)
 	Dispose()
 }
 
@@ -193,31 +193,6 @@ func (h *handler) getPluginInstance(ctx context.Context, pluginCtx backend.Plugi
 	}
 
 	return p, nil
-}
-
-// CheckHealth is a handle to check database connection status.
-func (h *handler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	p, err := h.getPluginInstance(ctx, req.PluginContext)
-	if err != nil {
-		return &backend.CheckHealthResult{
-			Status:  backend.HealthStatusUnknown,
-			Message: "Error, check Grafana logs for more details",
-		}, nil
-	}
-
-	err = p.CheckHealth(ctx)
-	if err != nil {
-		backend.Logger.Error("Failed to connect to server", "Message", err)
-		return &backend.CheckHealthResult{
-			Status:  backend.HealthStatusError,
-			Message: "Error, check Grafana logs for more details",
-		}, nil
-	}
-
-	return &backend.CheckHealthResult{
-		Status:  backend.HealthStatusOk,
-		Message: "Connected",
-	}, nil
 }
 
 // writeHTTPResult is a simple helper to serialize data and put it in a http response.

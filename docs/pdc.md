@@ -19,7 +19,10 @@ stack. If you do not see it, the proxy is not available to the instance and
 there is nothing for the plugin to connect through.
 
 Turn it on, make sure the **Host** field points at the cluster as seen *from the
-PDC agent*, then **Save & test**.
+PDC agent*, then **Save & test**. A connection made through the proxy ends with
+`through the secure socks proxy (Private Data Source Connect)`; if the proxy
+cannot be used, the message says so and
+[Troubleshooting](troubleshooting.md#network) explains what to check.
 
 ## Configuring via provisioning
 

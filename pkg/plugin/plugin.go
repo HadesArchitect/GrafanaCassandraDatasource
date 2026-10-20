@@ -20,18 +20,36 @@ type repository interface {
 	GetTables(keyspace string) ([]string, error)
 	GetColumns(keyspace, table, needType string) ([]string, error)
 	Ping(ctx context.Context) error
+	ClusterInfo(ctx context.Context) (cassandra.ClusterInfo, error)
+	KeyspaceExists(ctx context.Context, keyspace string) (bool, error)
+	CanReadSystemAuth(ctx context.Context) (bool, error)
 	Close()
+}
+
+// Options describe how the plugin instance is connected, for the health check.
+type Options struct {
+	// Keyspace is the configured default keyspace, if any.
+	Keyspace string
+	// SecureSocksProxy is true when connections go through Grafana's secure
+	// socks proxy (Private Data Source Connect).
+	SecureSocksProxy bool
+	// SecureSocksProxyUnavailable is true when the data source asks for the
+	// secure socks proxy but the Grafana instance has none configured, so
+	// connections are made directly.
+	SecureSocksProxyUnavailable bool
 }
 
 // Plugin represents grafana datasource plugin.
 type Plugin struct {
 	repo repository
+	opts Options
 }
 
 // New returns configured Plugin.
-func New(repo repository) *Plugin {
+func New(repo repository, opts Options) *Plugin {
 	return &Plugin{
 		repo: repo,
+		opts: opts,
 	}
 }
 
@@ -125,16 +143,6 @@ func (p *Plugin) GetVariables(ctx context.Context, query string) ([]Variable, er
 	}
 
 	return vars, nil
-}
-
-// CheckHealth executes repository Ping method to check database health.
-func (p *Plugin) CheckHealth(ctx context.Context) error {
-	err := p.repo.Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("repo.Ping: %w", err)
-	}
-
-	return nil
 }
 
 // Dispose closes all connections to Cassandra cluster.

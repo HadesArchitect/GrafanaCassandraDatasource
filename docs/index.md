@@ -7,6 +7,7 @@
 | [Installation](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/installation.md) | GUI, CLI, and manual plugin install |
 | [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/quick-demo.md) | Run the full stack locally with Docker Compose |
 | [Provisioning](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/provisioning.md) | Auto-configure the datasource via YAML (basic & TLS) |
+| [Troubleshooting](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md) | Every **Save & test** message, what it means and how to fix it; setting up a read-only role |
 
 ## Querying
 

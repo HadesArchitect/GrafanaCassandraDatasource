@@ -3,11 +3,14 @@ package cassandra
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/HadesArchitect/GrafanaCassandraDatasource/pkg/health"
 	gocql "github.com/apache/cassandra-gocql-driver/v2"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -54,27 +57,124 @@ type Settings struct {
 
 // Session is a convenience wrapper for the gocql.Session.
 type Session struct {
-	session *gocql.Session
+	session  *gocql.Session
+	connects *connectRecorder
 }
 
 // New creates a new cassandra cluster session using provided settings.
+//
+// Errors caused by the settings are tagged with a health.Category, and a
+// failed session creation carries the error of the last failed connection
+// attempt, so that the cause can be classified even though the driver
+// flattens it into a string.
 func New(cfg Settings) (*Session, error) {
 	cluster, err := newClusterConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
+	return createSession(cluster)
+}
+
+// createSession connects to the cluster, recording connection attempts to
+// explain a failure.
+func createSession(cluster *gocql.ClusterConfig) (*Session, error) {
+	connects := &connectRecorder{}
+	cluster.ConnectObserver = connects
+
 	clusterSession, err := cluster.CreateSession()
 	if err != nil {
+		if last := connects.lastError(); last != nil {
+			return nil, fmt.Errorf("cluster.CreateSession: %w (last connection attempt: %w)", err, last)
+		}
+		// Connections that succeed but cannot switch to the default keyspace
+		// are not reported to the connect observer, and leave the pool empty.
+		if errors.Is(err, gocql.ErrNoConnectionsStarted) && cluster.Keyspace != "" {
+			if exists, probeErr := probeKeyspace(*cluster); probeErr == nil && !exists {
+				return nil, fmt.Errorf("cluster.CreateSession: %w: %w", err, health.ErrKeyspaceNotFound)
+			}
+		}
 		return nil, fmt.Errorf("cluster.CreateSession: %w", err)
 	}
 
-	return &Session{clusterSession}, nil
+	return &Session{session: clusterSession, connects: connects}, nil
+}
+
+// connectRecorder is a gocql.ConnectObserver that keeps the outcome of the
+// latest connection attempt. The driver reports why a connection failed only
+// to its log and to connect observers: session creation returns a summary
+// with the original error flattened into text.
+type connectRecorder struct {
+	mu   sync.Mutex
+	last error
+}
+
+// ObserveConnect implements gocql.ConnectObserver.
+func (r *connectRecorder) ObserveConnect(c gocql.ObservedConnect) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.last = c.Err
+}
+
+// lastError returns the error of the latest connection attempt, or nil if it succeeded.
+func (r *connectRecorder) lastError() error {
+	if r == nil {
+		return nil
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.last
+}
+
+// probeTimeout bounds each optional query made to explain or enrich a health check.
+const probeTimeout = 5 * time.Second
+
+// probeKeyspace checks whether the keyspace configured in cluster exists, using
+// a short-lived session without a default keyspace. It is only used to explain
+// why a session could not be created.
+func probeKeyspace(cluster gocql.ClusterConfig) (bool, error) {
+	keyspace := cluster.Keyspace
+	cluster.Keyspace = ""
+	cluster.NumConns = 1
+	cluster.ConnectObserver = nil
+
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return false, fmt.Errorf("cluster.CreateSession: %w", err)
+	}
+	defer session.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), probeTimeout)
+	defer cancel()
+
+	return keyspaceExists(ctx, session, keyspace)
+}
+
+func keyspaceExists(ctx context.Context, session *gocql.Session, keyspace string) (bool, error) {
+	iter := session.Query("SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name = ?", keyspace).
+		Consistency(gocql.LocalOne).IterContext(ctx)
+	found := iter.NumRows() > 0
+	if err := iter.Close(); err != nil {
+		return false, fmt.Errorf("query processing: %w", err)
+	}
+
+	return found, nil
 }
 
 // newClusterConfig translates the plugin settings into a driver cluster config.
 func newClusterConfig(cfg Settings) (*gocql.ClusterConfig, error) {
-	cluster := gocql.NewCluster(cfg.Hosts...)
+	hosts := make([]string, 0, len(cfg.Hosts))
+	for _, host := range cfg.Hosts {
+		if host = strings.TrimSpace(host); host != "" {
+			hosts = append(hosts, host)
+		}
+	}
+	if len(hosts) == 0 {
+		return nil, health.Wrap(health.InvalidContactPoints, gocql.ErrNoHosts)
+	}
+
+	cluster := gocql.NewCluster(hosts...)
 	cluster.DisableInitialHostLookup = true // required, AWS specific
 	cluster.Keyspace = cfg.Keyspace
 	cluster.Logger = newDriverLogger(backend.Logger)
@@ -102,11 +202,16 @@ func newClusterConfig(cfg Settings) (*gocql.ClusterConfig, error) {
 
 	consistencyLevel, err := gocql.ParseConsistencyWrapper(cfg.Consistency)
 	if err != nil {
-		return nil, fmt.Errorf("gocql.ParseConsistencyWrapper: %w", err)
+		return nil, health.Wrap(health.InvalidConsistency, fmt.Errorf("gocql.ParseConsistencyWrapper: %w", err))
 	}
 	cluster.Consistency = consistencyLevel
 
 	if cfg.Timeout != nil {
+		// gocql treats a timeout of zero or less as no timeout at all, so a
+		// negative value would silently remove the bound it was meant to set.
+		if *cfg.Timeout < 0 {
+			return nil, health.Wrap(health.InvalidTimeout, fmt.Errorf("negative timeout: %d", *cfg.Timeout))
+		}
 		cluster.Timeout = time.Duration(*cfg.Timeout) * time.Second
 	}
 
@@ -229,10 +334,113 @@ func (s *Session) GetColumns(keyspace, table, needType string) ([]string, error)
 func (s *Session) Ping(ctx context.Context) error {
 	err := s.session.Query("SELECT key FROM system.local").ExecContext(ctx)
 	if err != nil {
+		// When no node can be reached, why is only known from the pool's
+		// latest reconnection attempt.
+		if errors.Is(err, gocql.ErrNoConnections) {
+			if last := s.connects.lastError(); last != nil {
+				return fmt.Errorf("session.Query: %w (last connection attempt: %w)", err, last)
+			}
+		}
 		return fmt.Errorf("session.Query: %w", err)
 	}
 
 	return nil
+}
+
+// ClusterInfo holds facts about the node the health check talked to. Every
+// field may be empty: AWS Keyspaces, Astra and other CQL-compatible services
+// return a limited or emulated system.local.
+type ClusterInfo struct {
+	ClusterName    string
+	ReleaseVersion string
+	// DSEVersion is only set by DataStax Enterprise.
+	DSEVersion string
+	DataCenter string
+}
+
+// systemLocalColumns are the system.local columns ClusterInfo is read from.
+var systemLocalColumns = map[string]func(info *ClusterInfo) *string{
+	"cluster_name":    func(info *ClusterInfo) *string { return &info.ClusterName },
+	"release_version": func(info *ClusterInfo) *string { return &info.ReleaseVersion },
+	"dse_version":     func(info *ClusterInfo) *string { return &info.DSEVersion },
+	"data_center":     func(info *ClusterInfo) *string { return &info.DataCenter },
+}
+
+// ClusterInfo reads cluster facts from system.local in a single query.
+//
+// The query selects every column, because which ones exist depends on the
+// server, and only decodes the text columns listed in systemLocalColumns.
+// Every other column, whatever its type, is skipped without being decoded.
+func (s *Session) ClusterInfo(ctx context.Context) (ClusterInfo, error) {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
+	defer cancel()
+
+	var info ClusterInfo
+	iter := s.session.Query("SELECT * FROM system.local").Consistency(gocql.LocalOne).IterContext(ctx)
+
+	columns := iter.Columns()
+	dest := make([]interface{}, len(columns))
+	for i, column := range columns {
+		field, known := systemLocalColumns[column.Name]
+		if known && isTextColumn(column) {
+			dest[i] = field(&info)
+		} else {
+			dest[i] = skipColumn{}
+		}
+	}
+	iter.Scan(dest...)
+
+	if err := iter.Close(); err != nil {
+		return ClusterInfo{}, fmt.Errorf("query processing: %w", err)
+	}
+
+	return info, nil
+}
+
+func isTextColumn(column gocql.ColumnInfo) bool {
+	if column.TypeInfo == nil {
+		return false
+	}
+
+	switch column.TypeInfo.Type() {
+	case gocql.TypeVarchar, gocql.TypeText, gocql.TypeAscii:
+		return true
+	default:
+		return false
+	}
+}
+
+// skipColumn is a scan destination that discards the column.
+type skipColumn struct{}
+
+// UnmarshalCQL implements gocql.Unmarshaler.
+func (skipColumn) UnmarshalCQL(gocql.TypeInfo, []byte) error { return nil }
+
+// KeyspaceExists reports whether the keyspace exists.
+func (s *Session) KeyspaceExists(ctx context.Context, keyspace string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
+	defer cancel()
+
+	return keyspaceExists(ctx, s.session, keyspace)
+}
+
+// CanReadSystemAuth reports whether the session's role can read
+// system_auth.roles, which holds the password hash of every role. A role used
+// by Grafana should not be able to.
+//
+// Only a successful read returns true. Any error, an authorization error as
+// well as system_auth not existing (AWS Keyspaces, Astra), means the role
+// cannot read it. The rows read are discarded without being decoded or logged.
+func (s *Session) CanReadSystemAuth(ctx context.Context) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, probeTimeout)
+	defer cancel()
+
+	err := s.session.Query("SELECT role FROM system_auth.roles LIMIT 1").Consistency(gocql.LocalOne).ExecContext(ctx)
+	if err != nil {
+		return false, fmt.Errorf("session.Query: %w", err)
+	}
+
+	return true, nil
 }
 
 // Close closes connections to cluster.
