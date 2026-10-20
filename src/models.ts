@@ -112,4 +112,18 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
 /** Row limit applied by the backend when `maxRows` is not set, see pkg/settings.go. */
 export const DEFAULT_MAX_ROWS = 100000;
 
+/**
+ * Row limit the backend applies to the queries of a data source with these settings, as resolveMaxRows in
+ * pkg/settings.go reads them: DEFAULT_MAX_ROWS when `maxRows` is not set, 0 for no limit. Undefined when the
+ * value is not a non-negative integer, which the backend rejects.
+ */
+export function effectiveMaxRows(jsonData?: Partial<CassandraDataSourceOptions>): number | undefined {
+  const maxRows: unknown = jsonData?.maxRows;
+  if (maxRows === undefined || maxRows === null) {
+    return DEFAULT_MAX_ROWS;
+  }
+
+  return Number.isInteger(maxRows) && (maxRows as number) >= 0 ? (maxRows as number) : undefined;
+}
+
 type CassandraQueryType = 'query' | 'alert';

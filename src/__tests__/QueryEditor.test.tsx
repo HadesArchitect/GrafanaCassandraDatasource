@@ -377,6 +377,33 @@ describe('QueryEditor', () => {
     });
 
     it.each([
+      [100000, 'up to 100000 rows (the Max rows setting of the data source)'],
+      [500, 'up to 500 rows (the Max rows setting of the data source)'],
+      [0, 'with no row limit as Max rows is 0 in the data source settings'],
+    ])('states the row limit of the data source when Max rows is %s', async (maxRows, text) => {
+      await renderComponent({
+        ...mockProps,
+        datasource: { ...mockDatasource, maxRows } as unknown as CassandraDatasource,
+        query: { ...mockQuery, rawQuery: true, target: 'SELECT * FROM ks.t' },
+      });
+
+      const warning = screen.getByText(warningTitle).closest('[role="alert"]')!;
+      expect(warning).toHaveTextContent(text);
+      expect(warning).toHaveTextContent('add a condition on the time column');
+      if (maxRows === 0) {
+        expect(warning).not.toHaveTextContent('up to');
+      }
+    });
+
+    it('does not mention a row limit it does not know', async () => {
+      await renderRawTarget('SELECT * FROM ks.t');
+
+      const warning = screen.getByText(warningTitle).closest('[role="alert"]')!;
+      expect(warning).not.toHaveTextContent('Max rows');
+      expect(warning).toHaveTextContent('add a condition on the time column');
+    });
+
+    it.each([
       ['$__timeFrom', 'SELECT * FROM ks.t WHERE time > $__timeFrom'],
       ['$__timeTo', 'SELECT * FROM ks.t WHERE time < $__timeTo'],
       ['$__unixEpochFrom', 'SELECT * FROM ks.t WHERE time > $__unixEpochFrom'],
