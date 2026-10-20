@@ -1,6 +1,7 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { FieldSet, InlineField, InlineFieldRow, Input, LegacyForms, LinkButton, Select, InlineSwitch, TextArea } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
+import { config } from '@grafana/runtime';
 import { CassandraDataSourceOptions } from './models';
 
 const { SecretFormField } = LegacyForms;
@@ -90,6 +91,15 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const jsonData = {
       ...options.jsonData,
       allowedAuthenticators: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+  onEnableSecureSocksProxyChange = (event: React.FormEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      enableSecureSocksProxy: event.currentTarget.checked,
     };
     onOptionsChange({ ...options, jsonData });
   };
@@ -295,6 +305,24 @@ export class ConfigEditor extends PureComponent<Props, State> {
             </InlineField>
           </InlineFieldRow>
         </FieldSet>
+        {config.secureSocksDSProxyEnabled && (
+          <FieldSet label="Private Data Source Connect">
+            <InlineFieldRow>
+              <InlineField
+                label="Secure Socks Proxy"
+                labelWidth={30}
+                htmlFor="enableSecureSocksProxy"
+                tooltip="Reach the cluster through Grafana's secure socks proxy instead of connecting to it directly. Required to query a Cassandra cluster that is not exposed to the internet from Grafana Cloud. Use IP addresses as contact points, host names are resolved by the plugin and not by the proxy."
+              >
+                <InlineSwitch
+                  id="enableSecureSocksProxy"
+                  value={options.jsonData.enableSecureSocksProxy ?? false}
+                  onChange={this.onEnableSecureSocksProxyChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          </FieldSet>
+        )}
         <FieldSet label="TLS Settings">
           <InlineFieldRow>
             <InlineField

@@ -24,6 +24,7 @@
 | [Partitions](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/partitions.md) | Fat-partition problem and time-bucketing strategy |
 | [Unix Epoch Time](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/unix-epoch.md) | Querying `bigint` timestamps stored as seconds or milliseconds |
 | [Custom Authenticators](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/authenticators.md) | Allow non-default authenticators such as LDAPAuthenticator |
+| [Private Data Source Connect](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/pdc.md) | Query a private cluster from Grafana Cloud through PDC |
 
 ## Connections
 

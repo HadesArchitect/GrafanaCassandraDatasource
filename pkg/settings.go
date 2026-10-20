@@ -24,6 +24,11 @@ type dataSourceSettings struct {
 	UseCustomTLS          bool   `json:"UseCustomTLS"`
 	AllowInsecureTLS      bool   `json:"allowInsecureTLS"`
 	AllowedAuthenticators string `json:"allowedAuthenticators"`
+	// EnableSecureSocksProxy mirrors the key the plugin SDK reads to decide
+	// whether the datasource connection must go through Grafana's secure SOCKS
+	// proxy (Private Data Source Connect). It is kept here only to be able to
+	// tell "not requested" apart from "requested but unavailable" when logging.
+	EnableSecureSocksProxy bool `json:"enableSecureSocksProxy"`
 }
 
 // parseAllowedAuthenticators splits the semicolon-separated allowedAuthenticators

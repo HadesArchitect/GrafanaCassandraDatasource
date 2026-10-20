@@ -4,11 +4,19 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
 	"github.com/gocql/gocql"
 )
+
+// Dialer establishes the TCP connections to the cluster nodes. It matches
+// gocql.Dialer and is satisfied by the secure SOCKS proxy dialer provided by
+// the Grafana plugin SDK, which is what Private Data Source Connect is built on.
+type Dialer interface {
+	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
+}
 
 // Settings is a set of Cassandra session settings.
 type Settings struct {
@@ -20,6 +28,7 @@ type Settings struct {
 	Timeout               *int
 	TLSConfig             *tls.Config
 	AllowedAuthenticators []string
+	Dialer                Dialer
 }
 
 // Session is a convenience wrapper for the gocql.Session.
@@ -55,6 +64,12 @@ func New(cfg Settings) (*Session, error) {
 
 	if cfg.TLSConfig != nil {
 		cluster.SslOpts = &gocql.SslOptions{Config: cfg.TLSConfig}
+	}
+
+	// gocql keeps applying SslOpts on top of a custom Dialer, so TLS and the
+	// secure SOCKS proxy can be used together.
+	if cfg.Dialer != nil {
+		cluster.Dialer = cfg.Dialer
 	}
 
 	clusterSession, err := cluster.CreateSession()
