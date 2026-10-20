@@ -1,0 +1,11 @@
+---
+'grafana-cassandra-datasource': minor
+---
+
+**Query results are now capped at 100000 rows by default.** A new **Max rows** setting in the data source settings (`jsonData.maxRows` for provisioning) sets the largest number of rows a single query may return, counted across all the series of the query. When a query has more, the plugin stops reading at the limit, does not fetch the rest from Cassandra, and the panel shows a warning: `Result truncated to 100000 rows (Max rows setting). Narrow the time range or the query, or raise Max rows in the data source settings.` Until now every row was read, so one Query Editor query without a time filter on a large table could load millions of rows and exhaust Grafana's memory. The cap applies to Query Editor and Query Configurator queries, annotations, alert rules and variable queries.
+
+**This changes behaviour for existing data sources:** a query that returned more than 100000 rows with 3.x now returns the first 100000 rows with a warning. If you rely on larger results, raise **Max rows**, or set it to `0` to remove the limit as before. Leaving the field empty uses the default; a negative value is rejected by **Save & test** with `Max rows must not be negative.`
+
+**The query inspector now shows what a query did.** **Inspect > Query** shows the CQL that was executed, after the time range macros and dashboard variables were replaced; for a Query Configurator query, the statement the plugin built followed by its bound ID values and time range. **Inspect > Stats** shows the number of rows returned and the execution time. Both are also reported for a query that returns no rows.
+
+**The Query Editor warns about queries without a time filter.** When the CQL uses none of `$__timeFrom`, `$__timeTo`, `$__unixEpochFrom`, `$__unixEpochTo`, `$__from` or `$__to`, a warning under the query explains that it reads every matching row whatever the dashboard time range. It is advice only: the query still runs, and queries meant to read all rows, for example for a table, can ignore it. See [Query Editor](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/editor.md) and [Truncated query results](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md#truncated-query-results).

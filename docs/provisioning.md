@@ -44,9 +44,17 @@ datasources:
       keyspace: system
       consistency: ONE
       user: cassandra
+      # Optional: the largest number of rows a query may return.
+      # Default 100000 when omitted, 0 for no limit, negative values are rejected.
+      maxRows: 100000
     secureJsonData:
       password: cassandra
 ```
+
+> `maxRows` caps every query, variable queries included. A query that returns
+> more rows is truncated to `maxRows` and its panel shows a warning, see
+> [Truncated query results](troubleshooting.md#truncated-query-results). It
+> must be a number, not a quoted string.
 
 > Connecting to a cluster that uses a non-default authenticator (e.g.
 > `org.apache.cassandra.auth.LDAPAuthenticator`)? Set the `allowedAuthenticators`

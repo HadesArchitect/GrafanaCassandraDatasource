@@ -2,12 +2,13 @@
 
 **Save & test** on the data source settings page checks that Grafana can connect
 to the cluster and run a query. This page lists every message it can show, what
-it means and how to fix it.
+it means and how to fix it. It also explains the warning shown on panels whose
+[query results were truncated](#truncated-query-results).
 
 ## What the check does
 
-1. Reads the data source settings: contact points, consistency, timeout, TLS
-   certificates and the secure socks proxy.
+1. Reads the data source settings: contact points, consistency, timeout, max
+   rows, TLS certificates and the secure socks proxy.
 2. Connects to the contact points and authenticates.
 3. Runs `SELECT key FROM system.local`. If this works, the check passes.
 4. Collects facts and warnings. None of these steps can make a working
@@ -80,6 +81,7 @@ These problems are found before connecting.
 | No contact point is configured. | Enter at least one contact point in the **Host** field, for example `10.0.0.1:9042`. Separate several contact points with a semicolon. |
 | The consistency level is not valid. | Pick a level from the **Consistency** list, for example `ONE`, `LOCAL_ONE`, `QUORUM` or `LOCAL_QUORUM`. For a provisioned data source, set `jsonData.consistency` to one of these names. |
 | The timeout must not be negative. | Set the **Timeout** field to a positive number of seconds, or leave it empty to use the default of 11 seconds. A negative value used to silently disable the timeout. |
+| Max rows must not be negative. | Set the **Max rows** field to the largest number of rows a query may return, `0` for no limit, or leave it empty to use the default of 100000. For a provisioned data source, set `jsonData.maxRows`. |
 | The TLS client certificate or private key could not be loaded. | The public key (certificate) and private key must be a matching PEM-encoded pair. When using file paths, both files must exist on the Grafana server and be readable by it. |
 | The TLS root CA certificate could not be loaded. | The root CA certificate must be PEM-encoded. When using a file path, the file must exist on the Grafana server and be readable by it. |
 
@@ -126,6 +128,39 @@ These problems are found before connecting.
 | Message | Meaning and fix |
 | --- | --- |
 | Could not connect to Cassandra. | The cause was not recognised. A Grafana administrator can find the full error in the Grafana server log. Please [open an issue](https://github.com/HadesArchitect/GrafanaCassandraDatasource/issues) with the log line, with addresses and names removed, so that it can be recognised in a future version. |
+
+## Truncated query results
+
+A panel can show this warning:
+
+```text
+Result truncated to 100000 rows (Max rows setting). Narrow the time range or the query, or raise Max rows in the data source settings.
+```
+
+The data source's **Max rows** setting (`jsonData.maxRows`, 100000 by default)
+caps how many rows a single query may return, counted across all the series of
+the query. When a query has more, the plugin stops reading at the limit, does
+not fetch the remaining rows from Cassandra, and returns the rows read so far
+with this warning. Without the cap, one query without a time filter on a large
+table could load millions of rows and exhaust Grafana's memory.
+
+The rows returned are the first ones in the order Cassandra returned them, so a
+truncated graph can miss whole series or the end of the time range. To fix it:
+
+- Limit the query to the dashboard time range with `$__timeFrom`/`$__timeTo`
+  (see [Query Editor](editor.md#queries-without-a-time-filter)), or narrow the
+  dashboard time range.
+- Select fewer series, add a `LIMIT` or `PER PARTITION LIMIT`, or aggregate in
+  CQL.
+- If the query really needs more rows, raise **Max rows** in the data source
+  settings. `0` removes the limit; only do this if every query of the data
+  source is known to return a bounded number of rows.
+
+**Inspect > Stats** shows the number of rows returned, and **Inspect > Query**
+the CQL that was executed. Variable queries are capped by the same setting:
+a truncated variable query offers the first values only, without a warning in
+the dashboard; the Grafana server log records it. Alert rules evaluate the
+truncated rows; the server log records that as well.
 
 ## Use a read-only role
 
