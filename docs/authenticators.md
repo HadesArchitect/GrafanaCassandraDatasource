@@ -1,10 +1,10 @@
 # Custom Authenticators (LDAP, etc.)
 
 Some Cassandra clusters authenticate clients with a non-standard authenticator —
-for example `org.apache.cassandra.auth.LDAPAuthenticator`. By default the driver
-used by this plugin (gocql) only accepts a fixed allow-list of server-side
-authenticator class names, and refuses to connect to anything else with an error
-like:
+for example `org.apache.cassandra.auth.LDAPAuthenticator`. By default the plugin
+only lets its Cassandra driver ([GoCQL](https://github.com/apache/cassandra-gocql-driver))
+authenticate against a fixed allow-list of server-side authenticator class
+names, and refuses to connect to anything else with an error like:
 
 ```text
 Failed to create Cassandra connection
@@ -22,7 +22,7 @@ server-side authenticators it is allowed to authenticate against. Add your
 cluster's authenticator class name and the connection will succeed.
 
 * It is a **semicolon-separated** list of fully-qualified authenticator class names.
-* **Leaving it empty preserves the original behaviour** — the driver falls back
+* **Leaving it empty preserves the original behaviour** — the plugin falls back
   to its built-in default allow-list (see below). Existing data sources are
   therefore unaffected.
 * The list **replaces** the default list rather than extending it. If your
@@ -62,8 +62,10 @@ datasources:
 
 ## Default allow-list
 
-When **Allowed authenticators** is left empty, the driver accepts the following
-authenticators (its built-in defaults):
+When **Allowed authenticators** is left empty, the plugin accepts the following
+authenticators (its built-in defaults). This is the list GoCQL 1.x enforced
+itself; GoCQL 2.x would accept any authenticator, so the plugin keeps applying
+it to avoid sending credentials to an unexpected authenticator:
 
 ```text
 org.apache.cassandra.auth.PasswordAuthenticator

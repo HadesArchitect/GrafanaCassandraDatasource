@@ -27,7 +27,7 @@ reviews:
     enabled: true
   path_instructions:
     - path: "pkg/**"
-      instructions: "Go backend using the Grafana backend plugin SDK and the gocql driver. Check for Cassandra query safety, connection/session lifecycle, and TLS handling."
+      instructions: "Go backend using the Grafana backend plugin SDK and the Apache Cassandra GoCQL driver v2 (github.com/apache/cassandra-gocql-driver/v2). Check for Cassandra query safety, connection/session lifecycle, and TLS handling."
     - path: "src/**"
       instructions: "TypeScript/React frontend using @grafana/data and @grafana/ui. Ensure compatibility with Grafana's DataSourcePlugin APIs and avoid direct DOM manipulation."
   auto_review:
