@@ -10,6 +10,7 @@ import {
   CassandraQuery,
   CassandraVariableQuery,
   CassandraDataSourceOptions,
+  effectiveMaxRows,
   isQueryComplete,
   normalizeVariableQuery,
 } from './models';
@@ -43,8 +44,13 @@ export class CassandraDatasource extends DataSourceWithBackend<CassandraQuery, C
   private tables: Map<string, string[]> = new Map();
   private columns: Map<string, string[]> = new Map();
 
+  /** Row limit the backend applies to each query, 0 for none; undefined when unknown, see effectiveMaxRows. */
+  readonly maxRows: number | undefined;
+
   constructor(instanceSettings: DataSourceInstanceSettings<CassandraDataSourceOptions>) {
     super(instanceSettings);
+
+    this.maxRows = effectiveMaxRows(instanceSettings.jsonData);
 
     // Annotations use the regular query editor and query path.
     // https://grafana.com/developers/plugin-tools/how-to-guides/data-source-plugins/add-support-for-annotation-queries

@@ -2,21 +2,21 @@ import { DataQueryRequest, DataSourceInstanceSettings, dateTime } from '@grafana
 import { BackendSrv, setBackendSrv } from '@grafana/runtime';
 import { lastValueFrom, of } from 'rxjs';
 import { CassandraDatasource, sortNames } from '../datasource';
-import { CassandraDataSourceOptions, CassandraQuery } from '../models';
+import { CassandraDataSourceOptions, CassandraQuery, DEFAULT_MAX_ROWS, effectiveMaxRows } from '../models';
 
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   getTemplateSrv: () => ({ replace: (text?: string) => (text ?? '').replace('$sensor', 'sensor-1') }),
 }));
 
-const makeDatasource = () =>
+const makeDatasource = (jsonData: Partial<CassandraDataSourceOptions> = {}) =>
   new CassandraDatasource({
     id: 1,
     uid: 'cassandra',
     type: 'hadesarchitect-cassandra-datasource',
     name: 'Cassandra',
     access: 'proxy',
-    jsonData: {},
+    jsonData,
     meta: {},
     readOnly: false,
   } as unknown as DataSourceInstanceSettings<CassandraDataSourceOptions>);
@@ -189,5 +189,20 @@ describe('CassandraDatasource dropdown options', () => {
     jest.spyOn(ds, 'getResource').mockResolvedValue(null);
 
     expect(await ds.getTables('empty')).toEqual([]);
+  });
+});
+
+describe('max rows', () => {
+  it.each([
+    ['unset', {}, DEFAULT_MAX_ROWS],
+    ['null', { maxRows: null as unknown as number }, DEFAULT_MAX_ROWS],
+    ['0 (no limit)', { maxRows: 0 }, 0],
+    ['a positive integer', { maxRows: 500 }, 500],
+    ['negative, which the backend rejects', { maxRows: -1 }, undefined],
+    ['not an integer', { maxRows: 1.5 }, undefined],
+    ['a string', { maxRows: '500' as unknown as number }, undefined],
+  ])('resolves %s like the backend', (_, jsonData, expected) => {
+    expect(effectiveMaxRows(jsonData)).toBe(expected);
+    expect(makeDatasource(jsonData).maxRows).toBe(expected);
   });
 });

@@ -38,9 +38,32 @@ SELECT sensor_id, temperature, registered_at, location FROM test.test WHERE sens
     * There could be any number of additional fields, however be cautious when using multiple numeric fields as they are interpreted as values by grafana and therefore are drawn on TimeSeries graph.
     * Any field returned by query is available to use in `Alias` template, e.g. `{{ location }}`. Datasource interpolates such strings and updates graph legend. 
     * Datasource will try to keep all the fields, however it is not always possible since cassandra and grafana use different sets of supported types. Unsupported fields will be removed from response.
-2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel. **Notice** It's important to add the placeholders otherwise query will try to fetch data for the whole period of time. Don't try to specify the timeframe on your own, just put the placeholders. It's grafana's job to specify time limits.
+2. To filter data by time, use `$__timeFrom` and `$__timeTo` placeholders as in the example. The datasource will replace them with time values from the panel. **Notice** It's important to add the placeholders otherwise query will try to fetch data for the whole period of time. Don't try to specify the timeframe on your own, just put the placeholders. It's grafana's job to specify time limits. See [Queries without a time filter](#queries-without-a-time-filter).
 
 ![103153625-1fd85280-4792-11eb-9c00-085297802117](https://user-images.githubusercontent.com/1742301/148654522-8e50617d-0ba9-4c5a-a3f0-7badec92e31f.png)
+
+## Queries without a time filter
+
+When the CQL uses none of `$__timeFrom`, `$__timeTo`, `$__unixEpochFrom`, `$__unixEpochTo`, `$__from` or `$__to` (including forms such as `${__from:date:iso}`), the editor shows a warning under the query: **This query has no time filter**. Such a query ignores the dashboard time range and reads every matching row, which on a large table can be millions of rows.
+
+The warning is advice only: the query still runs. Ignore it for queries that are meant to read all rows, for example a table of sensors. It is shown for the query as written, so a time range passed through a dashboard variable of your own is not recognised.
+
+Whatever the query, the result is capped by the **Max rows** setting of the data source (100000 rows by default), unless Max rows is set to `0`, which removes the limit. A query that returns more is truncated and its panel shows a warning, see [Truncated query results](troubleshooting.md#truncated-query-results).
+
+## Query inspector
+
+Open the panel's **Query inspector** (or **Inspect > Query** / **Inspect > Stats**) to see what a query did:
+
+* **Executed query.** The CQL that was sent to Cassandra, after the time range macros and dashboard variables were replaced. For a Query Configurator query it is the statement the plugin built, followed by a comment with the bound values: the ID values and the time range in UTC, for example:
+
+  ```cql
+  SELECT sensor_id, temperature, registered_at FROM test.test WHERE sensor_id IN ? AND registered_at >= ? AND registered_at <= ?
+  -- bound values: sensor_id IN (99051fe9-6a9c-46c2-b949-38ef78858dd1), registered_at >= 2024-03-01T09:00:00.000Z, registered_at <= 2024-03-01T10:00:00.000Z
+  ```
+
+* **Stats.** Under *Data source stats*: **Rows returned**, the number of rows read from Cassandra across all series of the query, and **Execution time**, how long running the query and reading its rows took, in milliseconds.
+
+A query that returns no rows still reports both, which helps to check that the executed CQL is the one you expected.
 
 ## Variables
 

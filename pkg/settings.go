@@ -26,11 +26,33 @@ type dataSourceSettings struct {
 	UseCustomTLS          bool   `json:"UseCustomTLS"`
 	AllowInsecureTLS      bool   `json:"allowInsecureTLS"`
 	AllowedAuthenticators string `json:"allowedAuthenticators"`
+	// MaxRows is the largest number of rows a query may return. Unset means
+	// defaultMaxRows, 0 means no limit.
+	MaxRows *int `json:"maxRows"`
 	// EnableSecureSocksProxy mirrors the key the plugin SDK reads to decide
 	// whether the datasource connection must go through Grafana's secure SOCKS
 	// proxy (Private Data Source Connect). It is kept here only to be able to
 	// tell "not requested" apart from "requested but unavailable" when logging.
 	EnableSecureSocksProxy bool `json:"enableSecureSocksProxy"`
+}
+
+// defaultMaxRows is the row limit of a data source whose settings do not set
+// maxRows. It keeps a query without a time filter from loading a whole table
+// into Grafana's memory.
+const defaultMaxRows = 100000
+
+// resolveMaxRows returns the row limit for the maxRows setting: the default
+// when it is not set, and no limit (0) when it is set to 0. A negative value
+// is rejected rather than read as "no limit", as it is most likely a typo.
+func resolveMaxRows(maxRows *int) (int, error) {
+	if maxRows == nil {
+		return defaultMaxRows, nil
+	}
+	if *maxRows < 0 {
+		return 0, health.Wrap(health.InvalidMaxRows, fmt.Errorf("negative maxRows: %d", *maxRows))
+	}
+
+	return *maxRows, nil
 }
 
 // parseAllowedAuthenticators splits the semicolon-separated allowedAuthenticators

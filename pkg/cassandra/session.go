@@ -229,22 +229,70 @@ func newClusterConfig(cfg Settings) (*gocql.ClusterConfig, error) {
 	return cluster, nil
 }
 
+// SelectResult holds the rows read by Select.
+type SelectResult struct {
+	// Rows are the rows grouped by ID, the value of the first column.
+	Rows map[string][]Row
+	// RowCount is the number of rows in Rows, across all IDs.
+	RowCount int
+	// Truncated is true when the query had more rows than the limit passed
+	// to Select. Rows then holds the first rows only, up to the limit.
+	Truncated bool
+}
+
+// defaultPageSize is the driver's default page size (gocql.ClusterConfig.PageSize).
+const defaultPageSize = 5000
+
 // Select queries the database with provided query string and returns result rows grouped by ID.
 // ID must be a first requested column in query and must be convertable to a string.
-func (s *Session) Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]Row, err error) {
+//
+// At most maxRows rows are read, counted across all IDs. When the query has
+// more, reading stops there, the remaining pages are not fetched, and the
+// result is marked as truncated. A maxRows of zero or less reads every row.
+func (s *Session) Select(ctx context.Context, maxRows int, query string, values ...interface{}) (result SelectResult, err error) {
 	if !isSelect(query) {
-		return nil, fmt.Errorf("query is not a SELECT statement: %s", query)
+		return SelectResult{}, fmt.Errorf("query is not a SELECT statement: %s", query)
 	}
 
-	iter := s.session.Query(query, values...).IterContext(ctx)
+	q := s.session.Query(query, values...)
+	// A small limit does not need the driver's default page of 5000 rows.
+	// The extra row tells whether the result goes beyond the limit.
+	if maxRows > 0 && maxRows < defaultPageSize {
+		q = q.PageSize(maxRows + 1)
+	}
+
+	iter := q.IterContext(ctx)
 	defer func() {
+		// Closing an iterator before its last page is not an error: the
+		// pages that were not read are simply never fetched.
 		if iterErr := iter.Close(); iterErr != nil {
+			result = SelectResult{}
 			err = fmt.Errorf("select query processing: %w", iterErr)
 		}
 	}()
 
-	rows = make(map[string][]Row)
+	return scanRows(iter, maxRows)
+}
+
+// rowScanner is the part of *gocql.Iter that scanRows uses.
+type rowScanner interface {
+	Columns() []gocql.ColumnInfo
+	MapScan(m map[string]interface{}) bool
+}
+
+// scanRows reads up to maxRows rows from iter, all of them when maxRows is
+// zero or less, and groups them by the value of their first column. Errors
+// of the iterator itself are reported by its Close method.
+func scanRows(iter rowScanner, maxRows int) (SelectResult, error) {
+	result := SelectResult{Rows: make(map[string][]Row)}
 	for {
+		if maxRows > 0 && result.RowCount >= maxRows {
+			// Reading one more row, which is discarded, tells a result of
+			// exactly maxRows rows apart from a larger one.
+			result.Truncated = iter.MapScan(make(map[string]interface{}, len(iter.Columns())))
+			break
+		}
+
 		rowValues := make(map[string]interface{}, len(iter.Columns()))
 		if !iter.MapScan(rowValues) {
 			break
@@ -256,7 +304,7 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 		idFieldName := iter.Columns()[0].Name
 		id, err := toString(rowValues[idFieldName])
 		if err != nil {
-			return nil, fmt.Errorf("row processing: %w", err)
+			return SelectResult{}, fmt.Errorf("row processing: %w", err)
 		}
 
 		row := Row{
@@ -264,12 +312,13 @@ func (s *Session) Select(ctx context.Context, query string, values ...interface{
 			Fields:  rowValues,
 		}
 		if err := row.normalize(); err != nil {
-			return nil, fmt.Errorf("row.normalize: %w", err)
+			return SelectResult{}, fmt.Errorf("row.normalize: %w", err)
 		}
-		rows[id] = append(rows[id], row)
+		result.Rows[id] = append(result.Rows[id], row)
+		result.RowCount++
 	}
 
-	return rows, nil
+	return result, nil
 }
 
 // GetKeyspaces queries the cassandra cluster for a list of existing keyspaces.

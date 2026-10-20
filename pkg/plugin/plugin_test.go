@@ -12,7 +12,10 @@ import (
 )
 
 type repositoryMock struct {
+	// onSelect returns the whole result. onSelectResult, when set, is used
+	// instead, to return a truncated result or check the row limit.
 	onSelect       func(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error)
+	onSelectResult func(ctx context.Context, maxRows int, query string, values ...interface{}) (cassandra.SelectResult, error)
 	onGetKeyspaces func(ctx context.Context) ([]string, error)
 	onGetTables    func(keyspace string) ([]string, error)
 	onGetColumns   func(keyspace, table, needType string) ([]string, error)
@@ -23,8 +26,21 @@ type repositoryMock struct {
 	onCanReadSystemAuth func(ctx context.Context) (bool, error)
 }
 
-func (m *repositoryMock) Select(ctx context.Context, query string, values ...interface{}) (rows map[string][]cassandra.Row, err error) {
-	return m.onSelect(ctx, query, values...)
+func (m *repositoryMock) Select(ctx context.Context, maxRows int, query string, values ...interface{}) (cassandra.SelectResult, error) {
+	if m.onSelectResult != nil {
+		return m.onSelectResult(ctx, maxRows, query, values...)
+	}
+
+	rows, err := m.onSelect(ctx, query, values...)
+	if err != nil {
+		return cassandra.SelectResult{}, err
+	}
+	count := 0
+	for _, idRows := range rows {
+		count += len(idRows)
+	}
+
+	return cassandra.SelectResult{Rows: rows, RowCount: count}, nil
 }
 
 func (m *repositoryMock) GetKeyspaces(ctx context.Context) ([]string, error) {
@@ -203,6 +219,11 @@ func TestPlugin_ExecQuery(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			p := &Plugin{repo: tc.repo}
 			dataFrames, err := p.ExecQuery(context.TODO(), tc.query)
+			// The metadata is checked by TestPlugin_ExecQuery_meta.
+			for _, frame := range dataFrames {
+				assert.NotNil(t, frame.Meta)
+				frame.Meta = nil
+			}
 			sort.Slice(dataFrames, func(i, j int) bool {
 				return dataFrames[i].Name < dataFrames[j].Name
 			})

@@ -38,7 +38,8 @@ See the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasourc
 
 1. Add the `Apache Cassandra Data Source` as a data source at the datasource configuration page.
 2. Configure the datasource specifying contact point and port like `10.11.12.13:9042`, username and password. It's strongly recommended to use a dedicated user with read-only permissions only to the table you have to access, see [Use a read-only role](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md#use-a-read-only-role).
-3. Push the "Save & test" button. On success it shows the cluster name, Cassandra version and data center it connected to (when the server reports them), and warns if the configured role is over-privileged. On failure it says what went wrong and how to fix it; every message is explained in [docs/troubleshooting.md](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md).
+3. Optionally adjust **Max rows**, the largest number of rows a single query may return (default `100000`, `0` for no limit). A query that returns more is truncated and its panel shows a warning, so that a query without a time filter cannot exhaust Grafana's memory. See [Truncated results](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md#truncated-query-results).
+4. Push the "Save & test" button. On success it shows the cluster name, Cassandra version and data center it connected to (when the server reports them), and warns if the configured role is over-privileged. On failure it says what went wrong and how to fix it; every message is explained in [docs/troubleshooting.md](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/troubleshooting.md).
 
 For a quick setup with Grafana automatic provisioning, see [docs/provisioning.md](https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/provisioning.md).
 

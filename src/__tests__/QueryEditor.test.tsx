@@ -365,6 +365,97 @@ describe('QueryEditor', () => {
     });
   });
 
+  describe('time filter warning', () => {
+    const warningTitle = 'This query has no time filter';
+    const renderRawTarget = async (target: string | undefined) =>
+      renderComponent({ ...mockProps, query: { ...mockQuery, rawQuery: true, target } });
+
+    it('advises adding a time filter to a query without one', async () => {
+      await renderRawTarget('SELECT id, value, time FROM ks.t');
+
+      expect(screen.getByText(warningTitle)).toBeInTheDocument();
+    });
+
+    it.each([
+      [100000, 'up to 100000 rows (the Max rows setting of the data source)'],
+      [500, 'up to 500 rows (the Max rows setting of the data source)'],
+      [0, 'with no row limit as Max rows is 0 in the data source settings'],
+    ])('states the row limit of the data source when Max rows is %s', async (maxRows, text) => {
+      await renderComponent({
+        ...mockProps,
+        datasource: { ...mockDatasource, maxRows } as unknown as CassandraDatasource,
+        query: { ...mockQuery, rawQuery: true, target: 'SELECT * FROM ks.t' },
+      });
+
+      const warning = screen.getByText(warningTitle).closest('[role="alert"]')!;
+      expect(warning).toHaveTextContent(text);
+      expect(warning).toHaveTextContent('add a condition on the time column');
+      if (maxRows === 0) {
+        expect(warning).not.toHaveTextContent('up to');
+      }
+    });
+
+    it('does not mention a row limit it does not know', async () => {
+      await renderRawTarget('SELECT * FROM ks.t');
+
+      const warning = screen.getByText(warningTitle).closest('[role="alert"]')!;
+      expect(warning).not.toHaveTextContent('Max rows');
+      expect(warning).toHaveTextContent('add a condition on the time column');
+    });
+
+    it.each([
+      ['$__timeFrom', 'SELECT * FROM ks.t WHERE time > $__timeFrom'],
+      ['$__timeTo', 'SELECT * FROM ks.t WHERE time < $__timeTo'],
+      ['$__unixEpochFrom', 'SELECT * FROM ks.t WHERE time > $__unixEpochFrom'],
+      ['$__unixEpochTo', 'SELECT * FROM ks.t WHERE time < $__unixEpochTo'],
+      ['$__from', 'SELECT * FROM ks.t WHERE time > $__from'],
+      ['$__to', 'SELECT * FROM ks.t WHERE time < $__to'],
+      ['${__from:date:iso}', "SELECT * FROM ks.t WHERE time > '${__from:date:iso}'"],
+      ['${__to}', 'SELECT * FROM ks.t WHERE time < ${__to}'],
+    ])('does not show for a query using %s', async (_, target) => {
+      await renderRawTarget(target);
+
+      expect(screen.queryByText(warningTitle)).not.toBeInTheDocument();
+    });
+
+    it('does not show for an empty query', async () => {
+      await renderRawTarget('  ');
+
+      expect(screen.queryByText(warningTitle)).not.toBeInTheDocument();
+    });
+
+    it('does not show in the configurator, which always filters by time', async () => {
+      await renderComponent({ ...mockProps, query: { ...mockQuery, rawQuery: false, target: 'SELECT * FROM ks.t' } });
+
+      expect(screen.queryByText(warningTitle)).not.toBeInTheDocument();
+    });
+
+    it('follows the committed query', async () => {
+      const props = { ...mockProps, query: { ...mockQuery, rawQuery: true, target: 'SELECT * FROM ks.t' } };
+      const { rerender } = await renderComponent(props);
+      expect(screen.getByText(warningTitle)).toBeInTheDocument();
+
+      rerender(
+        <QueryEditor {...props} query={{ ...props.query, target: 'SELECT * FROM ks.t WHERE t > $__timeFrom' }} />
+      );
+
+      expect(screen.queryByText(warningTitle)).not.toBeInTheDocument();
+    });
+
+    it('does not block running the query', async () => {
+      const onRunQuery = jest.fn();
+      await renderComponent({
+        ...mockProps,
+        onRunQuery,
+        query: { ...mockQuery, rawQuery: true, target: 'SELECT * FROM ks.t' },
+      });
+
+      fireEvent.blur(screen.getByRole('textbox', { name: 'Cassandra CQL Query' }));
+
+      expect(onRunQuery).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('configurator', () => {
     const complete: CassandraQuery = {
       ...mockQuery,
