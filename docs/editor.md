@@ -48,7 +48,7 @@ When the CQL uses none of `$__timeFrom`, `$__timeTo`, `$__unixEpochFrom`, `$__un
 
 The warning is advice only: the query still runs. Ignore it for queries that are meant to read all rows, for example a table of sensors. It is shown for the query as written, so a time range passed through a dashboard variable of your own is not recognised.
 
-Whatever the query, the result is capped by the **Max rows** setting of the data source (100000 rows by default). A query that returns more is truncated and its panel shows a warning, see [Truncated query results](troubleshooting.md#truncated-query-results).
+Whatever the query, the result is capped by the **Max rows** setting of the data source (100000 rows by default), unless Max rows is set to `0`, which removes the limit. A query that returns more is truncated and its panel shows a warning, see [Truncated query results](troubleshooting.md#truncated-query-results).
 
 ## Query inspector
 
