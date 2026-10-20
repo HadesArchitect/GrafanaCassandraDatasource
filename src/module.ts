@@ -1,13 +1,12 @@
 import { DataSourcePlugin } from '@grafana/data';
 import { CassandraDatasource } from './datasource';
-import { CassandraQuery,CassandraDataSourceOptions } from './models';
+import { CassandraQuery, CassandraDataSourceOptions } from './models';
 import { QueryEditor } from './QueryEditor';
-import { VariableQueryEditor } from './VariableQueryEditor';
 import { ConfigEditor } from './ConfigEditor';
 
+// The variable query editor is registered by the data source itself, see CassandraVariableSupport.
 export const plugin = new DataSourcePlugin<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>(
   CassandraDatasource
 )
   .setConfigEditor(ConfigEditor)
-  .setQueryEditor(QueryEditor)
-  .setVariableQueryEditor(VariableQueryEditor); // Deprecated, but there is no documentation on the new approach available atm.
+  .setQueryEditor(QueryEditor);

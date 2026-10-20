@@ -1,39 +1,53 @@
-import React, { useState } from 'react';
-import { CassandraVariableQuery } from './models';
-import { TextArea, LinkButton } from '@grafana/ui';
+import React, { useEffect, useState } from 'react';
+import { QueryEditorProps } from '@grafana/data';
+import { Field, LinkButton, TextArea } from '@grafana/ui';
+import type { CassandraDatasource } from './datasource';
+import { CassandraDataSourceOptions, CassandraQuery, CassandraVariableQuery, normalizeVariableQuery } from './models';
 
-interface VariableQueryProps {
-  query: CassandraVariableQuery;
-  onChange: (query: CassandraVariableQuery, definition: string) => void;
-}
+type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions, CassandraVariableQuery>;
 
-export const VariableQueryEditor = ({ onChange, query }: VariableQueryProps) => {
-  const [state, setState] = useState(query);
+export const VariableQueryEditor = ({ onChange, query }: Props) => {
+  // Dashboards saved with plugin 3.x or older store `{ query }` or a bare string.
+  const current = normalizeVariableQuery(query);
+  const [text, setText] = useState(current.query);
+
+  useEffect(() => {
+    setText(current.query);
+  }, [current.query]);
 
   const saveQuery = () => {
-    onChange(state, `${state.query}`);
+    if (text !== current.query) {
+      onChange({ ...current, query: text });
+    }
   };
-
-  const handleChange = (event: React.FormEvent<HTMLTextAreaElement>) =>
-    setState({
-      ...state,
-      [event.currentTarget.name]: event.currentTarget.value,
-    });
 
   return (
     <>
-        <label className="small">Specify a query that returns variable values and, optionally, their labels. Only strings are allowed here, so use CAST(column as text) if needed. First returned column interpreted as a value and second as a label. Labels should be used in cases when there is an intention to hide exact variable values behind human-readable names in the Grafana UI.</label>
-        <br />
+      <Field
+        label="CQL query"
+        htmlFor="cassandra-variable-query"
+        description="Specify a query that returns variable values and, optionally, their labels. Only strings are allowed here, so use CAST(column as text) if needed. First returned column interpreted as a value and second as a label. Labels should be used in cases when there is an intention to hide exact variable values behind human-readable names in the Grafana UI."
+      >
         <TextArea
+          id="cassandra-variable-query"
           name="query"
-          className="gf-form-input"
+          rows={4}
           onBlur={saveQuery}
-          onChange={handleChange}
-          value={state.query}
+          onChange={(event: React.FormEvent<HTMLTextAreaElement>) => setText(event.currentTarget.value)}
+          value={text}
           placeholder={'SELECT sensor_id, location FROM sensors.sensors_locations'}
         />
-        <br />
-        <LinkButton href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md" target="_blank" rel="noopener noreferrer" variant="secondary" size="sm" icon="external-link-alt">Learn more about variables</LinkButton>
+      </Field>
+      <LinkButton
+        href="https://github.com/HadesArchitect/GrafanaCassandraDatasource/blob/main/docs/variables.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        variant="secondary"
+        size="sm"
+        icon="external-link-alt"
+      >
+        Learn more about variables
+      </LinkButton>
     </>
   );
 };
