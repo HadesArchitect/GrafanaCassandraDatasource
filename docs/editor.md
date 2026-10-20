@@ -1,6 +1,27 @@
 # Query Editor
 
-Query Editor unlocks all possibilities of CQL including Used-Defined Functions, aggregations etc. To enable query editor, press "toggle editor mode" button.
+Query Editor unlocks all possibilities of CQL including User-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query.
+
+## The editor
+
+The CQL query is written in a code editor (the same Monaco editor Grafana uses for its own query languages):
+
+* **Syntax highlighting and line numbers.** There is no dedicated CQL mode, so the editor highlights CQL as SQL. Keywords, strings and numbers are highlighted as expected; CQL-only keywords may not be.
+* **Autocomplete.** Type `$` to get suggestions for the time range macros, Grafana's `$__from`/`$__to` and the variables of the dashboard. Each macro comes with a short description. `Ctrl+Space` opens the suggestions at any time.
+* **Run with `Ctrl+Enter`** (`Cmd+Enter` on macOS). The query also runs when the editor loses focus, as before.
+* The editor grows with the query, up to about 20 lines, and scrolls after that.
+
+Saved queries are not changed by the editor: they are stored in the same format as before and open as they are.
+
+A new query, or one whose CQL is still empty, is not run and shows no error. Other queries of the same panel run as usual.
+
+## Time range macros
+
+| Macro | Replaced with |
+| --- | --- |
+| `$__timeFrom` / `$__timeTo` | Start / end of the panel time range in milliseconds since the Unix epoch. Use them with `timestamp` columns, or `bigint` columns holding milliseconds. |
+| `$__unixEpochFrom` / `$__unixEpochTo` | Start / end of the panel time range in seconds since the Unix epoch, for columns storing Unix time in seconds. See [Unix epoch time format](unix-epoch.md). |
+| `$__from` / `$__to` | Grafana's global variables: start / end of the dashboard time range in milliseconds since the Unix epoch, with [formatting options](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to) such as `${__from:date:iso}`. |
 
 ## Usage
 

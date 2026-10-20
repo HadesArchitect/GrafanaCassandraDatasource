@@ -4,7 +4,14 @@ import '@testing-library/jest-dom';
 import { QueryEditor } from '../QueryEditor';
 import { CassandraDatasource } from '../datasource';
 import { CassandraQuery, CassandraDataSourceOptions } from '../models';
-import { QueryEditorProps, LoadingState, DataFrame } from '@grafana/data';
+import { CoreApp, QueryEditorProps, LoadingState, DataFrame } from '@grafana/data';
+import { lastCodeEditorProps } from '../testUtils/MockCodeEditor';
+
+// Monaco does not run in jsdom.
+jest.mock('@grafana/ui', () => ({
+  ...jest.requireActual('@grafana/ui'),
+  CodeEditor: jest.requireActual('../testUtils/MockCodeEditor').MockCodeEditor,
+}));
 
 // Mock the datasource
 export const mockDatasource = {
@@ -106,11 +113,11 @@ describe('QueryEditor', () => {
       query: { ...mockQuery, rawQuery: true },
     };
 
-    const { getByText, getByPlaceholderText } = await renderComponent({ ...rawQueryProps });
+    const { getByText, getByRole } = await renderComponent({ ...rawQueryProps });
 
     // Should show raw query editor
     expect(getByText('Cassandra CQL Query')).toBeInTheDocument();
-    expect(getByPlaceholderText('Enter a CQL query')).toBeInTheDocument();
+    expect(getByRole('textbox', { name: 'Cassandra CQL Query' })).toBeInTheDocument();
   });
 
   it('should call datasource methods on mount', async () => {
@@ -264,5 +271,129 @@ describe('QueryEditor', () => {
     fireEvent.click(checkboxes[1]);
 
     expect(mockOnChange).toHaveBeenCalledWith({ ...mockQuery, filtering: true });
+  });
+
+  describe('CQL code editor', () => {
+    const rawQuery: CassandraQuery = { ...mockQuery, rawQuery: true, target: 'SELECT * FROM ks.t' };
+    const renderRaw = async (query: CassandraQuery = rawQuery, extra: Partial<typeof mockProps> = {}) => {
+      const onChange = jest.fn();
+      const onRunQuery = jest.fn();
+      await renderComponent({ ...mockProps, query, onChange, onRunQuery, ...extra });
+      return { onChange, onRunQuery, editor: screen.getByRole('textbox', { name: 'Cassandra CQL Query' }) };
+    };
+
+    it('loads a saved query unchanged', async () => {
+      const { editor, onChange } = await renderRaw();
+
+      expect(editor).toHaveValue('SELECT * FROM ks.t');
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('is a SQL-highlighted Monaco editor with line numbers, no minimap and suggestions', async () => {
+      await renderRaw();
+
+      expect(lastCodeEditorProps).toMatchObject({ language: 'sql', showLineNumbers: true, showMiniMap: false });
+      const labels = lastCodeEditorProps!.getSuggestions!().map((item) => item.label);
+      expect(labels).toEqual(
+        expect.arrayContaining(['$__timeFrom', '$__timeTo', '$__unixEpochFrom', '$__unixEpochTo', '$__from', '$__to'])
+      );
+    });
+
+    it('commits the text and runs the query on blur, without changing the query shape', async () => {
+      const { editor, onChange, onRunQuery } = await renderRaw();
+
+      fireEvent.change(editor, { target: { value: 'SELECT id FROM ks.t' } });
+      expect(onChange).not.toHaveBeenCalled();
+
+      fireEvent.blur(editor);
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith({ ...rawQuery, target: 'SELECT id FROM ks.t', queryType: 'query' });
+      expect(onRunQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['Ctrl', { ctrlKey: true }],
+      ['Cmd', { metaKey: true }],
+    ])('runs the query on %s+Enter with the text being edited', async (_, modifier) => {
+      const { editor, onChange, onRunQuery } = await renderRaw();
+
+      fireEvent.change(editor, { target: { value: 'SELECT id FROM ks.t WHERE x > $__timeFrom' } });
+      fireEvent.keyDown(editor, { key: 'Enter', ...modifier });
+
+      expect(onChange).toHaveBeenCalledWith({
+        ...rawQuery,
+        target: 'SELECT id FROM ks.t WHERE x > $__timeFrom',
+        queryType: 'query',
+      });
+      expect(onRunQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not run on a plain Enter', async () => {
+      const { editor, onChange, onRunQuery } = await renderRaw();
+
+      fireEvent.keyDown(editor, { key: 'Enter' });
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onRunQuery).not.toHaveBeenCalled();
+    });
+
+    it('saves but does not run an empty query', async () => {
+      const { editor, onChange, onRunQuery } = await renderRaw();
+
+      fireEvent.change(editor, { target: { value: '  ' } });
+      fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+
+      expect(onChange).toHaveBeenCalledWith({ ...rawQuery, target: '  ', queryType: 'query' });
+      expect(onRunQuery).not.toHaveBeenCalled();
+    });
+
+    it('marks queries run from the alerting editor as alert queries', async () => {
+      const { editor, onChange } = await renderRaw(rawQuery, { app: CoreApp.UnifiedAlerting });
+
+      fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+
+      expect(onChange).toHaveBeenCalledWith({ ...rawQuery, queryType: 'alert' });
+    });
+
+    it('keeps the same suggestion provider across renders', async () => {
+      const { rerender } = await renderComponent({ ...mockProps, query: rawQuery });
+      const first = lastCodeEditorProps!.getSuggestions;
+
+      rerender(<QueryEditor {...mockProps} query={{ ...rawQuery, alias: 'x' }} />);
+
+      expect(lastCodeEditorProps!.getSuggestions).toBe(first);
+    });
+  });
+
+  describe('configurator', () => {
+    const complete: CassandraQuery = {
+      ...mockQuery,
+      keyspace: 'ks',
+      table: 't',
+      columnTime: 'ts',
+      columnValue: 'v',
+      columnId: 'id',
+      valueId: '99051fe9-6a9c-46c2-b949-38ef78858dd0',
+    };
+
+    it('runs a complete query on blur', async () => {
+      const onRunQuery = jest.fn();
+      await renderComponent({ ...mockProps, query: complete, onRunQuery });
+
+      fireEvent.blur(screen.getByPlaceholderText('my alias'));
+
+      expect(onRunQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('only saves an incomplete query on blur', async () => {
+      const onChange = jest.fn();
+      const onRunQuery = jest.fn();
+      await renderComponent({ ...mockProps, query: { ...complete, valueId: '' }, onChange, onRunQuery });
+
+      fireEvent.blur(screen.getByPlaceholderText('my alias'));
+
+      expect(onChange).toHaveBeenCalledWith({ ...complete, valueId: '', queryType: 'query' });
+      expect(onRunQuery).not.toHaveBeenCalled();
+    });
   });
 });

@@ -22,7 +22,7 @@ See the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasourc
 
 * Connect to Cassandra using auth credentials and TLS
 * Query Configurator
-* Raw CQL query editor
+* Raw CQL query editor with syntax highlighting and autocomplete for macros and variables
 * Table mode
 * Variables
 * Annotations
@@ -64,7 +64,7 @@ More information on [Query Configurator](https://github.com/HadesArchitect/Grafa
 
 ### Query Editor
 
-Query Editor unlocks all possibilities of CQL including Used-Defined Functions, aggregations etc. To enable query editor, press 'toggle editor mode' button.
+Query Editor unlocks all possibilities of CQL including User-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query. The CQL is written in a code editor with syntax highlighting and autocomplete for the time range macros and dashboard variables (type `$`); `Ctrl+Enter` (`Cmd+Enter` on macOS) runs the query.
 
 Example (using the sample table from the Query Configurator case):
 

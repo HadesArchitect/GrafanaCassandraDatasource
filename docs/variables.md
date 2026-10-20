@@ -8,6 +8,10 @@ Define variables in dashboard Settings > Variables. Each variable executes a CQL
 
 ![Variables example](assets/variables.png)
 
+The query is written in the same code editor as the [Query Editor](editor.md), with CQL highlighted as SQL and autocomplete for Grafana's `$__from`/`$__to` and the other dashboard variables (type `$`). The query is applied when the editor loses focus or with `Ctrl+Enter` (`Cmd+Enter` on macOS), and Grafana then refreshes the preview of the values.
+
+The data query macros `$__timeFrom`, `$__timeTo`, `$__unixEpochFrom` and `$__unixEpochTo` are not replaced in variable queries. To limit a variable query to the dashboard time range, use `$__from` and `$__to` and set the variable to refresh **On time range change**.
+
 Use variables in your queries by referencing them with `$variable_name` syntax.
 
 ## Chained Variables
