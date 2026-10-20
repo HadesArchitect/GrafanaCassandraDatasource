@@ -24,7 +24,7 @@ import (
 // text shown to users.
 const (
 	secretUser     = "grafana_reader_7f3a"
-	secretPassword = "s3cr3t-P@ss-91c2"
+	secretPassword = "fake-password-do-not-use"
 	secretCert     = "MIIBszCCAVmgAwIBAgIUfakecertcontent"
 	secretKeyPath  = "/etc/grafana/secret-dir/client-7f3a.key"
 	secretHost     = "10.13.37.42"

@@ -167,7 +167,7 @@ func Test_CheckHealth_failureExamples(t *testing.T) {
 func Test_CheckHealth_noLeaks(t *testing.T) {
 	const (
 		user     = "grafana_reader_7f3a"
-		password = "s3cr3t-P@ss-91c2"
+		password = "fake-password-do-not-use"
 		cert     = "-----BEGIN CERTIFICATE-----MIIBszCCAVmgAwIBAgIU-----END CERTIFICATE-----"
 		keyPath  = "/etc/grafana/secret-dir/client-7f3a.key"
 		host     = "10.13.37.42"

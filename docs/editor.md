@@ -1,6 +1,6 @@
 # Query Editor
 
-Query Editor unlocks all possibilities of CQL including Used-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query.
+Query Editor unlocks all possibilities of CQL including User-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query.
 
 ## The editor
 

@@ -16,7 +16,11 @@ import (
 // are reported by the instance factory with their own category and a curated
 // message (issue #271), instead of a generic error.
 func Test_newDataSource_settingsErrors(t *testing.T) {
-	const secretContent = "-----BEGIN PRIVATE KEY-----c2VjcmV0LWtleS1jb250ZW50-----END PRIVATE KEY-----"
+	// A fake, unparsable key used only to check that it never leaks.
+	const (
+		fakeKeyBody   = "fake-test-key-do-not-use"
+		secretContent = "-----BEGIN PRIVATE KEY-----" + fakeKeyBody + "-----END PRIVATE KEY-----"
+	)
 
 	testCases := map[string]struct {
 		url        string
@@ -92,7 +96,7 @@ func Test_newDataSource_settingsErrors(t *testing.T) {
 
 			problem := health.Describe(tc.want)
 			assert.Equal(t, problem.Message+" "+problem.Hint, err.Error())
-			assert.NotContains(t, err.Error(), "c2VjcmV0LWtleS1jb250ZW50")
+			assert.NotContains(t, err.Error(), fakeKeyBody)
 			assert.NotContains(t, err.Error(), "secret-dir")
 		})
 	}
