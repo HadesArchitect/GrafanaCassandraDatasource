@@ -36,11 +36,12 @@ export let registeredActions: FakeAction[] = [];
 export const MockCodeEditor = (props: CodeEditorProps) => {
   lastCodeEditorProps = props;
   const [text, setText] = useState(props.value);
+  // Kept in step with `text` by the handlers below, not during render.
   const textRef = useRef(text);
-  textRef.current = text;
   const actions = useRef<FakeAction[]>([]);
 
   useEffect(() => {
+    textRef.current = props.value;
     setText(props.value);
   }, [props.value]);
 
@@ -82,7 +83,10 @@ export const MockCodeEditor = (props: CodeEditorProps) => {
       data-language={props.language}
       aria-label={props.monacoOptions?.ariaLabel}
       value={text}
-      onChange={(event) => setText(event.target.value)}
+      onChange={(event) => {
+        textRef.current = event.target.value;
+        setText(event.target.value);
+      }}
       onBlur={() => props.onBlur?.(textRef.current)}
       onKeyDown={onKeyDown}
     />

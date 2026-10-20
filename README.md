@@ -64,7 +64,7 @@ More information on [Query Configurator](https://github.com/HadesArchitect/Grafa
 
 ### Query Editor
 
-Query Editor unlocks all possibilities of CQL including Used-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query. The CQL is written in a code editor with syntax highlighting and autocomplete for the time range macros and dashboard variables (type `$`); `Ctrl+Enter` (`Cmd+Enter` on macOS) runs the query.
+Query Editor unlocks all possibilities of CQL including User-Defined Functions, aggregations etc. To enable query editor, select **Query Editor** in the mode switch at the top of the query. The CQL is written in a code editor with syntax highlighting and autocomplete for the time range macros and dashboard variables (type `$`); `Ctrl+Enter` (`Cmd+Enter` on macOS) runs the query.
 
 Example (using the sample table from the Query Configurator case):
 
