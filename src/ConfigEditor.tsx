@@ -12,7 +12,7 @@ import {
 } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { config } from '@grafana/runtime';
-import { CassandraDataSourceOptions } from './models';
+import { CassandraDataSourceOptions, DEFAULT_MAX_ROWS } from './models';
 
 type Props = DataSourcePluginOptionsEditorProps<CassandraDataSourceOptions, Record<string, unknown>>;
 
@@ -83,6 +83,17 @@ export class ConfigEditor extends PureComponent<Props, State> {
     const jsonData = {
       ...options.jsonData,
       timeout: Number(event.target.value),
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+  // An empty field removes the key, so the backend applies its default; 0 is kept, it means no limit.
+  onMaxRowsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const value = event.target.value.trim();
+    const jsonData = {
+      ...options.jsonData,
+      maxRows: value === '' ? undefined : Math.trunc(Number(value)),
     };
     onOptionsChange({ ...options, jsonData });
   };
@@ -247,6 +258,28 @@ export class ConfigEditor extends PureComponent<Props, State> {
                 step={1}
                 value={options.jsonData.timeout}
                 onChange={this.onTimeoutChange}
+                width={60}
+              />
+            </InlineField>
+          </InlineFieldRow>
+          <InlineFieldRow>
+            <InlineField
+              label="Max rows"
+              labelWidth={25}
+              htmlFor="cassandra-max-rows"
+              invalid={(options.jsonData.maxRows ?? 0) < 0}
+              error="Max rows must not be negative"
+              tooltip={`Largest number of rows a query may return, across all its series. Reading stops there and the panel shows a warning that the result was truncated. Protects Grafana from running out of memory on a query without a time filter. Leave empty for the default of ${DEFAULT_MAX_ROWS}; 0 means no limit.`}
+            >
+              <Input
+                id="cassandra-max-rows"
+                name="maxRows"
+                type="number"
+                min={0}
+                step={1}
+                placeholder={String(DEFAULT_MAX_ROWS)}
+                value={options.jsonData.maxRows ?? ''}
+                onChange={this.onMaxRowsChange}
                 width={60}
               />
             </InlineField>

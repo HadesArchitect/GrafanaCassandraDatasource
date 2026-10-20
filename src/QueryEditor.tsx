@@ -1,11 +1,36 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { Field, InlineField, InlineFieldRow, Input, InlineSwitch, LinkButton, RadioButtonGroup, Select } from '@grafana/ui';
+import {
+  Alert,
+  Field,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  InlineSwitch,
+  LinkButton,
+  RadioButtonGroup,
+  Select,
+} from '@grafana/ui';
 import { CoreApp, QueryEditorProps, SelectableValue } from '@grafana/data';
 import { CassandraDatasource } from './datasource';
-import { CassandraQuery, CassandraDataSourceOptions, isQueryComplete } from './models';
+import { CassandraQuery, CassandraDataSourceOptions, hasTimeFilter, isQueryComplete } from './models';
 import { CqlEditor } from './CqlEditor';
 
 type Props = QueryEditorProps<CassandraDatasource, CassandraQuery, CassandraDataSourceOptions>;
+
+/**
+ * Advice shown under a Query Editor query that does not use the dashboard time range. It does not block
+ * anything: a query meant to read every row, e.g. for a table, is fine, and the data source's Max rows
+ * setting still caps the result.
+ */
+export const NoTimeFilterWarning = () => (
+  <Alert severity="warning" title="This query has no time filter" bottomSpacing={2}>
+    It uses none of <code>$__timeFrom</code>, <code>$__timeTo</code>, <code>$__unixEpochFrom</code>,{' '}
+    <code>$__unixEpochTo</code>, <code>$__from</code> or <code>$__to</code>, so it reads every matching row whatever the
+    dashboard time range, up to the Max rows limit of the data source. To follow the time range, add a condition on the
+    time column, for example <code>AND registered_at &gt; $__timeFrom AND registered_at &lt; $__timeTo</code>. Ignore
+    this if the query is meant to read all rows.
+  </Alert>
+);
 
 function selectable(value?: string): SelectableValue<string> {
   if (!value) {
@@ -251,6 +276,9 @@ export class QueryEditor extends PureComponent<Props> {
                 onRunQuery={this.onQueryTextCommit}
               />
             </Field>
+            {Boolean(this.props.query.target?.trim()) && !hasTimeFilter(this.props.query.target) && (
+              <NoTimeFilterWarning />
+            )}
             <InlineFieldRow>
               <InlineField label="Alias" labelWidth={30} tooltip="Series name override. Plain text or template using column names, e.g. `{{ column1 }}:{{ column2}}`">
                 <Input

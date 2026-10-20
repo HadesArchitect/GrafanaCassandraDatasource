@@ -34,6 +34,31 @@ export function isQueryComplete(query: CassandraQuery): boolean {
   );
 }
 
+/**
+ * Placeholders that limit a Query Editor query to the dashboard time range: the plugin's macros, replaced by
+ * the backend, and Grafana's global `$__from`/`$__to`, also in their `${__from:...}` forms, replaced in the browser.
+ */
+export const TIME_FILTER_PLACEHOLDERS = [
+  '$__timeFrom',
+  '$__timeTo',
+  '$__unixEpochFrom',
+  '$__unixEpochTo',
+  '$__from',
+  '$__to',
+  '${__from',
+  '${__to',
+];
+
+/**
+ * Tells whether a CQL query uses the dashboard time range. It looks at the query as written, before the
+ * browser interpolates `$__from`/`$__to` and dashboard variables, which the backend cannot do. A time range
+ * passed in a dashboard variable of its own is not recognised.
+ */
+export function hasTimeFilter(cql: string | undefined): boolean {
+  const text = cql ?? '';
+  return TIME_FILTER_PLACEHOLDERS.some((placeholder) => text.includes(placeholder));
+}
+
 export interface CassandraVariableQuery extends DataQuery {
   query: string;
 }
@@ -77,6 +102,14 @@ export interface CassandraDataSourceOptions extends DataSourceJsonData {
   allowInsecureTLS: boolean;
   allowedAuthenticators?: string;
   enableSecureSocksProxy?: boolean;
+  /**
+   * Largest number of rows a query may return; rows beyond it are dropped with a warning on the panel.
+   * Unset uses the default of DEFAULT_MAX_ROWS, 0 means no limit.
+   */
+  maxRows?: number;
 }
+
+/** Row limit applied by the backend when `maxRows` is not set, see pkg/settings.go. */
+export const DEFAULT_MAX_ROWS = 100000;
 
 type CassandraQueryType = 'query' | 'alert';
