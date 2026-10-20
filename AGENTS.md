@@ -14,7 +14,7 @@ The plugin has two main components:
 - Query Configurator (GUI-driven) and raw CQL Query Editor
 - Table mode, variables, annotations, alerting, and provisioning support
 - Authentication (username/password) and TLS
-- Compatible with Grafana 7.4+ and Cassandra 3+
+- Compatible with Grafana 10.4+ (plugin 4.x; Grafana 7.4-10.3 stay on plugin 3.x) and Cassandra 3+
 
 ## Building & Running
 

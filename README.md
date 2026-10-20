@@ -9,8 +9,8 @@ See the [Quick Demo](https://github.com/HadesArchitect/GrafanaCassandraDatasourc
 ## Compatibility
 
 * Grafana
-  * 10.x - 13.x are fully supported (plugin version 4.x)
-  * 7.4 - 9.x are supported by plugin version 3.x, which stays available to those instances
+  * 10.4 - 13.x are fully supported (plugin version 4.x)
+  * 7.4 - 10.3 are supported by plugin version 3.x, which stays available to those instances
   * 5.x, 6.x, 7.0-7.3 are deprecated (works with plugin versions 1.x/2.x, but we recommend upgrading)
 * Cassandra 3.x, 4.x, 5.x
 * DataStax Enterprise 6.x

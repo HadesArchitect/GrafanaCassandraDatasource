@@ -132,7 +132,7 @@ You can override the Grafana version using environment variables:
 
 ```bash
 # Test with a specific version
-GRAFANA_VERSION=10.0.0 docker compose up
+GRAFANA_VERSION=10.4.0 docker compose up
 
 # Test with Grafana OSS instead of Enterprise
 GRAFANA_IMAGE=grafana GRAFANA_VERSION=12.0.0 docker compose up
